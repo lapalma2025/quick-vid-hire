@@ -88,7 +88,11 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate(isCandidate ? "/profile/candidate" : "/profile/company")}
+                >
                   Edytuj profil
                 </Button>
               </CardContent>
@@ -106,7 +110,10 @@ const Dashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button className="w-full">
+                  <Button 
+                    className="w-full"
+                    onClick={() => navigate("/rooms/create")}
+                  >
                     Utwórz pokój
                   </Button>
                 </CardContent>
