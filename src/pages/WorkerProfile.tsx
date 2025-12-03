@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +54,7 @@ interface Category {
 
 export default function WorkerProfile() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [worker, setWorker] = useState<WorkerProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -138,11 +139,9 @@ export default function WorkerProfile() {
   return (
     <Layout>
       <div className="container max-w-4xl py-8">
-        <Button variant="ghost" asChild className="mb-6">
-          <Link to="/jobs">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Wróć
-          </Link>
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Wróć
         </Button>
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-8">

@@ -1,10 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -15,7 +22,9 @@ import {
   Clock,
   CheckCircle2,
   Archive,
-  Loader2
+  Loader2,
+  Filter,
+  ArrowUpDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -47,6 +56,8 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [filterResponses, setFilterResponses] = useState<'all' | 'with_responses'>('all');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -118,9 +129,25 @@ export default function Dashboard() {
     );
   }
 
-  const activeJobs = jobs.filter(j => j.status === 'active');
-  const inProgressJobs = jobs.filter(j => j.status === 'in_progress');
-  const doneJobs = jobs.filter(j => j.status === 'done' || j.status === 'archived' || j.status === 'closed');
+  const sortedAndFilteredJobs = useMemo(() => {
+    let filtered = [...jobs];
+    
+    if (filterResponses === 'with_responses') {
+      filtered = filtered.filter(j => (j.responses_count || 0) > 0);
+    }
+    
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+    
+    return filtered;
+  }, [jobs, sortOrder, filterResponses]);
+
+  const activeJobs = sortedAndFilteredJobs.filter(j => j.status === 'active');
+  const inProgressJobs = sortedAndFilteredJobs.filter(j => j.status === 'in_progress');
+  const doneJobs = sortedAndFilteredJobs.filter(j => j.status === 'done' || j.status === 'archived' || j.status === 'closed');
 
   return (
     <Layout>
@@ -266,8 +293,30 @@ export default function Dashboard() {
         {/* Client: Jobs list */}
         {isClient && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Moje zlecenia</CardTitle>
+              <div className="flex items-center gap-2">
+                <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'newest' | 'oldest')}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Od najnowszych</SelectItem>
+                    <SelectItem value="oldest">Od najstarszych</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterResponses} onValueChange={(v) => setFilterResponses(v as 'all' | 'with_responses')}>
+                  <SelectTrigger className="w-[160px] h-9">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Wszystkie</SelectItem>
+                    <SelectItem value="with_responses">Ze zgłoszeniami</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="active">
