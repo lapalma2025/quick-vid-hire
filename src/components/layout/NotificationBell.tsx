@@ -28,14 +28,16 @@ export const NotificationBell = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [hasUnread, setHasUnread] = useState(false);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && unreadCount > 0) {
-      // Mark messages as read in DB and reset badge
+    if (open && hasUnread) {
+      // Mark messages as read in DB and hide badge
       markMessagesAsRead();
-      setUnreadCount(0);
+      setHasUnread(false);
+      // Store last seen time to not show badge for these notifications again
+      localStorage.setItem(`notifications_seen_${profile?.id}`, new Date().toISOString());
     }
   };
 
@@ -165,7 +167,12 @@ export const NotificationBell = () => {
       .slice(0, 5);
 
     setNotifications(uniqueNotifs);
-    setUnreadCount(uniqueNotifs.length);
+    
+    // Check if there are new notifications since last seen
+    const lastSeen = localStorage.getItem(`notifications_seen_${profile.id}`);
+    const hasNew = uniqueNotifs.some(n => !lastSeen || new Date(n.createdAt) > new Date(lastSeen));
+    setHasUnread(hasNew);
+    
     setLoading(false);
   };
 
@@ -178,12 +185,8 @@ export const NotificationBell = () => {
           className="relative rounded-xl h-11 w-11 hover:bg-primary/10 transition-colors duration-300"
         >
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-destructive"
-            >
-              {unreadCount}
-            </Badge>
+          {hasUnread && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full" />
           )}
         </Button>
       </DropdownMenuTrigger>
