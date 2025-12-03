@@ -73,71 +73,150 @@ export default function Workers() {
     fetchCategories();
   }, []);
 
-  // Build query with filters
-  const buildQuery = useCallback(() => {
-    let query = supabase
-      .from('profiles')
-      .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`, { count: 'exact' })
-      .eq('is_available', true);
-
-    if (filters.wojewodztwo) query = query.eq('wojewodztwo', filters.wojewodztwo);
-    if (filters.miasto) query = query.eq('miasto', filters.miasto);
-    if (filters.minRate) query = query.gte('hourly_rate', parseFloat(filters.minRate));
-    if (filters.maxRate) query = query.lte('hourly_rate', parseFloat(filters.maxRate));
-    if (filters.minRating) query = query.gte('rating_avg', parseFloat(filters.minRating));
-
-    return query.order('rating_avg', { ascending: false });
-  }, [filters]);
-
-  // Initial fetch
+  // Initial fetch with category filtering
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
     setWorkers([]);
     setHasMore(true);
 
-    const query = buildQuery();
-    const { data, error, count } = await query.range(0, PAGE_SIZE - 1);
-
-    if (data && !error) {
-      let workersData = data.map((w: any) => ({
-        ...w,
-        categories: w.worker_categories?.map((wc: any) => wc.category) || [],
-      }));
+    try {
+      // If category filter is active, first get worker IDs that have this category
+      let workerIdsWithCategory: string[] | null = null;
+      
       if (filters.category) {
-        workersData = workersData.filter((w: Worker) => w.categories.some(c => c.name === filters.category));
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('name', filters.category)
+          .maybeSingle();
+        
+        if (categoryData) {
+          const { data: workerCats } = await supabase
+            .from('worker_categories')
+            .select('worker_id')
+            .eq('category_id', categoryData.id);
+          
+          workerIdsWithCategory = workerCats?.map(wc => wc.worker_id) || [];
+        } else {
+          // Category not found, return empty
+          setWorkers([]);
+          setTotalCount(0);
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
       }
-      setWorkers(workersData);
-      setTotalCount(count || 0);
-      setHasMore(data.length === PAGE_SIZE);
+
+      let query = supabase
+        .from('profiles')
+        .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`, { count: 'exact' })
+        .eq('is_available', true);
+
+      // Apply category filter via worker IDs
+      if (workerIdsWithCategory !== null) {
+        if (workerIdsWithCategory.length === 0) {
+          setWorkers([]);
+          setTotalCount(0);
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
+        query = query.in('id', workerIdsWithCategory);
+      }
+
+      if (filters.wojewodztwo) query = query.eq('wojewodztwo', filters.wojewodztwo);
+      if (filters.miasto) query = query.eq('miasto', filters.miasto);
+      if (filters.minRate) query = query.gte('hourly_rate', parseFloat(filters.minRate));
+      if (filters.maxRate) query = query.lte('hourly_rate', parseFloat(filters.maxRate));
+      if (filters.minRating) query = query.gte('rating_avg', parseFloat(filters.minRating));
+
+      const { data, error, count } = await query
+        .order('rating_avg', { ascending: false })
+        .range(0, PAGE_SIZE - 1);
+
+      if (data && !error) {
+        const workersData = data.map((w: any) => ({
+          ...w,
+          categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
+        }));
+        setWorkers(workersData);
+        setTotalCount(count || 0);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      console.error('Error fetching workers:', err);
     }
     setLoading(false);
-  }, [buildQuery, filters.category]);
+  }, [filters]);
 
   // Load more
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     
     setLoadingMore(true);
-    const query = buildQuery();
-    const { data, error } = await query.range(workers.length, workers.length + PAGE_SIZE - 1);
-    
-    if (!error && data) {
-      let newWorkersData = data.map((w: any) => ({
-        ...w,
-        categories: w.worker_categories?.map((wc: any) => wc.category) || [],
-      }));
+
+    try {
+      // If category filter is active, first get worker IDs that have this category
+      let workerIdsWithCategory: string[] | null = null;
+      
       if (filters.category) {
-        newWorkersData = newWorkersData.filter((w: Worker) => w.categories.some(c => c.name === filters.category));
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('name', filters.category)
+          .maybeSingle();
+        
+        if (categoryData) {
+          const { data: workerCats } = await supabase
+            .from('worker_categories')
+            .select('worker_id')
+            .eq('category_id', categoryData.id);
+          
+          workerIdsWithCategory = workerCats?.map(wc => wc.worker_id) || [];
+        }
       }
-      setWorkers(prev => [...prev, ...newWorkersData]);
-      setHasMore(data.length === PAGE_SIZE);
+
+      let query = supabase
+        .from('profiles')
+        .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`)
+        .eq('is_available', true);
+
+      if (workerIdsWithCategory !== null) {
+        if (workerIdsWithCategory.length === 0) {
+          setHasMore(false);
+          setLoadingMore(false);
+          return;
+        }
+        query = query.in('id', workerIdsWithCategory);
+      }
+
+      if (filters.wojewodztwo) query = query.eq('wojewodztwo', filters.wojewodztwo);
+      if (filters.miasto) query = query.eq('miasto', filters.miasto);
+      if (filters.minRate) query = query.gte('hourly_rate', parseFloat(filters.minRate));
+      if (filters.maxRate) query = query.lte('hourly_rate', parseFloat(filters.maxRate));
+      if (filters.minRating) query = query.gte('rating_avg', parseFloat(filters.minRating));
+
+      const { data, error } = await query
+        .order('rating_avg', { ascending: false })
+        .range(workers.length, workers.length + PAGE_SIZE - 1);
+      
+      if (!error && data) {
+        const newWorkersData = data.map((w: any) => ({
+          ...w,
+          categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
+        }));
+        setWorkers(prev => [...prev, ...newWorkersData]);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      console.error('Error loading more workers:', err);
     }
     setLoadingMore(false);
-  }, [buildQuery, workers.length, loadingMore, hasMore, filters.category]);
+  }, [workers.length, loadingMore, hasMore, filters]);
 
   useEffect(() => {
     fetchWorkers();
-  }, [fetchWorkers]);
+  }, [filters]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
