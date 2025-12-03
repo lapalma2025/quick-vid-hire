@@ -121,6 +121,7 @@ export default function Dashboard() {
   const activeJobs = jobs.filter(j => j.status === 'active');
   const inProgressJobs = jobs.filter(j => j.status === 'in_progress');
   const doneJobs = jobs.filter(j => j.status === 'done' || j.status === 'archived');
+  const closedJobs = jobs.filter(j => j.status === 'closed');
 
   return (
     <Layout>
@@ -275,6 +276,7 @@ export default function Dashboard() {
                   <TabsTrigger value="active">Aktywne ({activeJobs.length})</TabsTrigger>
                   <TabsTrigger value="progress">W realizacji ({inProgressJobs.length})</TabsTrigger>
                   <TabsTrigger value="done">Zakończone ({doneJobs.length})</TabsTrigger>
+                  <TabsTrigger value="closed">Zamknięte ({closedJobs.length})</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="active" className="space-y-4 mt-4">
@@ -338,6 +340,26 @@ export default function Dashboard() {
                             </p>
                           </div>
                           <Badge variant="outline">{JOB_STATUSES[job.status].label}</Badge>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="closed" className="space-y-4 mt-4">
+                  {closedJobs.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">Brak zamkniętych zleceń</p>
+                  ) : (
+                    closedJobs.map((job) => (
+                      <Link key={job.id} to={`/jobs/${job.id}`} className="block">
+                        <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                          <div>
+                            <p className="font-medium">{job.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(job.created_at), 'dd MMM yyyy', { locale: pl })}
+                            </p>
+                          </div>
+                          <Badge variant="destructive">{JOB_STATUSES[job.status].label}</Badge>
                         </div>
                       </Link>
                     ))

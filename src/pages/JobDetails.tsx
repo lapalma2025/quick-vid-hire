@@ -27,8 +27,20 @@ import {
   MessageSquare,
   Loader2,
   ArrowLeft,
-  Send
+  Send,
+  XCircle
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
@@ -190,6 +202,26 @@ export default function JobDetails() {
     }
   };
 
+  const handleCloseJob = async () => {
+    if (!job) return;
+
+    const { error } = await supabase
+      .from('jobs')
+      .update({ status: 'closed' })
+      .eq('id', job.id);
+
+    if (error) {
+      toast({
+        title: 'Błąd',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Ogłoszenie zostało zamknięte' });
+      fetchJob();
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -223,10 +255,37 @@ export default function JobDetails() {
               Wróć do listy
             </Link>
           </Button>
-          {isOwner && job.status === 'active' && (
-            <Button variant="outline" asChild>
-              <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
-            </Button>
+          {isOwner && (job.status === 'active' || job.status === 'in_progress') && (
+            <div className="flex gap-2">
+              {job.status === 'active' && (
+                <Button variant="outline" asChild>
+                  <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
+                </Button>
+              )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Zamknij ogłoszenie
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Zamknąć ogłoszenie?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ogłoszenie zostanie przeniesione do sekcji "Zamknięte" i nie będzie widoczne dla wykonawców. 
+                      Będziesz mógł je zobaczyć w swoim panelu.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCloseJob}>
+                      Zamknij
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
         </div>
 

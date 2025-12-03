@@ -57,4 +57,5 @@ export const JOB_STATUSES = {
   in_progress: { label: "W realizacji", color: "primary" },
   done: { label: "Zakończone", color: "muted" },
   archived: { label: "Archiwalne", color: "muted" },
+  closed: { label: "Zamknięte", color: "destructive" },
 } as const;
