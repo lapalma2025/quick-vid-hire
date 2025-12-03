@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
+
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -19,7 +19,6 @@ import { StarRating } from '@/components/ui/star-rating';
 import { 
   MapPin, 
   Banknote, 
-  Search,
   Loader2,
   Users,
   Filter,
@@ -57,7 +56,6 @@ export default function Workers() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
-    search: '',
     wojewodztwo: '',
     miasto: '',
     category: '',
@@ -102,7 +100,6 @@ export default function Workers() {
     if (filters.minRate) query = query.gte('hourly_rate', parseFloat(filters.minRate));
     if (filters.maxRate) query = query.lte('hourly_rate', parseFloat(filters.maxRate));
     if (filters.minRating) query = query.gte('rating_avg', parseFloat(filters.minRating));
-    if (filters.search) query = query.ilike('name', `%${filters.search}%`);
 
     const { data, error } = await query.order('rating_avg', { ascending: false });
 
@@ -128,7 +125,7 @@ export default function Workers() {
   };
 
   const clearFilters = () => {
-    setFilters({ search: '', wojewodztwo: '', miasto: '', category: '', minRate: '', maxRate: '', minRating: '' });
+    setFilters({ wojewodztwo: '', miasto: '', category: '', minRate: '', maxRate: '', minRating: '' });
   };
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
@@ -159,12 +156,8 @@ export default function Workers() {
       </div>
 
       <div className="container py-10">
-        {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input placeholder="Szukaj po imieniu..." value={filters.search} onChange={(e) => updateFilter('search', e.target.value)} className="pl-12 h-12 rounded-xl" />
-          </div>
+        {/* Filters Toggle */}
+        <div className="flex justify-end mb-6">
           <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="gap-2 h-12">
             <Filter className="h-4 w-4" />
             Filtry
