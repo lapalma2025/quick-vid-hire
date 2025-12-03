@@ -28,9 +28,19 @@ export const NotificationBell = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open && unreadCount > 0) {
+      // Mark messages as read in DB and reset badge
+      markMessagesAsRead();
+      setUnreadCount(0);
+    }
+  };
 
   const markMessagesAsRead = async () => {
-    if (!profile || notifications.length === 0) return;
+    if (!profile) return;
     
     const messageIds = notifications
       .filter(n => n.type === "message")
@@ -42,17 +52,10 @@ export const NotificationBell = () => {
         .update({ read: true })
         .in("id", messageIds);
     }
-    
-    // Clear notifications after marking as read
-    setNotifications([]);
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (open) {
-      // Mark as read when opening
-      markMessagesAsRead();
-    }
+  const clearNotifications = () => {
+    setNotifications([]);
   };
 
   useEffect(() => {
@@ -162,10 +165,9 @@ export const NotificationBell = () => {
       .slice(0, 5);
 
     setNotifications(uniqueNotifs);
+    setUnreadCount(uniqueNotifs.length);
     setLoading(false);
   };
-
-  const count = notifications.length;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
@@ -176,11 +178,11 @@ export const NotificationBell = () => {
           className="relative rounded-xl h-11 w-11 hover:bg-primary/10 transition-colors duration-300"
         >
           <Bell className="h-5 w-5" />
-          {count > 0 && (
+          {unreadCount > 0 && (
             <Badge
               className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-destructive"
             >
-              {count}
+              {unreadCount}
             </Badge>
           )}
         </Button>
@@ -196,8 +198,19 @@ export const NotificationBell = () => {
           </div>
         ) : (
           <>
-            <div className="px-3 py-2 text-sm font-semibold border-b mb-2">
-              Powiadomienia ({count})
+            <div className="px-3 py-2 text-sm font-semibold border-b mb-2 flex items-center justify-between">
+              <span>Powiadomienia ({notifications.length})</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  clearNotifications();
+                }}
+              >
+                Wyczyść
+              </Button>
             </div>
             {notifications.map((notif) => (
               <DropdownMenuItem key={notif.id} asChild className="rounded-lg cursor-pointer p-3">
