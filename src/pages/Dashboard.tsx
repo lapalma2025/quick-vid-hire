@@ -119,16 +119,6 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  if (isLoading || loading) {
-    return (
-      <Layout>
-        <div className="container py-16 flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
-  }
-
   const sortedAndFilteredJobs = useMemo(() => {
     let filtered = [...jobs];
     
@@ -144,6 +134,16 @@ export default function Dashboard() {
     
     return filtered;
   }, [jobs, sortOrder, filterResponses]);
+
+  if (isLoading || loading) {
+    return (
+      <Layout>
+        <div className="container py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   const activeJobs = sortedAndFilteredJobs.filter(j => j.status === 'active');
   const inProgressJobs = sortedAndFilteredJobs.filter(j => j.status === 'in_progress');
