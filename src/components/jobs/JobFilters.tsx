@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
 import {
@@ -20,6 +19,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
+import { WojewodztwoSelect } from './WojewodztwoSelect';
+import { CitySelect } from './CitySelect';
 
 interface Category {
   id: string;
@@ -81,50 +83,36 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
     onFiltersChange(cleared);
   };
 
-  const miasta = filters.wojewodztwo ? MIASTA_BY_WOJEWODZTWO[filters.wojewodztwo] || [] : [];
   const hasActiveFilters = filters.wojewodztwo || filters.miasto || filters.category_id || filters.urgent;
 
   const FilterContent = () => (
-    <div className="space-y-4">
-      <div>
-        <Label>Województwo</Label>
-        <Select value={filters.wojewodztwo} onValueChange={(v) => updateFilter('wojewodztwo', v)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Wybierz województwo" />
-          </SelectTrigger>
-          <SelectContent>
-            {WOJEWODZTWA.map((w) => (
-              <SelectItem key={w} value={w}>{w}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <Label className="font-medium">Województwo</Label>
+        <WojewodztwoSelect
+          value={filters.wojewodztwo}
+          onChange={(v) => updateFilter('wojewodztwo', v)}
+        />
       </div>
 
-      <div>
-        <Label>Miasto</Label>
-        <Select 
-          value={filters.miasto} 
-          onValueChange={(v) => updateFilter('miasto', v)}
+      <div className="space-y-2">
+        <Label className="font-medium">Miasto</Label>
+        <CitySelect
+          wojewodztwo={filters.wojewodztwo}
+          value={filters.miasto}
+          onChange={(v) => updateFilter('miasto', v)}
           disabled={!filters.wojewodztwo}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Wybierz miasto" />
-          </SelectTrigger>
-          <SelectContent>
-            {miasta.map((m) => (
-              <SelectItem key={m} value={m}>{m}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
 
-      <div>
-        <Label>Kategoria</Label>
-        <Select value={filters.category_id} onValueChange={(v) => updateFilter('category_id', v)}>
-          <SelectTrigger>
+      <div className="space-y-2">
+        <Label className="font-medium">Kategoria</Label>
+        <Select value={filters.category_id || "__all__"} onValueChange={(v) => updateFilter('category_id', v === "__all__" ? "" : v)}>
+          <SelectTrigger className="h-11 rounded-xl">
             <SelectValue placeholder="Wszystkie kategorie" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-popover border border-border shadow-xl rounded-xl">
+            <SelectItem value="__all__">Wszystkie kategorie</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
             ))}
@@ -132,21 +120,21 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
         </Select>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Label>Tylko pilne</Label>
+      <div className="flex items-center justify-between py-2">
+        <Label className="font-medium">Tylko pilne</Label>
         <Switch 
           checked={filters.urgent} 
           onCheckedChange={(v) => updateFilter('urgent', v)} 
         />
       </div>
 
-      <div>
-        <Label>Sortuj</Label>
+      <div className="space-y-2">
+        <Label className="font-medium">Sortuj</Label>
         <Select value={filters.sortBy} onValueChange={(v) => updateFilter('sortBy', v as any)}>
-          <SelectTrigger>
+          <SelectTrigger className="h-11 rounded-xl">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-popover border border-border shadow-xl rounded-xl">
             <SelectItem value="newest">Najnowsze</SelectItem>
             <SelectItem value="budget_high">Najwyższy budżet</SelectItem>
             <SelectItem value="start_soon">Najbliższy termin</SelectItem>
@@ -155,7 +143,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       </div>
 
       {hasActiveFilters && (
-        <Button variant="outline" className="w-full" onClick={clearFilters}>
+        <Button variant="outline" className="w-full rounded-xl" onClick={clearFilters}>
           <X className="h-4 w-4 mr-2" />
           Wyczyść filtry
         </Button>
@@ -167,12 +155,12 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
     <div className="space-y-4">
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
           placeholder="Szukaj zleceń..."
           value={filters.search}
           onChange={(e) => updateFilter('search', e.target.value)}
-          className="pl-10"
+          className="pl-12 h-12 rounded-xl"
         />
       </div>
 
@@ -180,19 +168,19 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       <div className="md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="w-full gap-2">
+            <Button variant="outline" className="w-full gap-2 h-11 rounded-xl">
               <SlidersHorizontal className="h-4 w-4" />
               Filtry
               {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1">!</Badge>
+                <Badge className="ml-1 bg-primary text-white">!</Badge>
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[80vh]">
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
             <SheetHeader>
-              <SheetTitle>Filtry</SheetTitle>
+              <SheetTitle className="font-display">Filtry</SheetTitle>
             </SheetHeader>
-            <div className="mt-4">
+            <div className="mt-6 overflow-y-auto">
               <FilterContent />
             </div>
           </SheetContent>
@@ -200,12 +188,10 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       </div>
 
       {/* Desktop filters */}
-      <div className="hidden md:block">
+      <div className="hidden md:block card-modern p-6">
+        <h3 className="font-display font-bold text-lg mb-5">Filtry</h3>
         <FilterContent />
       </div>
     </div>
   );
 };
-
-// Need to import Badge
-import { Badge } from '@/components/ui/badge';

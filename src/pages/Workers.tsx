@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
 import { StarRating } from '@/components/ui/star-rating';
 import { 
   MapPin, 
@@ -29,6 +28,8 @@ import {
   ArrowRight
 } from 'lucide-react';
 import gsap from 'gsap';
+import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
+import { CitySelect } from '@/components/jobs/CitySelect';
 
 interface Worker {
   id: string;
@@ -64,8 +65,6 @@ export default function Workers() {
     maxRate: '',
     minRating: '',
   });
-
-  const miasta = filters.wojewodztwo ? MIASTA_BY_WOJEWODZTWO[filters.wojewodztwo] || [] : [];
 
   useEffect(() => {
     fetchCategories();
@@ -179,23 +178,19 @@ export default function Workers() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label className="font-medium">Województwo</Label>
-                  <Select value={filters.wojewodztwo || "__all__"} onValueChange={(v) => updateFilter('wojewodztwo', v === "__all__" ? "" : v)}>
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Wszystkie</SelectItem>
-                      {WOJEWODZTWA.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <WojewodztwoSelect
+                    value={filters.wojewodztwo}
+                    onChange={(v) => updateFilter('wojewodztwo', v)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium">Miasto</Label>
-                  <Select value={filters.miasto || "__all__"} onValueChange={(v) => updateFilter('miasto', v === "__all__" ? "" : v)} disabled={!filters.wojewodztwo}>
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Wszystkie</SelectItem>
-                      {miasta.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <CitySelect
+                    wojewodztwo={filters.wojewodztwo}
+                    value={filters.miasto}
+                    onChange={(v) => updateFilter('miasto', v)}
+                    disabled={!filters.wojewodztwo}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium">Kategoria</Label>
