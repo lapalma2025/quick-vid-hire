@@ -1,0 +1,60 @@
+export const WOJEWODZTWA = [
+  "dolnośląskie",
+  "kujawsko-pomorskie",
+  "lubelskie",
+  "lubuskie",
+  "łódzkie",
+  "małopolskie",
+  "mazowieckie",
+  "opolskie",
+  "podkarpackie",
+  "podlaskie",
+  "pomorskie",
+  "śląskie",
+  "świętokrzyskie",
+  "warmińsko-mazurskie",
+  "wielkopolskie",
+  "zachodniopomorskie",
+] as const;
+
+export const MIASTA_BY_WOJEWODZTWO: Record<string, string[]> = {
+  "dolnośląskie": ["Wrocław", "Wałbrzych", "Legnica", "Jelenia Góra", "Lubin", "Głogów"],
+  "kujawsko-pomorskie": ["Bydgoszcz", "Toruń", "Włocławek", "Grudziądz", "Inowrocław"],
+  "lubelskie": ["Lublin", "Zamość", "Chełm", "Biała Podlaska", "Puławy"],
+  "lubuskie": ["Zielona Góra", "Gorzów Wielkopolski", "Nowa Sól", "Żary"],
+  "łódzkie": ["Łódź", "Piotrków Trybunalski", "Pabianice", "Tomaszów Mazowiecki", "Bełchatów"],
+  "małopolskie": ["Kraków", "Tarnów", "Nowy Sącz", "Oświęcim", "Chrzanów", "Zakopane"],
+  "mazowieckie": ["Warszawa", "Radom", "Płock", "Siedlce", "Pruszków", "Legionowo", "Ostrołęka"],
+  "opolskie": ["Opole", "Kędzierzyn-Koźle", "Nysa", "Brzeg", "Kluczbork"],
+  "podkarpackie": ["Rzeszów", "Przemyśl", "Stalowa Wola", "Mielec", "Tarnobrzeg", "Krosno"],
+  "podlaskie": ["Białystok", "Suwałki", "Łomża", "Augustów", "Bielsk Podlaski"],
+  "pomorskie": ["Gdańsk", "Gdynia", "Sopot", "Słupsk", "Tczew", "Starogard Gdański"],
+  "śląskie": ["Katowice", "Częstochowa", "Sosnowiec", "Gliwice", "Zabrze", "Bytom", "Bielsko-Biała", "Rybnik", "Tychy"],
+  "świętokrzyskie": ["Kielce", "Ostrowiec Świętokrzyski", "Starachowice", "Skarżysko-Kamienna"],
+  "warmińsko-mazurskie": ["Olsztyn", "Elbląg", "Ełk", "Ostróda", "Iława", "Giżycko"],
+  "wielkopolskie": ["Poznań", "Kalisz", "Konin", "Piła", "Ostrów Wielkopolski", "Gniezno", "Leszno"],
+  "zachodniopomorskie": ["Szczecin", "Koszalin", "Stargard", "Kołobrzeg", "Świnoujście"],
+};
+
+export const CATEGORY_ICONS: Record<string, string> = {
+  "Prace fizyczne": "Hammer",
+  "Sprzątanie": "Sparkles",
+  "Przeprowadzki": "Truck",
+  "Eventy": "PartyPopper",
+  "Gastronomia": "UtensilsCrossed",
+  "Ogród": "Flower2",
+  "Transport": "Car",
+  "Montaż i naprawy": "Wrench",
+  "Opieka": "Heart",
+  "Dostawy": "Package",
+  "IT i komputery": "Laptop",
+  "Inne": "MoreHorizontal",
+};
+
+export const JOB_STATUSES = {
+  pending_payment: { label: "Oczekuje na płatność", color: "warning" },
+  active: { label: "Aktywne", color: "success" },
+  in_progress: { label: "W realizacji", color: "primary" },
+  done: { label: "Zakończone", color: "muted" },
+  archived: { label: "Archiwalne", color: "muted" },
+} as const;
