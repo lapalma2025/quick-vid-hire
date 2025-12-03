@@ -306,20 +306,8 @@ export default function JobDetails() {
       return;
     }
 
-    // Send chat message to worker
-    const { error: chatError } = await supabase.from('chat_messages').insert({
-      job_id: job.id,
-      sender_id: profile!.id,
-      message: `🎉 Zostałeś wybrany do realizacji zlecenia "${job.title}"! Proszę o potwierdzenie, że akceptujesz to zlecenie.`,
-    });
-
     setSubmitting(false);
-
-    if (chatError) {
-      console.error('Chat message error:', chatError);
-    }
-
-    toast({ title: 'Zlecenie rozpoczęte! Czekamy na potwierdzenie wykonawcy.' });
+    toast({ title: 'Wysłano do potwierdzenia! Wykonawca zobaczy powiadomienie.' });
     fetchJob();
     fetchResponses();
   };
@@ -337,14 +325,9 @@ export default function JobDetails() {
     if (error) {
       toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
     } else {
-      // Send confirmation message
-      await supabase.from('chat_messages').insert({
-        job_id: job.id,
-        sender_id: profile!.id,
-        message: '✅ Akceptuję zlecenie! Zaczynam realizację.',
-      });
       toast({ title: 'Zlecenie zaakceptowane!' });
       fetchResponses();
+      fetchJob();
     }
 
     setSubmitting(false);
@@ -376,12 +359,6 @@ export default function JobDetails() {
     if (jobError) {
       toast({ title: 'Błąd', description: jobError.message, variant: 'destructive' });
     } else {
-      // Send rejection message
-      await supabase.from('chat_messages').insert({
-        job_id: job.id,
-        sender_id: profile!.id,
-        message: '❌ Niestety muszę odrzucić to zlecenie.',
-      });
       toast({ title: 'Zlecenie odrzucone' });
       fetchJob();
       fetchResponses();
