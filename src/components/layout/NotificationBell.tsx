@@ -101,6 +101,13 @@ export const NotificationBell = () => {
         .update({ status: "in_progress" })
         .eq("id", confirmationDialog.notification.jobId);
 
+      // Send notification message to client
+      await supabase.from("chat_messages").insert({
+        job_id: confirmationDialog.notification.jobId,
+        sender_id: profile.id,
+        message: "✅ Akceptuję zlecenie! Zaczynam realizację.",
+      });
+
       toast({ title: "Zlecenie zaakceptowane!" });
       setConfirmationDialog({ open: false, notification: null });
       fetchNotifications();
@@ -125,6 +132,13 @@ export const NotificationBell = () => {
         .from("jobs")
         .update({ selected_worker_id: null, status: "active" })
         .eq("id", confirmationDialog.notification.jobId);
+
+      // Send notification message to client
+      await supabase.from("chat_messages").insert({
+        job_id: confirmationDialog.notification.jobId,
+        sender_id: profile.id,
+        message: "❌ Niestety muszę odrzucić to zlecenie.",
+      });
 
       toast({ title: "Zlecenie odrzucone" });
       setConfirmationDialog({ open: false, notification: null });
