@@ -546,64 +546,33 @@ export default function JobDetails() {
           {isOwner && (
             <div className="flex gap-2">
               {job.status === 'active' && !job.selected_worker_id && (
-                <>
-                  <Button variant="outline" asChild>
-                    <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
-                        <X className="h-4 w-4 mr-2" />
-                        Anuluj
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Anulować zlecenie?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Czy na pewno chcesz anulować to zlecenie? Ta akcja jest nieodwracalna.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Nie</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCancelJob} className="bg-destructive hover:bg-destructive/90">
-                          Tak, anuluj
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
+                <Button variant="outline" asChild>
+                  <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
+                </Button>
               )}
-              {job.status === 'active' && job.selected_worker_id && selectedWorkerResponse?.status === 'selected' && (
-                <>
-                  <Button onClick={handleStartProgress} disabled={submitting} className="gap-2">
-                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    <Play className="h-4 w-4" />
-                    Rozpocznij realizację
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
-                        <X className="h-4 w-4 mr-2" />
-                        Anuluj
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Anulować zlecenie?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Czy na pewno chcesz anulować to zlecenie? Wykonawca zostanie poinformowany.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Nie</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCancelJob} className="bg-destructive hover:bg-destructive/90">
-                          Tak, anuluj
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
+              {job.status === 'active' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                      <X className="h-4 w-4 mr-2" />
+                      Anuluj
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Anulować zlecenie?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Czy na pewno chcesz anulować to zlecenie? Ta akcja jest nieodwracalna.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Nie</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleCancelJob} className="bg-destructive hover:bg-destructive/90">
+                        Tak, anuluj
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               {job.status === 'in_progress' && (
                 <Dialog open={ratingDialogOpen} onOpenChange={setRatingDialogOpen}>
@@ -819,18 +788,16 @@ export default function JobDetails() {
                                 className="gap-1"
                               >
                                 {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
-                                <Play className="h-3 w-3" />
-                                Rozpocznij realizację
+                                <Send className="h-3 w-3" />
+                                Wyślij do realizacji
                               </Button>
                             )}
-                            {isSelected && job.selected_worker_id && (
-                              <Button size="sm" variant="outline" asChild className="gap-1">
-                                <Link to={`/jobs/${job.id}/chat`}>
-                                  <MessageSquare className="h-3 w-3" />
-                                  Czat
-                                </Link>
-                              </Button>
-                            )}
+                            <Button size="sm" variant="outline" asChild className="gap-1">
+                              <Link to={`/jobs/${job.id}/chat`}>
+                                <MessageSquare className="h-3 w-3" />
+                                Czat
+                              </Link>
+                            </Button>
                             <Button size="sm" variant="outline" asChild>
                               <Link to={`/worker/${response.worker.id}`}>Profil</Link>
                             </Button>
