@@ -25,7 +25,8 @@ import {
   Archive,
   Loader2,
   Filter,
-  ArrowUpDown
+  ArrowUpDown,
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -239,12 +240,14 @@ export default function Dashboard() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <MessageSquare className="h-5 w-5 text-primary" />
+                    <div className="p-3 rounded-lg bg-warning/10">
+                      <AlertCircle className="h-5 w-5 text-warning" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{responses.length}</p>
-                      <p className="text-sm text-muted-foreground">Wysłanych ofert</p>
+                      <p className="text-2xl font-bold">
+                        {responses.filter(r => r.status === 'awaiting_confirmation').length}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Do potwierdzenia</p>
                     </div>
                   </div>
                 </CardContent>
@@ -267,12 +270,12 @@ export default function Dashboard() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-warning/10">
-                      <Star className="h-5 w-5 text-warning" />
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <MessageSquare className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{profile?.rating_avg?.toFixed(1) || '0.0'}</p>
-                      <p className="text-sm text-muted-foreground">Średnia ocena</p>
+                      <p className="text-2xl font-bold">{responses.length}</p>
+                      <p className="text-sm text-muted-foreground">Wszystkich ofert</p>
                     </div>
                   </div>
                 </CardContent>
@@ -281,11 +284,11 @@ export default function Dashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="p-3 rounded-lg bg-accent/10">
-                      <Archive className="h-5 w-5 text-accent" />
+                      <Star className="h-5 w-5 text-accent" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{profile?.rating_count || 0}</p>
-                      <p className="text-sm text-muted-foreground">Opinii</p>
+                      <p className="text-2xl font-bold">{profile?.rating_avg?.toFixed(1) || '0.0'}</p>
+                      <p className="text-sm text-muted-foreground">Średnia ocena</p>
                     </div>
                   </div>
                 </CardContent>
@@ -403,40 +406,88 @@ export default function Dashboard() {
 
         {/* Worker: Responses list */}
         {isWorkerView && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Moje oferty</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {responses.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">Nie wysłałeś jeszcze żadnych ofert</p>
-                  <Button asChild>
-                    <Link to="/jobs">Przeglądaj zlecenia</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {responses.map((response) => (
-                    <Link key={response.id} to={`/jobs/${response.job.id}`} className="block">
-                      <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
-                        <div>
-                          <p className="font-medium">{response.job.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {response.job.miasto} • {response.job.budget ? `${response.job.budget} zł` : 'Do ustalenia'}
-                          </p>
+          <div className="space-y-6">
+            {/* Awaiting confirmation - highlighted */}
+            {responses.filter(r => r.status === 'awaiting_confirmation').length > 0 && (
+              <Card className="border-warning bg-warning/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-warning">
+                    <AlertCircle className="h-5 w-5" />
+                    Oczekujące na potwierdzenie
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {responses.filter(r => r.status === 'awaiting_confirmation').map((response) => (
+                      <Link key={response.id} to={`/jobs/${response.job.id}`} className="block">
+                        <div className="flex items-center justify-between p-4 rounded-lg border border-warning/50 bg-background hover:bg-muted/50 transition-colors">
+                          <div>
+                            <p className="font-medium">{response.job.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {response.job.miasto} • {response.job.budget ? `${response.job.budget} zł` : 'Do ustalenia'}
+                            </p>
+                          </div>
+                          <Badge className="bg-warning text-warning-foreground">
+                            Wymagana akcja
+                          </Badge>
                         </div>
-                        <Badge variant={response.status === 'accepted' ? 'default' : 'secondary'}>
-                          {response.status === 'accepted' ? 'Zaakceptowana' : 
-                           response.status === 'rejected' ? 'Odrzucona' : 'Oczekuje'}
-                        </Badge>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* All responses */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Moje oferty</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {responses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">Nie wysłałeś jeszcze żadnych ofert</p>
+                    <Button asChild>
+                      <Link to="/jobs">Przeglądaj zlecenia</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {responses.map((response) => {
+                      const getStatusBadge = () => {
+                        switch (response.status) {
+                          case 'selected':
+                            return <Badge variant="secondary">Wybrany</Badge>;
+                          case 'awaiting_confirmation':
+                            return <Badge className="bg-warning text-warning-foreground">Oczekuje potwierdzenia</Badge>;
+                          case 'accepted':
+                            return <Badge className="bg-green-500 text-white">Zaakceptowana</Badge>;
+                          case 'rejected':
+                            return <Badge variant="destructive">Odrzucona</Badge>;
+                          default:
+                            return <Badge variant="outline">Oczekuje</Badge>;
+                        }
+                      };
+
+                      return (
+                        <Link key={response.id} to={`/jobs/${response.job.id}`} className="block">
+                          <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                            <div>
+                              <p className="font-medium">{response.job.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {response.job.miasto} • {response.job.budget ? `${response.job.budget} zł` : 'Do ustalenia'}
+                              </p>
+                            </div>
+                            {getStatusBadge()}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </Layout>

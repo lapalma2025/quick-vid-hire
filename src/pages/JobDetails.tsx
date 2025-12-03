@@ -16,6 +16,17 @@ import {
   DialogTrigger,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +43,9 @@ import {
   ArrowLeft,
   Send,
   Play,
-  CheckCircle2
+  CheckCircle2,
+  X,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -118,6 +131,11 @@ export default function JobDetails() {
   const isOwner = profile?.id === job?.user_id;
   const isSelectedWorker = profile?.id === job?.selected_worker_id;
   const hasResponded = responses.some(r => r.worker.id === profile?.id);
+  
+  // Find selected worker's response
+  const selectedWorkerResponse = responses.find(r => r.worker.id === job?.selected_worker_id);
+  // Find current user's response (if worker)
+  const myResponse = responses.find(r => r.worker.id === profile?.id);
 
   useEffect(() => {
     if (id) {
@@ -135,7 +153,6 @@ export default function JobDetails() {
   const checkExistingRatings = async () => {
     if (!job || !profile) return;
     
-    // Check if client has rated worker
     const { data: clientRating } = await supabase
       .from('reviews')
       .select('id')
@@ -145,7 +162,6 @@ export default function JobDetails() {
     
     setHasClientRated(!!clientRating);
 
-    // Check if worker has rated client
     if (job.selected_worker_id) {
       const { data: workerRating } = await supabase
         .from('reviews')
@@ -222,43 +238,170 @@ export default function JobDetails() {
     }
   };
 
-  const handleSelectWorker = async (workerId: string) => {
+  const handleSelectWorker = async (workerId: string, responseId: string) => {
     if (!job) return;
 
-    const { error } = await supabase
+    setSubmitting(true);
+    
+    // Update job with selected worker
+    const { error: jobError } = await supabase
       .from('jobs')
       .update({ selected_worker_id: workerId })
       .eq('id', job.id);
 
-    if (error) {
-      toast({
-        title: 'Błąd',
-        description: error.message,
-        variant: 'destructive',
-      });
+    if (jobError) {
+      toast({ title: 'Błąd', description: jobError.message, variant: 'destructive' });
+      setSubmitting(false);
+      return;
+    }
+
+    // Update response status to 'selected'
+    const { error: responseError } = await supabase
+      .from('job_responses')
+      .update({ status: 'selected' })
+      .eq('id', responseId);
+
+    setSubmitting(false);
+
+    if (responseError) {
+      toast({ title: 'Błąd', description: responseError.message, variant: 'destructive' });
     } else {
       toast({ title: 'Wykonawca wybrany! Teraz możesz rozpocząć realizację.' });
       fetchJob();
+      fetchResponses();
     }
   };
 
   const handleStartProgress = async () => {
-    if (!job) return;
+    if (!job || !job.selected_worker_id || !selectedWorkerResponse) return;
 
-    const { error } = await supabase
+    setSubmitting(true);
+
+    // Update job status
+    const { error: jobError } = await supabase
       .from('jobs')
       .update({ status: 'in_progress' })
       .eq('id', job.id);
 
+    if (jobError) {
+      toast({ title: 'Błąd', description: jobError.message, variant: 'destructive' });
+      setSubmitting(false);
+      return;
+    }
+
+    // Update response status to awaiting confirmation
+    const { error: responseError } = await supabase
+      .from('job_responses')
+      .update({ status: 'awaiting_confirmation' })
+      .eq('id', selectedWorkerResponse.id);
+
+    if (responseError) {
+      toast({ title: 'Błąd', description: responseError.message, variant: 'destructive' });
+      setSubmitting(false);
+      return;
+    }
+
+    // Send chat message to worker
+    const { error: chatError } = await supabase.from('chat_messages').insert({
+      job_id: job.id,
+      sender_id: profile!.id,
+      message: `🎉 Zostałeś wybrany do realizacji zlecenia "${job.title}"! Proszę o potwierdzenie, że akceptujesz to zlecenie.`,
+    });
+
+    setSubmitting(false);
+
+    if (chatError) {
+      console.error('Chat message error:', chatError);
+    }
+
+    toast({ title: 'Zlecenie rozpoczęte! Czekamy na potwierdzenie wykonawcy.' });
+    fetchJob();
+    fetchResponses();
+  };
+
+  const handleWorkerAccept = async () => {
+    if (!myResponse || !job) return;
+
+    setSubmitting(true);
+
+    const { error } = await supabase
+      .from('job_responses')
+      .update({ status: 'accepted' })
+      .eq('id', myResponse.id);
+
     if (error) {
-      toast({
-        title: 'Błąd',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Zlecenie rozpoczęte!' });
+      // Send confirmation message
+      await supabase.from('chat_messages').insert({
+        job_id: job.id,
+        sender_id: profile!.id,
+        message: '✅ Akceptuję zlecenie! Zaczynam realizację.',
+      });
+      toast({ title: 'Zlecenie zaakceptowane!' });
+      fetchResponses();
+    }
+
+    setSubmitting(false);
+  };
+
+  const handleWorkerReject = async () => {
+    if (!myResponse || !job) return;
+
+    setSubmitting(true);
+
+    // Update response status
+    const { error: responseError } = await supabase
+      .from('job_responses')
+      .update({ status: 'rejected' })
+      .eq('id', myResponse.id);
+
+    if (responseError) {
+      toast({ title: 'Błąd', description: responseError.message, variant: 'destructive' });
+      setSubmitting(false);
+      return;
+    }
+
+    // Clear selected worker and set job back to active
+    const { error: jobError } = await supabase
+      .from('jobs')
+      .update({ selected_worker_id: null, status: 'active' })
+      .eq('id', job.id);
+
+    if (jobError) {
+      toast({ title: 'Błąd', description: jobError.message, variant: 'destructive' });
+    } else {
+      // Send rejection message
+      await supabase.from('chat_messages').insert({
+        job_id: job.id,
+        sender_id: profile!.id,
+        message: '❌ Niestety muszę odrzucić to zlecenie.',
+      });
+      toast({ title: 'Zlecenie odrzucone' });
       fetchJob();
+      fetchResponses();
+    }
+
+    setSubmitting(false);
+  };
+
+  const handleCancelJob = async () => {
+    if (!job) return;
+
+    setSubmitting(true);
+
+    const { error } = await supabase
+      .from('jobs')
+      .update({ status: 'closed', selected_worker_id: null })
+      .eq('id', job.id);
+
+    setSubmitting(false);
+
+    if (error) {
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Zlecenie anulowane' });
+      navigate('/dashboard');
     }
   };
 
@@ -267,7 +410,6 @@ export default function JobDetails() {
 
     setSubmitting(true);
 
-    // If rating is provided, save the review first
     if (withRating && ratingForm.rating > 0 && job.selected_worker_id && profile) {
       const { error: reviewError } = await supabase.from('reviews').insert({
         job_id: job.id,
@@ -296,11 +438,7 @@ export default function JobDetails() {
     setSubmitting(false);
 
     if (error) {
-      toast({
-        title: 'Błąd',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: withRating && ratingForm.rating > 0 ? 'Zlecenie zakończone i ocena dodana!' : 'Zlecenie zakończone!' });
       setRatingDialogOpen(false);
@@ -326,11 +464,7 @@ export default function JobDetails() {
     setSubmitting(false);
 
     if (error) {
-      toast({
-        title: 'Błąd',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Ocena dodana!' });
       setWorkerRatingDialogOpen(false);
@@ -355,15 +489,26 @@ export default function JobDetails() {
     setSubmitting(false);
 
     if (error) {
-      toast({
-        title: 'Błąd',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Ocena dodana!' });
       setRatingForm({ rating: 0, comment: '' });
       setHasClientRated(true);
+    }
+  };
+
+  const getResponseStatusBadge = (status: string) => {
+    switch (status) {
+      case 'selected':
+        return <Badge variant="secondary">Wybrany</Badge>;
+      case 'awaiting_confirmation':
+        return <Badge className="bg-warning text-warning-foreground">Oczekuje potwierdzenia</Badge>;
+      case 'accepted':
+        return <Badge className="bg-green-500 text-white">Zaakceptowany</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Odrzucony</Badge>;
+      default:
+        return null;
     }
   };
 
@@ -401,15 +546,64 @@ export default function JobDetails() {
           {isOwner && (
             <div className="flex gap-2">
               {job.status === 'active' && !job.selected_worker_id && (
-                <Button variant="outline" asChild>
-                  <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
-                </Button>
+                <>
+                  <Button variant="outline" asChild>
+                    <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                        <X className="h-4 w-4 mr-2" />
+                        Anuluj
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Anulować zlecenie?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Czy na pewno chcesz anulować to zlecenie? Ta akcja jest nieodwracalna.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Nie</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCancelJob} className="bg-destructive hover:bg-destructive/90">
+                          Tak, anuluj
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
-              {job.status === 'active' && job.selected_worker_id && (
-                <Button onClick={handleStartProgress} className="gap-2">
-                  <Play className="h-4 w-4" />
-                  Rozpocznij realizację
-                </Button>
+              {job.status === 'active' && job.selected_worker_id && selectedWorkerResponse?.status === 'selected' && (
+                <>
+                  <Button onClick={handleStartProgress} disabled={submitting} className="gap-2">
+                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <Play className="h-4 w-4" />
+                    Rozpocznij realizację
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                        <X className="h-4 w-4 mr-2" />
+                        Anuluj
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Anulować zlecenie?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Czy na pewno chcesz anulować to zlecenie? Wykonawca zostanie poinformowany.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Nie</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCancelJob} className="bg-destructive hover:bg-destructive/90">
+                          Tak, anuluj
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
               {job.status === 'in_progress' && (
                 <Dialog open={ratingDialogOpen} onOpenChange={setRatingDialogOpen}>
@@ -569,52 +763,125 @@ export default function JobDetails() {
                   <CardTitle>Oferty ({responses.length})</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {responses.map((response) => (
-                    <div key={response.id} className="flex gap-4 p-4 rounded-lg border">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={response.worker.avatar_url || ''} />
-                        <AvatarFallback>
-                          {response.worker.name?.charAt(0)?.toUpperCase() || 'W'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Link 
-                            to={`/worker/${response.worker.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {response.worker.name || 'Wykonawca'}
-                          </Link>
-                          {response.worker.rating_count > 0 && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Star className="h-3 w-3 fill-warning text-warning" />
-                              {response.worker.rating_avg.toFixed(1)}
-                            </div>
+                  {responses.map((response) => {
+                    const isSelected = job.selected_worker_id === response.worker.id;
+                    const canSelect = job.status === 'active' && !job.selected_worker_id;
+                    const showStartButton = isSelected && response.status === 'selected';
+                    
+                    return (
+                      <div key={response.id} className={`flex gap-4 p-4 rounded-lg border ${isSelected ? 'border-primary bg-primary/5' : ''}`}>
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={response.worker.avatar_url || ''} />
+                          <AvatarFallback>
+                            {response.worker.name?.charAt(0)?.toUpperCase() || 'W'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Link 
+                              to={`/worker/${response.worker.id}`}
+                              className="font-medium hover:underline"
+                            >
+                              {response.worker.name || 'Wykonawca'}
+                            </Link>
+                            {response.worker.rating_count > 0 && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Star className="h-3 w-3 fill-warning text-warning" />
+                                {response.worker.rating_avg.toFixed(1)}
+                              </div>
+                            )}
+                            {getResponseStatusBadge(response.status)}
+                          </div>
+                          {response.message && (
+                            <p className="text-sm text-muted-foreground mb-2">{response.message}</p>
                           )}
-                        </div>
-                        {response.message && (
-                          <p className="text-sm text-muted-foreground mb-2">{response.message}</p>
-                        )}
-                        {response.offer_price && (
-                          <p className="text-sm font-medium text-primary">
-                            Proponowana cena: {response.offer_price} zł
-                          </p>
-                        )}
-                        <div className="flex gap-2 mt-3">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleSelectWorker(response.worker.id)}
-                            disabled={job.status !== 'active'}
-                          >
-                            Wybierz
-                          </Button>
-                          <Button size="sm" variant="outline" asChild>
-                            <Link to={`/worker/${response.worker.id}`}>Profil</Link>
-                          </Button>
+                          {response.offer_price && (
+                            <p className="text-sm font-medium text-primary">
+                              Proponowana cena: {response.offer_price} zł
+                            </p>
+                          )}
+                          <div className="flex gap-2 mt-3 flex-wrap">
+                            {canSelect && (
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleSelectWorker(response.worker.id, response.id)}
+                                disabled={submitting}
+                              >
+                                {submitting && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                                Wybierz
+                              </Button>
+                            )}
+                            {showStartButton && (
+                              <Button 
+                                size="sm" 
+                                onClick={handleStartProgress}
+                                disabled={submitting}
+                                className="gap-1"
+                              >
+                                {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
+                                <Play className="h-3 w-3" />
+                                Rozpocznij realizację
+                              </Button>
+                            )}
+                            {isSelected && job.selected_worker_id && (
+                              <Button size="sm" variant="outline" asChild className="gap-1">
+                                <Link to={`/jobs/${job.id}/chat`}>
+                                  <MessageSquare className="h-3 w-3" />
+                                  Czat
+                                </Link>
+                              </Button>
+                            )}
+                            <Button size="sm" variant="outline" asChild>
+                              <Link to={`/worker/${response.worker.id}`}>Profil</Link>
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Worker confirmation panel */}
+            {isSelectedWorker && myResponse?.status === 'awaiting_confirmation' && (
+              <Card className="border-warning bg-warning/10">
+                <CardHeader>
+                  <CardTitle className="text-lg">Potwierdzenie zlecenia</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">
+                    Zleceniodawca chce rozpocząć z Tobą realizację tego zlecenia. Czy akceptujesz?
+                  </p>
+                  <div className="flex gap-3">
+                    <Button onClick={handleWorkerAccept} disabled={submitting} className="gap-2">
+                      {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                      <Check className="h-4 w-4" />
+                      Akceptuję
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="gap-2 text-destructive border-destructive hover:bg-destructive/10">
+                          <X className="h-4 w-4" />
+                          Odrzuć
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Odrzucić zlecenie?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Czy na pewno chcesz odrzucić to zlecenie? Zleceniodawca będzie mógł wybrać innego wykonawcę.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleWorkerReject} className="bg-destructive hover:bg-destructive/90">
+                            Tak, odrzuć
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -651,7 +918,7 @@ export default function JobDetails() {
             )}
 
             {/* Actions */}
-            {isAuthenticated && isWorkerView && !isOwner && job.status === 'active' && (
+            {isAuthenticated && isWorkerView && !isOwner && job.status === 'active' && !job.selected_worker_id && (
               <Card>
                 <CardContent className="p-6">
                   {hasResponded ? (
@@ -706,7 +973,7 @@ export default function JobDetails() {
             )}
 
             {/* Chat button if worker selected */}
-            {(isOwner || job.selected_worker_id === profile?.id) && job.selected_worker_id && (
+            {(isOwner || isSelectedWorker) && job.selected_worker_id && (
               <Button asChild className="w-full gap-2">
                 <Link to={`/jobs/${job.id}/chat`}>
                   <MessageSquare className="h-4 w-4" />
