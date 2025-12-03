@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,11 @@ import {
   Loader2,
   Users,
   Filter,
-  X
+  X,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
+import gsap from 'gsap';
 
 interface Worker {
   id: string;
@@ -50,6 +53,7 @@ export default function Workers() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(true);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
     search: '',
@@ -71,52 +75,35 @@ export default function Workers() {
     fetchWorkers();
   }, [filters]);
 
+  useEffect(() => {
+    if (gridRef.current && !loading && workers.length > 0) {
+      gsap.fromTo(
+        gridRef.current.querySelectorAll('.worker-card'),
+        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out' }
+      );
+    }
+  }, [loading, workers]);
+
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from('categories')
-      .select('id, name')
-      .order('name');
+    const { data } = await supabase.from('categories').select('id, name').order('name');
     if (data) setCategories(data);
   };
 
   const fetchWorkers = async () => {
     setLoading(true);
-    
     let query = supabase
       .from('profiles')
-      .select(`
-        id,
-        name,
-        avatar_url,
-        bio,
-        wojewodztwo,
-        miasto,
-        hourly_rate,
-        rating_avg,
-        rating_count,
-        worker_categories(category:categories(name))
-      `)
+      .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`)
       .eq('role', 'worker')
       .eq('is_available', true);
 
-    if (filters.wojewodztwo) {
-      query = query.eq('wojewodztwo', filters.wojewodztwo);
-    }
-    if (filters.miasto) {
-      query = query.eq('miasto', filters.miasto);
-    }
-    if (filters.minRate) {
-      query = query.gte('hourly_rate', parseFloat(filters.minRate));
-    }
-    if (filters.maxRate) {
-      query = query.lte('hourly_rate', parseFloat(filters.maxRate));
-    }
-    if (filters.minRating) {
-      query = query.gte('rating_avg', parseFloat(filters.minRating));
-    }
-    if (filters.search) {
-      query = query.ilike('name', `%${filters.search}%`);
-    }
+    if (filters.wojewodztwo) query = query.eq('wojewodztwo', filters.wojewodztwo);
+    if (filters.miasto) query = query.eq('miasto', filters.miasto);
+    if (filters.minRate) query = query.gte('hourly_rate', parseFloat(filters.minRate));
+    if (filters.maxRate) query = query.lte('hourly_rate', parseFloat(filters.maxRate));
+    if (filters.minRating) query = query.gte('rating_avg', parseFloat(filters.minRating));
+    if (filters.search) query = query.ilike('name', `%${filters.search}%`);
 
     const { data, error } = await query.order('rating_avg', { ascending: false });
 
@@ -125,14 +112,9 @@ export default function Workers() {
         ...w,
         categories: w.worker_categories?.map((wc: any) => wc.category) || [],
       }));
-
-      // Filter by category client-side (since it's a relation)
       if (filters.category) {
-        workersData = workersData.filter((w: Worker) => 
-          w.categories.some(c => c.name === filters.category)
-        );
+        workersData = workersData.filter((w: Worker) => w.categories.some(c => c.name === filters.category));
       }
-
       setWorkers(workersData);
     }
     setLoading(false);
@@ -141,122 +123,94 @@ export default function Workers() {
   const updateFilter = (key: string, value: string) => {
     setFilters(prev => {
       const updated = { ...prev, [key]: value };
-      if (key === 'wojewodztwo') {
-        updated.miasto = '';
-      }
+      if (key === 'wojewodztwo') updated.miasto = '';
       return updated;
     });
   };
 
   const clearFilters = () => {
-    setFilters({
-      search: '',
-      wojewodztwo: '',
-      miasto: '',
-      category: '',
-      minRate: '',
-      maxRate: '',
-      minRating: '',
-    });
+    setFilters({ search: '', wojewodztwo: '', miasto: '', category: '', minRate: '', maxRate: '', minRating: '' });
   };
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
 
   return (
     <Layout>
-      <div className="container py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Znajdź wykonawcę</h1>
-          <p className="text-muted-foreground">
-            Przeglądaj dostępnych wykonawców i znajdź idealną osobę do swojego zlecenia
+      {/* Hero Header */}
+      <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 left-10 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
+        </div>
+        <div className="container relative py-16 md:py-20">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              <Sparkles className="h-3.5 w-3.5" />
+              {workers.length} wykonawców
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Znajdź idealnego wykonawcę</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl">
+            Przeglądaj profile zweryfikowanych wykonawców i wybierz najlepszego do swojego zlecenia
           </p>
         </div>
+      </div>
 
-        {/* Search & Filter Toggle */}
+      <div className="container py-10">
+        {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Szukaj po imieniu..."
-              value={filters.search}
-              onChange={(e) => updateFilter('search', e.target.value)}
-              className="pl-10"
-            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input placeholder="Szukaj po imieniu..." value={filters.search} onChange={(e) => updateFilter('search', e.target.value)} className="pl-12 h-12 rounded-xl" />
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="gap-2 h-12">
             <Filter className="h-4 w-4" />
             Filtry
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="ml-1">!</Badge>
-            )}
+            {hasActiveFilters && <Badge className="bg-primary text-white ml-1">!</Badge>}
           </Button>
         </div>
 
-        {/* Filters Panel */}
         {showFilters && (
-          <Card className="mb-6">
+          <Card className="mb-8 card-modern">
             <CardContent className="p-6">
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label>Województwo</Label>
+                  <Label className="font-medium">Województwo</Label>
                   <Select value={filters.wojewodztwo || "__all__"} onValueChange={(v) => updateFilter('wojewodztwo', v === "__all__" ? "" : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wszystkie" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__all__">Wszystkie</SelectItem>
-                      {WOJEWODZTWA.map((w) => (
-                        <SelectItem key={w} value={w}>{w}</SelectItem>
-                      ))}
+                      {WOJEWODZTWA.map((w) => <SelectItem key={w} value={w}>{w}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
-                  <Label>Miasto</Label>
-                  <Select 
-                    value={filters.miasto || "__all__"} 
-                    onValueChange={(v) => updateFilter('miasto', v === "__all__" ? "" : v)}
-                    disabled={!filters.wojewodztwo}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wszystkie" />
-                    </SelectTrigger>
+                  <Label className="font-medium">Miasto</Label>
+                  <Select value={filters.miasto || "__all__"} onValueChange={(v) => updateFilter('miasto', v === "__all__" ? "" : v)} disabled={!filters.wojewodztwo}>
+                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__all__">Wszystkie</SelectItem>
-                      {miasta.map((m) => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
+                      {miasta.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
-                  <Label>Kategoria</Label>
+                  <Label className="font-medium">Kategoria</Label>
                   <Select value={filters.category || "__all__"} onValueChange={(v) => updateFilter('category', v === "__all__" ? "" : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wszystkie" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__all__">Wszystkie</SelectItem>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                      ))}
+                      {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
-                  <Label>Min. ocena</Label>
+                  <Label className="font-medium">Min. ocena</Label>
                   <Select value={filters.minRating || "__all__"} onValueChange={(v) => updateFilter('minRating', v === "__all__" ? "" : v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Dowolna" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Dowolna" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__all__">Dowolna</SelectItem>
                       <SelectItem value="3">3+ ⭐</SelectItem>
@@ -265,35 +219,9 @@ export default function Workers() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Stawka od (zł/h)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minRate}
-                    onChange={(e) => updateFilter('minRate', e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Stawka do (zł/h)</Label>
-                  <Input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxRate}
-                    onChange={(e) => updateFilter('maxRate', e.target.value)}
-                  />
-                </div>
               </div>
-
               {hasActiveFilters && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearFilters}
-                  className="mt-4 gap-2"
-                >
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="mt-4 gap-2">
                   <X className="h-4 w-4" />
                   Wyczyść filtry
                 </Button>
@@ -302,42 +230,37 @@ export default function Workers() {
           </Card>
         )}
 
-        {/* Results count */}
-        <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          {loading ? 'Ładowanie...' : `${workers.length} dostępnych wykonawców`}
-        </div>
-
         {/* Workers Grid */}
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            <p className="text-muted-foreground font-medium">Ładowanie wykonawców...</p>
           </div>
         ) : workers.length === 0 ? (
-          <Card>
-            <CardContent className="p-16 text-center">
-              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Brak wyników</h3>
-              <p className="text-muted-foreground">
-                Nie znaleziono wykonawców spełniających kryteria. Spróbuj zmienić filtry.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
+              <Users className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-semibold">Brak wyników</p>
+            <p className="text-muted-foreground">Nie znaleziono wykonawców. Spróbuj zmienić filtry.</p>
+          </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div ref={gridRef} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {workers.map((worker) => (
               <Link key={worker.id} to={`/worker/${worker.id}`}>
-                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                <Card className="worker-card card-modern h-full group">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4 mb-4">
-                      <Avatar className="h-16 w-16">
+                      <Avatar className="h-16 w-16 rounded-xl border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
                         <AvatarImage src={worker.avatar_url || ''} />
-                        <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                        <AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary-glow text-white rounded-xl">
                           {worker.name?.charAt(0)?.toUpperCase() || 'W'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg truncate">
+                        <h3 className="font-display font-bold text-lg truncate group-hover:text-primary transition-colors">
                           {worker.name || 'Wykonawca'}
                         </h3>
                         {worker.rating_count > 0 ? (
@@ -349,40 +272,37 @@ export default function Workers() {
                           <span className="text-sm text-muted-foreground">Nowy wykonawca</span>
                         )}
                       </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <ArrowRight className="h-5 w-5 text-primary" />
+                        </div>
+                      </div>
                     </div>
 
-                    {worker.bio && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {worker.bio}
-                      </p>
-                    )}
+                    {worker.bio && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{worker.bio}</p>}
 
                     <div className="space-y-2">
                       {(worker.miasto || worker.wojewodztwo) && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="h-4 w-4 text-primary/60" />
                           {[worker.miasto, worker.wojewodztwo].filter(Boolean).join(', ')}
                         </div>
                       )}
                       {worker.hourly_rate && (
                         <div className="flex items-center gap-2 text-sm">
                           <Banknote className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-primary">{worker.hourly_rate} zł/h</span>
+                          <span className="font-display font-bold text-primary">{worker.hourly_rate} zł/h</span>
                         </div>
                       )}
                     </div>
 
                     {worker.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-4">
+                      <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-border/50">
                         {worker.categories.slice(0, 3).map((cat, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
-                            {cat.name}
-                          </Badge>
+                          <Badge key={i} variant="secondary" className="text-xs rounded-lg">{cat.name}</Badge>
                         ))}
                         {worker.categories.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{worker.categories.length - 3}
-                          </Badge>
+                          <Badge variant="outline" className="text-xs rounded-lg">+{worker.categories.length - 3}</Badge>
                         )}
                       </div>
                     )}
