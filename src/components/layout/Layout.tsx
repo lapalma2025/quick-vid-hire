@@ -1,54 +1,139 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from './Header';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export const Layout = ({ children }: LayoutProps) => {
+  const footerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (footerRef.current) {
+      gsap.fromTo(
+        footerRef.current,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: footerRef.current,
+            start: 'top 95%',
+          },
+        }
+      );
+    }
+
+    return () => {
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">{children}</main>
-      <footer className="border-t bg-card py-8 mt-auto">
+      <footer ref={footerRef} className="border-t border-border/50 bg-muted/30 py-12 mt-auto">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
             <div>
-              <h4 className="font-semibold mb-3">O nas</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/how-it-works" className="hover:text-foreground transition-colors">Jak to działa</Link></li>
-                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Cennik</Link></li>
-                <li><Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
+              <h4 className="font-display font-bold text-lg mb-4">O nas</h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Jak to działa
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Cennik
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/faq" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    FAQ
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Dla zleceniodawców</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/jobs/new" className="hover:text-foreground transition-colors">Dodaj zlecenie</Link></li>
-                <li><Link to="/client-tips" className="hover:text-foreground transition-colors">Porady</Link></li>
-                <li><Link to="/safety" className="hover:text-foreground transition-colors">Bezpieczeństwo</Link></li>
+              <h4 className="font-display font-bold text-lg mb-4">Dla zleceniodawców</h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link to="/jobs/new" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Dodaj zlecenie
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/client-tips" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Porady
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/safety" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Bezpieczeństwo
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Dla wykonawców</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/jobs" className="hover:text-foreground transition-colors">Znajdź zlecenie</Link></li>
-                <li><Link to="/worker-guide" className="hover:text-foreground transition-colors">Jak zacząć</Link></li>
-                <li><Link to="/reviews" className="hover:text-foreground transition-colors">Opinie</Link></li>
+              <h4 className="font-display font-bold text-lg mb-4">Dla wykonawców</h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link to="/jobs" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Znajdź zlecenie
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/worker-guide" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Jak zacząć
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/reviews" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Opinie
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Kontakt</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/help" className="hover:text-foreground transition-colors">Pomoc</Link></li>
-                <li><Link to="/terms" className="hover:text-foreground transition-colors">Regulamin</Link></li>
-                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Polityka prywatności</Link></li>
+              <h4 className="font-display font-bold text-lg mb-4">Kontakt</h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link to="/help" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Pomoc
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Regulamin
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                    Polityka prywatności
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
-          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            © 2024 ZlecenieTeraz. Wszystkie prawa zastrzeżone.
+          <div className="border-t border-border/50 mt-10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
+                <span className="text-lg font-bold text-white">Z</span>
+              </div>
+              <span className="font-display font-bold text-xl">ZlecenieTeraz</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              © 2024 ZlecenieTeraz. Wszystkie prawa zastrzeżone.
+            </p>
           </div>
         </div>
       </footer>

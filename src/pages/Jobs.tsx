@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobFilters, type JobFilters as Filters } from '@/components/jobs/JobFilters';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, Sparkles } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Job {
   id: string;
@@ -34,9 +38,39 @@ export default function Jobs() {
     sortBy: 'newest',
   });
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetchJobs();
   }, [filters]);
+
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gridRef.current && !loading && jobs.length > 0) {
+      gsap.fromTo(
+        gridRef.current.querySelectorAll('.job-card'),
+        { opacity: 0, y: 30, scale: 0.95 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.08,
+          ease: 'power3.out',
+        }
+      );
+    }
+  }, [loading, jobs]);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -98,30 +132,61 @@ export default function Jobs() {
 
   return (
     <Layout>
-      <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Zlecenia</h1>
-          <p className="text-muted-foreground">Znajdź zlecenie w swojej okolicy</p>
+      {/* Hero Header */}
+      <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
         </div>
+        <div ref={headerRef} className="container relative py-16 md:py-20">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Search className="h-6 w-6 text-primary" />
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              <Sparkles className="h-3.5 w-3.5" />
+              {jobs.length} zleceń
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Znajdź idealne zlecenie</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl">
+            Przeglądaj dostępne zlecenia w swojej okolicy i zacznij zarabiać już dziś
+          </p>
+        </div>
+      </div>
 
-        <div className="grid lg:grid-cols-[280px_1fr] gap-8">
+      <div className="container py-10">
+        <div className="grid lg:grid-cols-[300px_1fr] gap-10">
           <aside className="space-y-4">
-            <JobFilters onFiltersChange={setFilters} />
+            <div className="sticky top-28">
+              <JobFilters onFiltersChange={setFilters} />
+            </div>
           </aside>
 
           <div>
             {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+                <p className="text-muted-foreground font-medium">Ładowanie zleceń...</p>
               </div>
             ) : jobs.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground">Brak zleceń spełniających kryteria</p>
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
+                  <Search className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold mb-1">Brak zleceń</p>
+                  <p className="text-muted-foreground">Nie znaleziono zleceń spełniających kryteria</p>
+                </div>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div ref={gridRef} className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {jobs.map((job) => (
-                  <JobCard key={job.id} job={job} />
+                  <div key={job.id} className="job-card">
+                    <JobCard job={job} />
+                  </div>
                 ))}
               </div>
             )}
