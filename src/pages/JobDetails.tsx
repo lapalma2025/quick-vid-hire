@@ -261,15 +261,17 @@ export default function JobDetails() {
       .update({ status: 'selected' })
       .eq('id', responseId);
 
-    setSubmitting(false);
-
     if (responseError) {
       toast({ title: 'Błąd', description: responseError.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Wykonawca wybrany! Teraz możesz rozpocząć realizację.' });
-      fetchJob();
-      fetchResponses();
+      setSubmitting(false);
+      return;
     }
+
+    toast({ title: 'Wykonawca wybrany! Teraz możesz wysłać zlecenie do realizacji.' });
+    
+    // Refresh data
+    await Promise.all([fetchJob(), fetchResponses()]);
+    setSubmitting(false);
   };
 
   const handleStartProgress = async () => {
