@@ -17,11 +17,14 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { WOJEWODZTWA } from '@/lib/constants';
 import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CitySelect } from '@/components/jobs/CitySelect';
+import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
+import { CountrySelect } from '@/components/jobs/CountrySelect';
+import { ForeignCitySelect } from '@/components/jobs/ForeignCitySelect';
+import { LocationTypeToggle } from '@/components/jobs/LocationTypeToggle';
 
 interface Category {
   id: string;
@@ -45,8 +48,10 @@ export default function NewJob() {
     title: '',
     description: '',
     category_id: '',
+    is_foreign: false,
     wojewodztwo: '',
     miasto: '',
+    country: '',
     start_time: '',
     duration_hours: '',
     budget: '',
@@ -84,6 +89,14 @@ export default function NewJob() {
       if (field === 'wojewodztwo') {
         updated.miasto = '';
       }
+      if (field === 'country') {
+        updated.miasto = '';
+      }
+      if (field === 'is_foreign') {
+        updated.wojewodztwo = '';
+        updated.miasto = '';
+        updated.country = '';
+      }
       return updated;
     });
   };
@@ -93,13 +106,15 @@ export default function NewJob() {
       return form.title.length >= 5 && form.category_id !== '';
     }
     if (s === 2) {
+      if (form.is_foreign) {
+        return form.country !== '' && form.miasto !== '';
+      }
       return form.wojewodztwo !== '' && form.miasto !== '';
     }
     return true;
   };
 
   const handlePayment = async () => {
-    // Simulate payment processing (test mode)
     setPaymentProcessing(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     setPaymentProcessing(false);
@@ -112,7 +127,6 @@ export default function NewJob() {
 
     setLoading(true);
 
-    // Create job
     const { data: job, error } = await supabase
       .from('jobs')
       .insert({
@@ -120,8 +134,10 @@ export default function NewJob() {
         title: form.title,
         description: form.description || null,
         category_id: form.category_id,
-        wojewodztwo: form.wojewodztwo,
+        is_foreign: form.is_foreign,
+        wojewodztwo: form.is_foreign ? form.country : form.wojewodztwo,
         miasto: form.miasto,
+        country: form.is_foreign ? form.country : null,
         start_time: form.start_time || null,
         duration_hours: form.duration_hours ? parseInt(form.duration_hours) : null,
         budget: form.budget ? parseFloat(form.budget) : null,
@@ -143,7 +159,6 @@ export default function NewJob() {
       return;
     }
 
-    // Add images
     if (form.images.length > 0 && job) {
       const imageInserts = form.images.map(url => ({
         job_id: job.id,
@@ -258,32 +273,61 @@ export default function NewJob() {
               <CardTitle>Lokalizacja i termin</CardTitle>
               <CardDescription>Gdzie i kiedy potrzebujesz pomocy</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Województwo *</Label>
-                  <Select value={form.wojewodztwo} onValueChange={(v) => updateForm('wojewodztwo', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wybierz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WOJEWODZTWA.map((w) => (
-                        <SelectItem key={w} value={w}>{w}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Miasto *</Label>
-                  <CitySelect
-                    wojewodztwo={form.wojewodztwo}
-                    value={form.miasto}
-                    onChange={(v) => updateForm('miasto', v)}
-                    disabled={!form.wojewodztwo}
-                  />
-                </div>
+            <CardContent className="space-y-6">
+              {/* Location type toggle */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Rodzaj lokalizacji *</Label>
+                <LocationTypeToggle
+                  isForeign={form.is_foreign}
+                  onChange={(v) => updateForm('is_foreign', v)}
+                />
               </div>
+
+              {/* Polish location */}
+              {!form.is_foreign && (
+                <div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div className="space-y-2">
+                    <Label>Województwo *</Label>
+                    <WojewodztwoSelect
+                      value={form.wojewodztwo}
+                      onChange={(v) => updateForm('wojewodztwo', v)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Miasto *</Label>
+                    <CitySelect
+                      wojewodztwo={form.wojewodztwo}
+                      value={form.miasto}
+                      onChange={(v) => updateForm('miasto', v)}
+                      disabled={!form.wojewodztwo}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Foreign location */}
+              {form.is_foreign && (
+                <div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div className="space-y-2">
+                    <Label>Kraj *</Label>
+                    <CountrySelect
+                      value={form.country}
+                      onChange={(v) => updateForm('country', v)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Miasto *</Label>
+                    <ForeignCitySelect
+                      country={form.country}
+                      value={form.miasto}
+                      onChange={(v) => updateForm('miasto', v)}
+                      disabled={!form.country}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Data i godzina rozpoczęcia</Label>
@@ -353,7 +397,10 @@ export default function NewJob() {
               <div className="rounded-lg border p-4 space-y-2">
                 <h4 className="font-medium">Twoje zlecenie</h4>
                 <p className="text-sm"><strong>Tytuł:</strong> {form.title}</p>
-                <p className="text-sm"><strong>Lokalizacja:</strong> {form.miasto}, {form.wojewodztwo}</p>
+                <p className="text-sm">
+                  <strong>Lokalizacja:</strong> {form.miasto}, {form.is_foreign ? form.country : form.wojewodztwo}
+                  {form.is_foreign && <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Zagranica</span>}
+                </p>
                 {form.budget && (
                   <p className="text-sm">
                     <strong>Budżet:</strong> {form.budget} zł{form.budget_type === 'hourly' ? '/h' : ''}

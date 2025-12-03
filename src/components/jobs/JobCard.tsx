@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Calendar, Banknote, ArrowRight } from 'lucide-react';
+import { MapPin, Clock, Calendar, Banknote, ArrowRight, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from './CategoryIcon';
@@ -12,6 +12,8 @@ interface Job {
   description: string | null;
   wojewodztwo: string;
   miasto: string;
+  is_foreign?: boolean | null;
+  country?: string | null;
   start_time: string | null;
   duration_hours: number | null;
   budget: number | null;
@@ -49,14 +51,22 @@ export const JobCard = ({ job }: JobCardProps) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
           {/* Badges container */}
-          <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-            {job.urgent && (
-              <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                PILNE
-              </Badge>
-            )}
+          <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
+            <div className="flex gap-2">
+              {job.urgent && (
+                <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                  PILNE
+                </Badge>
+              )}
+              {job.is_foreign && (
+                <Badge className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  ZAGRANICA
+                </Badge>
+              )}
+            </div>
             {job.category && (
-              <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-medium ml-auto shadow-sm">
+              <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-medium shadow-sm">
                 {job.category.name}
               </Badge>
             )}
@@ -79,8 +89,14 @@ export const JobCard = ({ job }: JobCardProps) => {
 
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4 flex-shrink-0 text-primary/60" />
-              <span className="truncate">{job.miasto}, {job.wojewodztwo}</span>
+              {job.is_foreign ? (
+                <Globe className="h-4 w-4 flex-shrink-0 text-blue-500" />
+              ) : (
+                <MapPin className="h-4 w-4 flex-shrink-0 text-primary/60" />
+              )}
+              <span className="truncate">
+                {job.miasto}, {job.is_foreign ? job.country || job.wojewodztwo : job.wojewodztwo}
+              </span>
             </div>
             
             <div className="flex items-center gap-4">

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, X, SlidersHorizontal } from 'lucide-react';
+import { Search, X, SlidersHorizontal, MapPin, Globe } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -22,6 +22,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { WojewodztwoSelect } from './WojewodztwoSelect';
 import { CitySelect } from './CitySelect';
+import { CountrySelect } from './CountrySelect';
+import { ForeignCitySelect } from './ForeignCitySelect';
+import { cn } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -34,8 +37,10 @@ interface JobFiltersProps {
 
 export interface JobFilters {
   search: string;
+  locationType: 'all' | 'poland' | 'foreign';
   wojewodztwo: string;
   miasto: string;
+  country: string;
   category_id: string;
   urgent: boolean;
   sortBy: 'newest' | 'budget_high' | 'start_soon';
@@ -45,8 +50,10 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filters, setFilters] = useState<JobFilters>({
     search: '',
+    locationType: 'all',
     wojewodztwo: '',
     miasto: '',
+    country: '',
     category_id: '',
     urgent: false,
     sortBy: 'newest',
@@ -66,6 +73,14 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
     if (key === 'wojewodztwo') {
       newFilters.miasto = '';
     }
+    if (key === 'country') {
+      newFilters.miasto = '';
+    }
+    if (key === 'locationType') {
+      newFilters.wojewodztwo = '';
+      newFilters.miasto = '';
+      newFilters.country = '';
+    }
     setFilters(newFilters);
     onFiltersChange(newFilters);
   };
@@ -73,8 +88,10 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
   const clearFilters = () => {
     const cleared: JobFilters = {
       search: '',
+      locationType: 'all',
       wojewodztwo: '',
       miasto: '',
+      country: '',
       category_id: '',
       urgent: false,
       sortBy: 'newest',
@@ -83,27 +100,86 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
     onFiltersChange(cleared);
   };
 
-  const hasActiveFilters = filters.wojewodztwo || filters.miasto || filters.category_id || filters.urgent;
+  const hasActiveFilters = filters.locationType !== 'all' || filters.wojewodztwo || filters.miasto || filters.country || filters.category_id || filters.urgent;
+
+  const LocationTypeSelector = () => (
+    <div className="grid grid-cols-3 gap-2">
+      {[
+        { value: 'all', label: 'Wszystkie', icon: null },
+        { value: 'poland', label: 'Polska', icon: MapPin },
+        { value: 'foreign', label: 'Zagranica', icon: Globe },
+      ].map((item) => (
+        <button
+          key={item.value}
+          type="button"
+          onClick={() => updateFilter('locationType', item.value)}
+          className={cn(
+            "flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+            filters.locationType === item.value
+              ? "bg-primary text-primary-foreground shadow-lg"
+              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+          )}
+        >
+          {item.icon && <item.icon className="h-4 w-4" />}
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
 
   const FilterContent = () => (
     <div className="space-y-5">
+      {/* Location type */}
       <div className="space-y-2">
-        <Label className="font-medium">Województwo</Label>
-        <WojewodztwoSelect
-          value={filters.wojewodztwo}
-          onChange={(v) => updateFilter('wojewodztwo', v)}
-        />
+        <Label className="font-medium">Lokalizacja</Label>
+        <LocationTypeSelector />
       </div>
 
-      <div className="space-y-2">
-        <Label className="font-medium">Miasto</Label>
-        <CitySelect
-          wojewodztwo={filters.wojewodztwo}
-          value={filters.miasto}
-          onChange={(v) => updateFilter('miasto', v)}
-          disabled={!filters.wojewodztwo}
-        />
-      </div>
+      {/* Polish filters */}
+      {filters.locationType === 'poland' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="space-y-2">
+            <Label className="font-medium">Województwo</Label>
+            <WojewodztwoSelect
+              value={filters.wojewodztwo}
+              onChange={(v) => updateFilter('wojewodztwo', v)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-medium">Miasto</Label>
+            <CitySelect
+              wojewodztwo={filters.wojewodztwo}
+              value={filters.miasto}
+              onChange={(v) => updateFilter('miasto', v)}
+              disabled={!filters.wojewodztwo}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Foreign filters */}
+      {filters.locationType === 'foreign' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="space-y-2">
+            <Label className="font-medium">Kraj</Label>
+            <CountrySelect
+              value={filters.country}
+              onChange={(v) => updateFilter('country', v)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="font-medium">Miasto</Label>
+            <ForeignCitySelect
+              country={filters.country}
+              value={filters.miasto}
+              onChange={(v) => updateFilter('miasto', v)}
+              disabled={!filters.country}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label className="font-medium">Kategoria</Label>
@@ -172,7 +248,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
               <SlidersHorizontal className="h-4 w-4" />
               Filtry
               {hasActiveFilters && (
-                <Badge className="ml-1 bg-primary text-white">!</Badge>
+                <Badge className="ml-1 bg-primary text-primary-foreground">!</Badge>
               )}
             </Button>
           </SheetTrigger>
