@@ -1,8 +1,8 @@
-import { ReactNode, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Header } from './Header';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ReactNode, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import { Header } from "./Header";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -22,12 +22,12 @@ export const Layout = ({ children }: LayoutProps) => {
           opacity: 1,
           y: 0,
           duration: 0.8,
-          ease: 'power3.out',
+          ease: "power3.out",
           scrollTrigger: {
             trigger: footerRef.current,
-            start: 'top 95%',
+            start: "top 95%",
           },
-        }
+        },
       );
     }
 
@@ -47,12 +47,18 @@ export const Layout = ({ children }: LayoutProps) => {
               <h4 className="font-display font-bold text-lg mb-4">O nas</h4>
               <ul className="space-y-3">
                 <li>
-                  <Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/how-it-works"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Jak to działa
                   </Link>
                 </li>
                 <li>
-                  <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/pricing"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Cennik
                   </Link>
                 </li>
@@ -67,17 +73,26 @@ export const Layout = ({ children }: LayoutProps) => {
               <h4 className="font-display font-bold text-lg mb-4">Dla zleceniodawców</h4>
               <ul className="space-y-3">
                 <li>
-                  <Link to="/jobs/new" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/jobs/new"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Dodaj zlecenie
                   </Link>
                 </li>
                 <li>
-                  <Link to="/client-tips" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/client-tips"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Porady
                   </Link>
                 </li>
                 <li>
-                  <Link to="/safety" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/safety"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Bezpieczeństwo
                   </Link>
                 </li>
@@ -92,12 +107,18 @@ export const Layout = ({ children }: LayoutProps) => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/worker-guide" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/worker-guide"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Jak zacząć
                   </Link>
                 </li>
                 <li>
-                  <Link to="/reviews" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/reviews"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Opinie
                   </Link>
                 </li>
@@ -117,7 +138,10 @@ export const Layout = ({ children }: LayoutProps) => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors duration-300">
+                  <Link
+                    to="/privacy"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
                     Polityka prywatności
                   </Link>
                 </li>
@@ -129,11 +153,9 @@ export const Layout = ({ children }: LayoutProps) => {
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
                 <span className="text-lg font-bold text-white">Z</span>
               </div>
-              <span className="font-display font-bold text-xl">ZlecenieTeraz</span>
+              <span className="font-display font-bold text-xl">Hop Hop</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 ZlecenieTeraz. Wszystkie prawa zastrzeżone.
-            </p>
+            <p className="text-sm text-muted-foreground">© 2024 ZlecenieTeraz. Wszystkie prawa zastrzeżone.</p>
           </div>
         </div>
       </footer>
