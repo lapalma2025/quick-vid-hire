@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useViewModeStore } from '@/store/viewModeStore';
 import { 
   Plus, 
   Briefcase, 
@@ -52,7 +53,10 @@ interface Response {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { profile, isAuthenticated, isLoading, isClient, isWorker } = useAuth();
+  const { profile, isAuthenticated, isLoading } = useAuth();
+  const { viewMode } = useViewModeStore();
+  const isClientView = viewMode === 'client';
+  const isWorkerView = viewMode === 'worker';
   const [jobs, setJobs] = useState<Job[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,13 +71,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (profile) {
-      if (isClient) {
+      if (isClientView) {
         fetchClientJobs();
-      } else if (isWorker) {
+      } else if (isWorkerView) {
         fetchWorkerResponses();
       }
     }
-  }, [profile, isClient, isWorker]);
+  }, [profile, isClientView, isWorkerView]);
 
   const fetchClientJobs = async () => {
     if (!profile) return;
@@ -158,10 +162,10 @@ export default function Dashboard() {
               Cześć, {profile?.name || 'Użytkowniku'}!
             </h1>
             <p className="text-muted-foreground">
-              {isClient ? 'Panel zleceniodawcy' : 'Panel wykonawcy'}
+              {isClientView ? 'Panel zleceniodawcy' : 'Panel wykonawcy'}
             </p>
           </div>
-          {isClient && (
+          {isClientView && (
             <Button asChild className="gap-2">
               <Link to="/jobs/new">
                 <Plus className="h-4 w-4" />
@@ -173,7 +177,7 @@ export default function Dashboard() {
 
         {/* Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {isClient ? (
+          {isClientView ? (
             <>
               <Card>
                 <CardContent className="p-6">
@@ -291,7 +295,7 @@ export default function Dashboard() {
         </div>
 
         {/* Client: Jobs list */}
-        {isClient && (
+        {isClientView && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Moje zlecenia</CardTitle>
@@ -398,7 +402,7 @@ export default function Dashboard() {
         )}
 
         {/* Worker: Responses list */}
-        {isWorker && (
+        {isWorkerView && (
           <Card>
             <CardHeader>
               <CardTitle>Moje oferty</CardTitle>

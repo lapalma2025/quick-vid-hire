@@ -35,7 +35,7 @@ type Step = 1 | 2 | 3 | 4;
 
 export default function NewJob() {
   const navigate = useNavigate();
-  const { profile, isAuthenticated, isClient } = useAuth();
+  const { profile, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
   const [step, setStep] = useState<Step>(1);
@@ -65,18 +65,9 @@ export default function NewJob() {
       navigate('/login');
       return;
     }
-    if (profile && !isClient) {
-      toast({
-        title: 'Brak dostępu',
-        description: 'Tylko zleceniodawcy mogą dodawać zlecenia',
-        variant: 'destructive',
-      });
-      navigate('/jobs');
-      return;
-    }
     
     fetchCategories();
-  }, [isAuthenticated, profile, isClient]);
+  }, [isAuthenticated]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id, name').order('name');
