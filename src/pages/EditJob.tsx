@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,28 +18,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { WOJEWODZTWA } from '@/lib/constants';
-import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle } from 'lucide-react';
+import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CitySelect } from '@/components/jobs/CitySelect';
+import { Link } from 'react-router-dom';
 
 interface Category {
   id: string;
   name: string;
 }
 
-type Step = 1 | 2 | 3 | 4;
-
-export default function NewJob() {
+export default function EditJob() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { profile, isAuthenticated, isClient } = useAuth();
+  const { profile, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const [step, setStep] = useState<Step>(1);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     title: '',
@@ -60,22 +59,52 @@ export default function NewJob() {
       navigate('/login');
       return;
     }
-    if (profile && !isClient) {
-      toast({
-        title: 'Brak dostępu',
-        description: 'Tylko zleceniodawcy mogą dodawać zlecenia',
-        variant: 'destructive',
-      });
-      navigate('/jobs');
-      return;
-    }
-    
     fetchCategories();
-  }, [isAuthenticated, profile, isClient]);
+    if (id) fetchJob();
+  }, [isAuthenticated, id]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id, name').order('name');
     if (data) setCategories(data);
+  };
+
+  const fetchJob = async () => {
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .select('*, job_images(image_url)')
+      .eq('id', id)
+      .single();
+
+    if (error || !job) {
+      toast({ title: 'Błąd', description: 'Nie znaleziono zlecenia', variant: 'destructive' });
+      navigate('/dashboard');
+      return;
+    }
+
+    // Check ownership
+    if (job.user_id !== profile?.id) {
+      toast({ title: 'Brak dostępu', description: 'To nie jest Twoje zlecenie', variant: 'destructive' });
+      navigate('/dashboard');
+      return;
+    }
+
+    const imgs = job.job_images?.map((i: any) => i.image_url) || [];
+    setExistingImages(imgs);
+
+    setForm({
+      title: job.title || '',
+      description: job.description || '',
+      category_id: job.category_id || '',
+      wojewodztwo: job.wojewodztwo || '',
+      miasto: job.miasto || '',
+      start_time: job.start_time ? job.start_time.slice(0, 16) : '',
+      duration_hours: job.duration_hours?.toString() || '',
+      budget: job.budget?.toString() || '',
+      budget_type: (job.budget_type as 'fixed' | 'hourly') || 'fixed',
+      urgent: job.urgent || false,
+      images: imgs,
+    });
+    setLoading(false);
   };
 
   const updateForm = (field: string, value: any) => {
@@ -88,35 +117,14 @@ export default function NewJob() {
     });
   };
 
-  const validateStep = (s: Step): boolean => {
-    if (s === 1) {
-      return form.title.length >= 5 && form.category_id !== '';
-    }
-    if (s === 2) {
-      return form.wojewodztwo !== '' && form.miasto !== '';
-    }
-    return true;
-  };
-
-  const handlePayment = async () => {
-    // Simulate payment processing (test mode)
-    setPaymentProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setPaymentProcessing(false);
-    setPaymentComplete(true);
-    toast({ title: 'Płatność zakończona!', description: 'Testowa płatność 5 zł została przetworzona.' });
-  };
-
   const handleSubmit = async () => {
-    if (!profile || !paymentComplete) return;
+    if (!profile || !id) return;
 
-    setLoading(true);
+    setSaving(true);
 
-    // Create job
-    const { data: job, error } = await supabase
+    const { error } = await supabase
       .from('jobs')
-      .insert({
-        user_id: profile.id,
+      .update({
         title: form.title,
         description: form.description || null,
         category_id: form.category_id,
@@ -127,67 +135,59 @@ export default function NewJob() {
         budget: form.budget ? parseFloat(form.budget) : null,
         budget_type: form.budget_type,
         urgent: form.urgent,
-        status: 'active',
-        paid: true,
       })
-      .select()
-      .single();
+      .eq('id', id);
 
     if (error) {
-      setLoading(false);
-      toast({
-        title: 'Błąd',
-        description: error.message,
-        variant: 'destructive',
-      });
+      setSaving(false);
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
       return;
     }
 
-    // Add images
-    if (form.images.length > 0 && job) {
-      const imageInserts = form.images.map(url => ({
-        job_id: job.id,
-        image_url: url,
-      }));
+    // Handle images - delete old ones and insert new ones
+    const newImages = form.images.filter(img => !existingImages.includes(img));
+    const removedImages = existingImages.filter(img => !form.images.includes(img));
+
+    if (removedImages.length > 0) {
+      await supabase.from('job_images').delete().eq('job_id', id).in('image_url', removedImages);
+    }
+
+    if (newImages.length > 0) {
+      const imageInserts = newImages.map(url => ({ job_id: id, image_url: url }));
       await supabase.from('job_images').insert(imageInserts);
     }
 
-    setLoading(false);
-    toast({ title: 'Zlecenie dodane!' });
-    navigate(`/jobs/${job.id}`);
+    setSaving(false);
+    toast({ title: 'Zapisano zmiany!' });
+    navigate(`/jobs/${id}`);
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="container max-w-2xl py-8">
-        <h1 className="text-2xl font-bold mb-6">Dodaj nowe zlecenie</h1>
+        <Button variant="ghost" asChild className="mb-6">
+          <Link to={`/jobs/${id}`}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Wróć do zlecenia
+          </Link>
+        </Button>
 
-        {/* Progress */}
-        <div className="flex items-center gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
-            <div key={s} className="flex items-center gap-2 flex-1">
-              <div 
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                  step >= s 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {s}
-              </div>
-              {s < 4 && (
-                <div className={`flex-1 h-1 rounded ${step > s ? 'bg-primary' : 'bg-muted'}`} />
-              )}
-            </div>
-          ))}
-        </div>
+        <h1 className="text-2xl font-bold mb-6">Edytuj zlecenie</h1>
 
-        {/* Step 1: Basic info */}
-        {step === 1 && (
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Podstawowe informacje</CardTitle>
-              <CardDescription>Opisz czego potrzebujesz</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -219,7 +219,7 @@ export default function NewJob() {
               </div>
 
               <div className="space-y-2">
-                <Label>Opis (opcjonalnie)</Label>
+                <Label>Opis</Label>
                 <Textarea
                   placeholder="Opisz szczegóły zlecenia..."
                   value={form.description}
@@ -229,7 +229,7 @@ export default function NewJob() {
               </div>
 
               <div className="space-y-2">
-                <Label>Zdjęcia (opcjonalnie)</Label>
+                <Label>Zdjęcia</Label>
                 <ImageUpload
                   images={form.images}
                   onChange={(imgs) => updateForm('images', imgs)}
@@ -249,14 +249,10 @@ export default function NewJob() {
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Step 2: Location & time */}
-        {step === 2 && (
           <Card>
             <CardHeader>
               <CardTitle>Lokalizacja i termin</CardTitle>
-              <CardDescription>Gdzie i kiedy potrzebujesz pomocy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
@@ -305,14 +301,10 @@ export default function NewJob() {
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Step 3: Budget */}
-        {step === 3 && (
           <Card>
             <CardHeader>
               <CardTitle>Budżet</CardTitle>
-              <CardDescription>Ile jesteś w stanie zapłacić</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -339,87 +331,17 @@ export default function NewJob() {
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Step 4: Payment & Summary */}
-        {step === 4 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Podsumowanie i płatność</CardTitle>
-              <CardDescription>Sprawdź dane i opłać publikację</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Summary */}
-              <div className="rounded-lg border p-4 space-y-2">
-                <h4 className="font-medium">Twoje zlecenie</h4>
-                <p className="text-sm"><strong>Tytuł:</strong> {form.title}</p>
-                <p className="text-sm"><strong>Lokalizacja:</strong> {form.miasto}, {form.wojewodztwo}</p>
-                {form.budget && (
-                  <p className="text-sm">
-                    <strong>Budżet:</strong> {form.budget} zł{form.budget_type === 'hourly' ? '/h' : ''}
-                  </p>
-                )}
-                {form.images.length > 0 && (
-                  <p className="text-sm"><strong>Zdjęcia:</strong> {form.images.length}</p>
-                )}
-                {form.urgent && <p className="text-sm text-destructive font-medium">⚡ Zlecenie pilne</p>}
-              </div>
-
-              {/* Payment */}
-              <div className="space-y-4">
-                <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
-                  <CreditCard className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-sm flex-1">
-                    <p className="font-medium">Opłata za publikację: 5 zł</p>
-                    <p className="text-muted-foreground">Karta lub BLIK (tryb testowy)</p>
-                  </div>
-                </div>
-
-                {!paymentComplete ? (
-                  <Button 
-                    className="w-full" 
-                    onClick={handlePayment}
-                    disabled={paymentProcessing}
-                  >
-                    {paymentProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {paymentProcessing ? 'Przetwarzanie...' : 'Zapłać 5 zł (test)'}
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 text-primary">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="font-medium">Płatność zakończona</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Navigation */}
-        <div className="flex justify-between mt-6">
-          {step > 1 ? (
-            <Button variant="outline" onClick={() => setStep((s) => (s - 1) as Step)}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Wstecz
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" asChild>
+              <Link to={`/jobs/${id}`}>Anuluj</Link>
             </Button>
-          ) : (
-            <div />
-          )}
-          
-          {step < 4 ? (
-            <Button 
-              onClick={() => setStep((s) => (s + 1) as Step)}
-              disabled={!validateStep(step)}
-            >
-              Dalej
-              <ArrowRight className="h-4 w-4 ml-2" />
+            <Button onClick={handleSubmit} disabled={saving || !form.title || !form.category_id || !form.wojewodztwo || !form.miasto}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Save className="h-4 w-4 mr-2" />
+              Zapisz zmiany
             </Button>
-          ) : (
-            <Button onClick={handleSubmit} disabled={loading || !paymentComplete}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Opublikuj zlecenie
-            </Button>
-          )}
+          </div>
         </div>
       </div>
     </Layout>
