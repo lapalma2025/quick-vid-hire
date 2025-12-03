@@ -28,14 +28,14 @@ export const NotificationBell = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && hasUnread) {
+    if (open && unreadCount > 0) {
       // Mark messages as read in DB and hide badge
       markMessagesAsRead();
-      setHasUnread(false);
+      setUnreadCount(0);
       // Store last seen time to not show badge for these notifications again
       localStorage.setItem(`notifications_seen_${profile?.id}`, new Date().toISOString());
     }
@@ -168,10 +168,10 @@ export const NotificationBell = () => {
 
     setNotifications(uniqueNotifs);
     
-    // Check if there are new notifications since last seen
+    // Count new notifications since last seen
     const lastSeen = localStorage.getItem(`notifications_seen_${profile.id}`);
-    const hasNew = uniqueNotifs.some(n => !lastSeen || new Date(n.createdAt) > new Date(lastSeen));
-    setHasUnread(hasNew);
+    const newCount = uniqueNotifs.filter(n => !lastSeen || new Date(n.createdAt) > new Date(lastSeen)).length;
+    setUnreadCount(newCount);
     
     setLoading(false);
   };
@@ -185,8 +185,10 @@ export const NotificationBell = () => {
           className="relative rounded-xl h-11 w-11 hover:bg-primary/10 transition-colors duration-300"
         >
           <Bell className="h-5 w-5" />
-          {hasUnread && (
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full flex items-center justify-center text-[10px] font-medium text-destructive-foreground">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
