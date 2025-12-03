@@ -815,48 +815,46 @@ export default function JobDetails() {
               </Card>
             )}
 
-            {/* Worker confirmation panel */}
-            {isSelectedWorker && myResponse?.status === 'awaiting_confirmation' && (
-              <Card className="border-warning bg-warning/10">
-                <CardHeader>
-                  <CardTitle className="text-lg">Potwierdzenie zlecenia</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    Zleceniodawca chce rozpocząć z Tobą realizację tego zlecenia. Czy akceptujesz?
-                  </p>
-                  <div className="flex gap-3">
-                    <Button onClick={handleWorkerAccept} disabled={submitting} className="gap-2">
-                      {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                      <Check className="h-4 w-4" />
-                      Akceptuję
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="gap-2 text-destructive border-destructive hover:bg-destructive/10">
-                          <X className="h-4 w-4" />
-                          Odrzuć
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Odrzucić zlecenie?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Czy na pewno chcesz odrzucić to zlecenie? Zleceniodawca będzie mógł wybrać innego wykonawcę.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleWorkerReject} className="bg-destructive hover:bg-destructive/90">
-                            Tak, odrzuć
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Worker confirmation dialog - opens automatically */}
+            <Dialog open={isSelectedWorker && myResponse?.status === 'awaiting_confirmation'} onOpenChange={() => {}}>
+              <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+                <DialogHeader>
+                  <DialogTitle className="text-xl">🎉 Zostałeś wybrany!</DialogTitle>
+                  <DialogDescription className="text-base pt-2">
+                    Zleceniodawca chce rozpocząć z Tobą realizację zlecenia <strong>"{job.title}"</strong>. Czy akceptujesz?
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex gap-3 pt-4">
+                  <Button onClick={handleWorkerAccept} disabled={submitting} className="flex-1 gap-2">
+                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <Check className="h-4 w-4" />
+                    Akceptuję
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="flex-1 gap-2 text-destructive border-destructive hover:bg-destructive/10">
+                        <X className="h-4 w-4" />
+                        Odrzuć
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Odrzucić zlecenie?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Czy na pewno chcesz odrzucić to zlecenie? Zleceniodawca będzie mógł wybrać innego wykonawcę.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleWorkerReject} className="bg-destructive hover:bg-destructive/90">
+                          Tak, odrzuć
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Sidebar */}
