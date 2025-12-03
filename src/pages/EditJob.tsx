@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import {
   Select,
@@ -17,11 +17,14 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { WOJEWODZTWA } from '@/lib/constants';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CitySelect } from '@/components/jobs/CitySelect';
+import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
+import { CountrySelect } from '@/components/jobs/CountrySelect';
+import { ForeignCitySelect } from '@/components/jobs/ForeignCitySelect';
+import { LocationTypeToggle } from '@/components/jobs/LocationTypeToggle';
 import { Link } from 'react-router-dom';
 
 interface Category {
@@ -44,8 +47,10 @@ export default function EditJob() {
     title: '',
     description: '',
     category_id: '',
+    is_foreign: false,
     wojewodztwo: '',
     miasto: '',
+    country: '',
     start_time: '',
     duration_hours: '',
     budget: '',
@@ -81,7 +86,6 @@ export default function EditJob() {
       return;
     }
 
-    // Check ownership
     if (job.user_id !== profile?.id) {
       toast({ title: 'Brak dostępu', description: 'To nie jest Twoje zlecenie', variant: 'destructive' });
       navigate('/dashboard');
@@ -91,12 +95,16 @@ export default function EditJob() {
     const imgs = job.job_images?.map((i: any) => i.image_url) || [];
     setExistingImages(imgs);
 
+    const isForeign = job.is_foreign || false;
+
     setForm({
       title: job.title || '',
       description: job.description || '',
       category_id: job.category_id || '',
-      wojewodztwo: job.wojewodztwo || '',
+      is_foreign: isForeign,
+      wojewodztwo: isForeign ? '' : (job.wojewodztwo || ''),
       miasto: job.miasto || '',
+      country: job.country || (isForeign ? job.wojewodztwo : '') || '',
       start_time: job.start_time ? job.start_time.slice(0, 16) : '',
       duration_hours: job.duration_hours?.toString() || '',
       budget: job.budget?.toString() || '',
@@ -113,6 +121,14 @@ export default function EditJob() {
       if (field === 'wojewodztwo') {
         updated.miasto = '';
       }
+      if (field === 'country') {
+        updated.miasto = '';
+      }
+      if (field === 'is_foreign') {
+        updated.wojewodztwo = '';
+        updated.miasto = '';
+        updated.country = '';
+      }
       return updated;
     });
   };
@@ -128,8 +144,10 @@ export default function EditJob() {
         title: form.title,
         description: form.description || null,
         category_id: form.category_id,
-        wojewodztwo: form.wojewodztwo,
+        is_foreign: form.is_foreign,
+        wojewodztwo: form.is_foreign ? form.country : form.wojewodztwo,
         miasto: form.miasto,
+        country: form.is_foreign ? form.country : null,
         start_time: form.start_time || null,
         duration_hours: form.duration_hours ? parseInt(form.duration_hours) : null,
         budget: form.budget ? parseFloat(form.budget) : null,
@@ -144,7 +162,6 @@ export default function EditJob() {
       return;
     }
 
-    // Handle images - delete old ones and insert new ones
     const newImages = form.images.filter(img => !existingImages.includes(img));
     const removedImages = existingImages.filter(img => !form.images.includes(img));
 
@@ -171,6 +188,9 @@ export default function EditJob() {
       </Layout>
     );
   }
+
+  const isValid = form.title && form.category_id && form.miasto && 
+    (form.is_foreign ? form.country : form.wojewodztwo);
 
   return (
     <Layout>
@@ -254,32 +274,61 @@ export default function EditJob() {
             <CardHeader>
               <CardTitle>Lokalizacja i termin</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Województwo *</Label>
-                  <Select value={form.wojewodztwo} onValueChange={(v) => updateForm('wojewodztwo', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wybierz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WOJEWODZTWA.map((w) => (
-                        <SelectItem key={w} value={w}>{w}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Miasto *</Label>
-                  <CitySelect
-                    wojewodztwo={form.wojewodztwo}
-                    value={form.miasto}
-                    onChange={(v) => updateForm('miasto', v)}
-                    disabled={!form.wojewodztwo}
-                  />
-                </div>
+            <CardContent className="space-y-6">
+              {/* Location type toggle */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Rodzaj lokalizacji *</Label>
+                <LocationTypeToggle
+                  isForeign={form.is_foreign}
+                  onChange={(v) => updateForm('is_foreign', v)}
+                />
               </div>
+
+              {/* Polish location */}
+              {!form.is_foreign && (
+                <div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div className="space-y-2">
+                    <Label>Województwo *</Label>
+                    <WojewodztwoSelect
+                      value={form.wojewodztwo}
+                      onChange={(v) => updateForm('wojewodztwo', v)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Miasto *</Label>
+                    <CitySelect
+                      wojewodztwo={form.wojewodztwo}
+                      value={form.miasto}
+                      onChange={(v) => updateForm('miasto', v)}
+                      disabled={!form.wojewodztwo}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Foreign location */}
+              {form.is_foreign && (
+                <div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
+                  <div className="space-y-2">
+                    <Label>Kraj *</Label>
+                    <CountrySelect
+                      value={form.country}
+                      onChange={(v) => updateForm('country', v)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Miasto *</Label>
+                    <ForeignCitySelect
+                      country={form.country}
+                      value={form.miasto}
+                      onChange={(v) => updateForm('miasto', v)}
+                      disabled={!form.country}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Data i godzina rozpoczęcia</Label>
@@ -336,7 +385,7 @@ export default function EditJob() {
             <Button variant="outline" asChild>
               <Link to={`/jobs/${id}`}>Anuluj</Link>
             </Button>
-            <Button onClick={handleSubmit} disabled={saving || !form.title || !form.category_id || !form.wojewodztwo || !form.miasto}>
+            <Button onClick={handleSubmit} disabled={saving || !isValid}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="h-4 w-4 mr-2" />
               Zapisz zmiany

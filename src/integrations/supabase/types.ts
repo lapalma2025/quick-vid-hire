@@ -162,10 +162,12 @@ export type Database = {
           budget: number | null
           budget_type: string | null
           category_id: string | null
+          country: string | null
           created_at: string | null
           description: string | null
           duration_hours: number | null
           id: string
+          is_foreign: boolean | null
           miasto: string
           paid: boolean | null
           selected_worker_id: string | null
@@ -182,10 +184,12 @@ export type Database = {
           budget?: number | null
           budget_type?: string | null
           category_id?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           duration_hours?: number | null
           id?: string
+          is_foreign?: boolean | null
           miasto: string
           paid?: boolean | null
           selected_worker_id?: string | null
@@ -202,10 +206,12 @@ export type Database = {
           budget?: number | null
           budget_type?: string | null
           category_id?: string | null
+          country?: string | null
           created_at?: string | null
           description?: string | null
           duration_hours?: number | null
           id?: string
+          is_foreign?: boolean | null
           miasto?: string
           paid?: boolean | null
           selected_worker_id?: string | null

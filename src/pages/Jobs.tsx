@@ -15,6 +15,8 @@ interface Job {
   description: string | null;
   wojewodztwo: string;
   miasto: string;
+  is_foreign: boolean | null;
+  country: string | null;
   start_time: string | null;
   duration_hours: number | null;
   budget: number | null;
@@ -31,8 +33,10 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
     search: '',
+    locationType: 'all',
     wojewodztwo: '',
     miasto: '',
+    country: '',
     category_id: '',
     urgent: false,
     sortBy: 'newest',
@@ -83,6 +87,8 @@ export default function Jobs() {
         description,
         wojewodztwo,
         miasto,
+        is_foreign,
+        country,
         start_time,
         duration_hours,
         budget,
@@ -98,12 +104,26 @@ export default function Jobs() {
     if (filters.search) {
       query = query.ilike('title', `%${filters.search}%`);
     }
-    if (filters.wojewodztwo) {
-      query = query.eq('wojewodztwo', filters.wojewodztwo);
+    
+    // Location type filtering
+    if (filters.locationType === 'poland') {
+      query = query.or('is_foreign.is.null,is_foreign.eq.false');
+      if (filters.wojewodztwo) {
+        query = query.eq('wojewodztwo', filters.wojewodztwo);
+      }
+      if (filters.miasto) {
+        query = query.eq('miasto', filters.miasto);
+      }
+    } else if (filters.locationType === 'foreign') {
+      query = query.eq('is_foreign', true);
+      if (filters.country) {
+        query = query.eq('country', filters.country);
+      }
+      if (filters.miasto) {
+        query = query.eq('miasto', filters.miasto);
+      }
     }
-    if (filters.miasto) {
-      query = query.eq('miasto', filters.miasto);
-    }
+
     if (filters.category_id) {
       query = query.eq('category_id', filters.category_id);
     }
@@ -150,7 +170,7 @@ export default function Jobs() {
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Znajdź idealne zlecenie</h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
-            Przeglądaj dostępne zlecenia w swojej okolicy i zacznij zarabiać już dziś
+            Przeglądaj dostępne zlecenia w Polsce i za granicą
           </p>
         </div>
       </div>
