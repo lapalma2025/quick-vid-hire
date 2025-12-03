@@ -267,10 +267,13 @@ export default function JobDetails() {
       return;
     }
 
-    toast({ title: 'Wykonawca wybrany! Teraz możesz wysłać zlecenie do realizacji.' });
-    
-    // Refresh data
-    await Promise.all([fetchJob(), fetchResponses()]);
+    // Update local state immediately for instant UI feedback
+    setJob(prev => prev ? { ...prev, selected_worker_id: workerId } : null);
+    setResponses(prev => prev.map(r => 
+      r.id === responseId ? { ...r, status: 'selected' } : r
+    ));
+
+    toast({ title: 'Wykonawca wybrany! Teraz kliknij "Wyślij do realizacji".' });
     setSubmitting(false);
   };
 
