@@ -391,11 +391,9 @@ export default function JobDetails() {
     <Layout>
       <div className="container py-8">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" asChild>
-            <Link to="/jobs">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Wróć do listy
-            </Link>
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Wróć
           </Button>
           {isOwner && (
             <div className="flex gap-2">

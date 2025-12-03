@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
+import { NotificationBell } from "./NotificationBell";
 
 export const Header = () => {
   const { isAuthenticated, profile, signOut, isClient, isAdmin } = useAuth();
@@ -73,7 +74,9 @@ export const Header = () => {
             </Button>
           )}
           {isAuthenticated ? (
-            <DropdownMenu>
+            <>
+              <NotificationBell />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -130,6 +133,7 @@ export const Header = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </>
           ) : (
             <div className="flex items-center gap-3">
               <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/10 transition-colors duration-300">
