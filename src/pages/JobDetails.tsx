@@ -103,7 +103,17 @@ export default function JobDetails() {
     comment: '',
   });
 
+  const [workerRatingForm, setWorkerRatingForm] = useState({
+    rating: 0,
+    comment: '',
+  });
+
+  const [workerRatingDialogOpen, setWorkerRatingDialogOpen] = useState(false);
+  const [hasRatedClient, setHasRatedClient] = useState(false);
+  const [hasClientRated, setHasClientRated] = useState(false);
+
   const isOwner = profile?.id === job?.user_id;
+  const isSelectedWorker = profile?.id === job?.selected_worker_id;
   const hasResponded = responses.some(r => r.worker.id === profile?.id);
 
   useEffect(() => {
@@ -112,6 +122,38 @@ export default function JobDetails() {
       fetchResponses();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (job && profile && job.status === 'done') {
+      checkExistingRatings();
+    }
+  }, [job, profile]);
+
+  const checkExistingRatings = async () => {
+    if (!job || !profile) return;
+    
+    // Check if client has rated worker
+    const { data: clientRating } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('job_id', job.id)
+      .eq('reviewer_id', job.user_id)
+      .maybeSingle();
+    
+    setHasClientRated(!!clientRating);
+
+    // Check if worker has rated client
+    if (job.selected_worker_id) {
+      const { data: workerRating } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('job_id', job.id)
+        .eq('reviewer_id', job.selected_worker_id)
+        .maybeSingle();
+      
+      setHasRatedClient(!!workerRating);
+    }
+  };
 
   const fetchJob = async () => {
     const { data, error } = await supabase
@@ -261,6 +303,64 @@ export default function JobDetails() {
       setRatingDialogOpen(false);
       setRatingForm({ rating: 0, comment: '' });
       fetchJob();
+      checkExistingRatings();
+    }
+  };
+
+  const handleWorkerRateClient = async () => {
+    if (!job || !profile) return;
+
+    setSubmitting(true);
+
+    const { error } = await supabase.from('reviews').insert({
+      job_id: job.id,
+      reviewer_id: profile.id,
+      reviewed_id: job.user_id,
+      rating: workerRatingForm.rating,
+      comment: workerRatingForm.comment || null,
+    });
+
+    setSubmitting(false);
+
+    if (error) {
+      toast({
+        title: 'Błąd',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Ocena dodana!' });
+      setWorkerRatingDialogOpen(false);
+      setWorkerRatingForm({ rating: 0, comment: '' });
+      setHasRatedClient(true);
+    }
+  };
+
+  const handleClientRateWorker = async () => {
+    if (!job || !profile || !job.selected_worker_id) return;
+
+    setSubmitting(true);
+
+    const { error } = await supabase.from('reviews').insert({
+      job_id: job.id,
+      reviewer_id: profile.id,
+      reviewed_id: job.selected_worker_id,
+      rating: ratingForm.rating,
+      comment: ratingForm.comment || null,
+    });
+
+    setSubmitting(false);
+
+    if (error) {
+      toast({
+        title: 'Błąd',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Ocena dodana!' });
+      setRatingForm({ rating: 0, comment: '' });
+      setHasClientRated(true);
     }
   };
 
@@ -612,6 +712,122 @@ export default function JobDetails() {
                   Przejdź do czatu
                 </Link>
               </Button>
+            )}
+
+            {/* Worker rating for client (after job is done) */}
+            {isSelectedWorker && job.status === 'done' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Oceń zleceniodawcę</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {hasRatedClient ? (
+                    <p className="text-sm text-muted-foreground text-center">
+                      ✓ Już oceniłeś zleceniodawcę
+                    </p>
+                  ) : (
+                    <Dialog open={workerRatingDialogOpen} onOpenChange={setWorkerRatingDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full gap-2">
+                          <Star className="h-4 w-4" />
+                          Wystaw ocenę
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Oceń zleceniodawcę</DialogTitle>
+                          <DialogDescription>
+                            Podziel się opinią o współpracy
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label>Ocena</Label>
+                            <StarRating
+                              value={workerRatingForm.rating}
+                              onChange={(v) => setWorkerRatingForm(prev => ({ ...prev, rating: v }))}
+                              size="lg"
+                              showValue
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Komentarz (opcjonalnie)</Label>
+                            <Textarea
+                              placeholder="Napisz kilka słów o współpracy..."
+                              value={workerRatingForm.comment}
+                              onChange={(e) => setWorkerRatingForm(prev => ({ ...prev, comment: e.target.value }))}
+                              rows={3}
+                            />
+                          </div>
+                          <Button 
+                            onClick={handleWorkerRateClient} 
+                            disabled={submitting || workerRatingForm.rating === 0}
+                            className="w-full"
+                          >
+                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Wyślij ocenę
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Client rating reminder (after job is done) */}
+            {isOwner && job.status === 'done' && !hasClientRated && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Oceń wykonawcę</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full gap-2">
+                        <Star className="h-4 w-4" />
+                        Wystaw ocenę
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Oceń wykonawcę</DialogTitle>
+                        <DialogDescription>
+                          Podziel się opinią o współpracy
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label>Ocena</Label>
+                          <StarRating
+                            value={ratingForm.rating}
+                            onChange={(v) => setRatingForm(prev => ({ ...prev, rating: v }))}
+                            size="lg"
+                            showValue
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Komentarz (opcjonalnie)</Label>
+                          <Textarea
+                            placeholder="Napisz kilka słów o współpracy..."
+                            value={ratingForm.comment}
+                            onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))}
+                            rows={3}
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleClientRateWorker} 
+                          disabled={submitting || ratingForm.rating === 0}
+                          className="w-full"
+                        >
+                          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Wyślij ocenę
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
             )}
 
             {!isAuthenticated && (
