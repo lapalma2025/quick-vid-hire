@@ -9,13 +9,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard } from "lucide-react";
+import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard, Wrench } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { NotificationBell } from "./NotificationBell";
+import { useViewModeStore } from "@/store/viewModeStore";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Header = () => {
-  const { isAuthenticated, profile, signOut, isClient, isAdmin } = useAuth();
+  const { isAuthenticated, profile, signOut, isAdmin } = useAuth();
+  const { viewMode, setViewMode } = useViewModeStore();
+  const isClientView = viewMode === 'client';
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -61,17 +65,33 @@ export const Header = () => {
           >
             Wykonawcy
           </Link>
-          {isAuthenticated && isClient && (
-            <Button
-              asChild
-              size="default"
-              className="gap-2 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
-            >
-              <Link to="/jobs/new">
-                <Plus className="h-4 w-4" />
-                Dodaj zlecenie
-              </Link>
-            </Button>
+          {isAuthenticated && (
+            <>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="ml-2">
+                <TabsList className="h-9 bg-muted/50">
+                  <TabsTrigger value="client" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Zleceniodawca
+                  </TabsTrigger>
+                  <TabsTrigger value="worker" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Wrench className="h-3.5 w-3.5" />
+                    Wykonawca
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              {isClientView && (
+                <Button
+                  asChild
+                  size="default"
+                  className="gap-2 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <Link to="/jobs/new">
+                    <Plus className="h-4 w-4" />
+                    Dodaj zlecenie
+                  </Link>
+                </Button>
+              )}
+            </>
           )}
           {isAuthenticated ? (
             <>
@@ -184,7 +204,21 @@ export const Header = () => {
                 </Link>
                 {isAuthenticated ? (
                   <>
-                    {isClient && (
+                    <div className="mb-4">
+                      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="w-full">
+                        <TabsList className="w-full h-12 bg-muted/50">
+                          <TabsTrigger value="client" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            <Briefcase className="h-4 w-4" />
+                            Zleceniodawca
+                          </TabsTrigger>
+                          <TabsTrigger value="worker" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            <Wrench className="h-4 w-4" />
+                            Wykonawca
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+                    {isClientView && (
                       <Link
                         to="/jobs/new"
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-colors"

@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useViewModeStore } from '@/store/viewModeStore';
 import { StarRating } from '@/components/ui/star-rating';
 import { 
   MapPin, 
@@ -83,7 +84,9 @@ interface Response {
 export default function JobDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { profile, isAuthenticated, isWorker, isClient } = useAuth();
+  const { profile, isAuthenticated } = useAuth();
+  const { viewMode } = useViewModeStore();
+  const isWorkerView = viewMode === 'worker';
   const { toast } = useToast();
   
   const [job, setJob] = useState<JobDetails | null>(null);
@@ -648,7 +651,7 @@ export default function JobDetails() {
             )}
 
             {/* Actions */}
-            {isAuthenticated && isWorker && !isOwner && job.status === 'active' && (
+            {isAuthenticated && isWorkerView && !isOwner && job.status === 'active' && (
               <Card>
                 <CardContent className="p-6">
                   {hasResponded ? (

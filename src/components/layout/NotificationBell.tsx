@@ -24,7 +24,7 @@ interface Notification {
 }
 
 export const NotificationBell = () => {
-  const { profile, isClient } = useAuth();
+  const { profile } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -72,91 +72,89 @@ export const NotificationBell = () => {
 
     const notifs: Notification[] = [];
 
-    if (isClient) {
-      // Fetch unread messages for client's jobs
-      const { data: messages } = await supabase
-        .from("chat_messages")
-        .select(`
-          id,
-          created_at,
-          job:jobs!inner(id, title, user_id),
-          sender:profiles!chat_messages_sender_id_fkey(name)
-        `)
-        .neq("sender_id", profile.id)
-        .eq("read", false)
-        .order("created_at", { ascending: false })
-        .limit(10);
+    // Fetch unread messages for user's jobs (as client)
+    const { data: clientMessages } = await supabase
+      .from("chat_messages")
+      .select(`
+        id,
+        created_at,
+        job:jobs!inner(id, title, user_id),
+        sender:profiles!chat_messages_sender_id_fkey(name)
+      `)
+      .neq("sender_id", profile.id)
+      .eq("read", false)
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-      if (messages) {
-        for (const msg of messages as any[]) {
-          if (msg.job?.user_id === profile.id) {
-            notifs.push({
-              id: msg.id,
-              type: "message",
-              jobId: msg.job.id,
-              jobTitle: msg.job.title,
-              senderName: msg.sender?.name || "Użytkownik",
-              createdAt: msg.created_at,
-            });
-          }
+    if (clientMessages) {
+      for (const msg of clientMessages as any[]) {
+        if (msg.job?.user_id === profile.id) {
+          notifs.push({
+            id: msg.id,
+            type: "message",
+            jobId: msg.job.id,
+            jobTitle: msg.job.title,
+            senderName: msg.sender?.name || "Użytkownik",
+            createdAt: msg.created_at,
+          });
         }
       }
+    }
 
-      // Fetch new responses for client's jobs
-      const { data: responses } = await supabase
-        .from("job_responses")
-        .select(`
-          id,
-          created_at,
-          status,
-          job:jobs!inner(id, title, user_id),
-          worker:profiles!job_responses_worker_id_fkey(name)
-        `)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(10);
+    // Fetch new responses for user's jobs (as client)
+    const { data: responses } = await supabase
+      .from("job_responses")
+      .select(`
+        id,
+        created_at,
+        status,
+        job:jobs!inner(id, title, user_id),
+        worker:profiles!job_responses_worker_id_fkey(name)
+      `)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(10);
 
-      if (responses) {
-        for (const resp of responses as any[]) {
-          if (resp.job?.user_id === profile.id) {
-            notifs.push({
-              id: resp.id,
-              type: "response",
-              jobId: resp.job.id,
-              jobTitle: resp.job.title,
-              senderName: resp.worker?.name || "Wykonawca",
-              createdAt: resp.created_at,
-            });
-          }
+    if (responses) {
+      for (const resp of responses as any[]) {
+        if (resp.job?.user_id === profile.id) {
+          notifs.push({
+            id: resp.id,
+            type: "response",
+            jobId: resp.job.id,
+            jobTitle: resp.job.title,
+            senderName: resp.worker?.name || "Wykonawca",
+            createdAt: resp.created_at,
+          });
         }
       }
-    } else {
-      // For workers - fetch messages for jobs they're selected for
-      const { data: messages } = await supabase
-        .from("chat_messages")
-        .select(`
-          id,
-          created_at,
-          job:jobs!inner(id, title, selected_worker_id),
-          sender:profiles!chat_messages_sender_id_fkey(name)
-        `)
-        .neq("sender_id", profile.id)
-        .eq("read", false)
-        .order("created_at", { ascending: false })
-        .limit(10);
+    }
 
-      if (messages) {
-        for (const msg of messages as any[]) {
-          if (msg.job?.selected_worker_id === profile.id) {
-            notifs.push({
-              id: msg.id,
-              type: "message",
-              jobId: msg.job.id,
-              jobTitle: msg.job.title,
-              senderName: msg.sender?.name || "Użytkownik",
-              createdAt: msg.created_at,
-            });
-          }
+    // Fetch messages for jobs where user is selected worker
+    const { data: workerMessages } = await supabase
+      .from("chat_messages")
+      .select(`
+        id,
+        created_at,
+        job:jobs!inner(id, title, selected_worker_id),
+        sender:profiles!chat_messages_sender_id_fkey(name)
+      `)
+      .neq("sender_id", profile.id)
+      .eq("read", false)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (workerMessages) {
+      for (const msg of workerMessages as any[]) {
+        if (msg.job?.selected_worker_id === profile.id) {
+          notifs.push({
+            id: msg.id,
+            type: "message",
+            jobId: msg.job.id,
+            jobTitle: msg.job.title,
+            senderName: msg.sender?.name || "Użytkownik",
+            createdAt: msg.created_at,
+          });
         }
       }
     }

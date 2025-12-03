@@ -20,10 +20,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
 import { Loader2, Save, Star } from 'lucide-react';
+import { useViewModeStore } from '@/store/viewModeStore';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { profile, isAuthenticated, isLoading, isWorker, refreshProfile } = useAuth();
+  const { profile, isAuthenticated, isLoading, refreshProfile } = useAuth();
+  const { viewMode } = useViewModeStore();
+  const isWorkerView = viewMode === 'worker';
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -210,7 +213,7 @@ export default function Profile() {
               />
             </div>
 
-            {isWorker && (
+            {isWorkerView && (
               <>
                 <div className="space-y-2">
                   <Label>Stawka godzinowa (zł/h)</Label>

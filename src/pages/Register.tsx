@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/layout/Layout';
-import { Loader2, Briefcase, Wrench } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
 const registerSchema = z.object({
@@ -17,13 +16,10 @@ const registerSchema = z.object({
   password: z.string().min(6, 'Hasło musi mieć minimum 6 znaków'),
 });
 
-type UserRole = 'client' | 'worker';
-
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('client');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const navigate = useNavigate();
@@ -51,7 +47,6 @@ export default function Register() {
         emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
           name,
-          role,
         },
       },
     });
@@ -134,34 +129,6 @@ export default function Register() {
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Rejestruję się jako</Label>
-                <RadioGroup value={role} onValueChange={(v) => setRole(v as UserRole)} className="grid grid-cols-2 gap-4">
-                  <div>
-                    <RadioGroupItem value="client" id="client" className="peer sr-only" />
-                    <Label
-                      htmlFor="client"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                    >
-                      <Briefcase className="mb-3 h-6 w-6" />
-                      <span className="text-sm font-medium">Zleceniodawca</span>
-                      <span className="text-xs text-muted-foreground">Szukam wykonawców</span>
-                    </Label>
-                  </div>
-                  <div>
-                    <RadioGroupItem value="worker" id="worker" className="peer sr-only" />
-                    <Label
-                      htmlFor="worker"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                    >
-                      <Wrench className="mb-3 h-6 w-6" />
-                      <span className="text-sm font-medium">Wykonawca</span>
-                      <span className="text-xs text-muted-foreground">Szukam zleceń</span>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="name">Imię</Label>
                 <Input
