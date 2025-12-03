@@ -8,35 +8,49 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
 interface Notification {
   id: string;
-  type: "message" | "response";
+  type: "message" | "response" | "confirmation";
   jobId: string;
   jobTitle: string;
   senderName: string;
   createdAt: string;
+  responseId?: string;
 }
 
 export const NotificationBell = () => {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    open: boolean;
+    notification: Notification | null;
+  }>({ open: false, notification: null });
+  const [submitting, setSubmitting] = useState(false);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open && unreadCount > 0) {
-      // Mark messages as read in DB and hide badge
       markMessagesAsRead();
       setUnreadCount(0);
-      // Store last seen time to not show badge for these notifications again
       localStorage.setItem(`notifications_seen_${profile?.id}`, new Date().toISOString());
     }
   };
@@ -58,6 +72,65 @@ export const NotificationBell = () => {
 
   const clearNotifications = () => {
     setNotifications([]);
+  };
+
+  const handleNotificationClick = (notif: Notification, e: React.MouseEvent) => {
+    if (notif.type === "confirmation") {
+      e.preventDefault();
+      e.stopPropagation();
+      setConfirmationDialog({ open: true, notification: notif });
+      setIsOpen(false);
+    }
+  };
+
+  const handleAcceptJob = async () => {
+    if (!confirmationDialog.notification || !profile) return;
+    setSubmitting(true);
+
+    const { error } = await supabase
+      .from("job_responses")
+      .update({ status: "accepted" })
+      .eq("id", confirmationDialog.notification.responseId);
+
+    if (error) {
+      toast({ title: "Błąd", description: error.message, variant: "destructive" });
+    } else {
+      // Update job status to in_progress
+      await supabase
+        .from("jobs")
+        .update({ status: "in_progress" })
+        .eq("id", confirmationDialog.notification.jobId);
+
+      toast({ title: "Zlecenie zaakceptowane!" });
+      setConfirmationDialog({ open: false, notification: null });
+      fetchNotifications();
+    }
+    setSubmitting(false);
+  };
+
+  const handleRejectJob = async () => {
+    if (!confirmationDialog.notification || !profile) return;
+    setSubmitting(true);
+
+    const { error } = await supabase
+      .from("job_responses")
+      .update({ status: "rejected" })
+      .eq("id", confirmationDialog.notification.responseId);
+
+    if (error) {
+      toast({ title: "Błąd", description: error.message, variant: "destructive" });
+    } else {
+      // Reset job status and clear selected worker
+      await supabase
+        .from("jobs")
+        .update({ selected_worker_id: null, status: "active" })
+        .eq("id", confirmationDialog.notification.jobId);
+
+      toast({ title: "Zlecenie odrzucone" });
+      setConfirmationDialog({ open: false, notification: null });
+      fetchNotifications();
+    }
+    setSubmitting(false);
   };
 
   useEffect(() => {
@@ -159,10 +232,46 @@ export const NotificationBell = () => {
       }
     }
 
-    // Sort by date and dedupe by jobId
+    // Fetch job confirmations awaiting worker's response
+    const { data: confirmations } = await supabase
+      .from("job_responses")
+      .select(`
+        id,
+        created_at,
+        status,
+        job:jobs!inner(id, title, user_id),
+        client:jobs!inner(user_id)
+      `)
+      .eq("worker_id", profile.id)
+      .eq("status", "awaiting_confirmation")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (confirmations) {
+      for (const conf of confirmations as any[]) {
+        // Fetch client name
+        const { data: clientProfile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", conf.job.user_id)
+          .single();
+
+        notifs.push({
+          id: `conf-${conf.id}`,
+          type: "confirmation",
+          jobId: conf.job.id,
+          jobTitle: conf.job.title,
+          senderName: clientProfile?.name || "Zleceniodawca",
+          createdAt: conf.created_at,
+          responseId: conf.id,
+        });
+      }
+    }
+
+    // Sort by date and limit
     const uniqueNotifs = notifs
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
+      .slice(0, 10);
 
     setNotifications(uniqueNotifs);
     
@@ -174,70 +283,139 @@ export const NotificationBell = () => {
     setLoading(false);
   };
 
+  const getNotificationBadgeVariant = (type: Notification["type"]) => {
+    switch (type) {
+      case "message": return "secondary";
+      case "response": return "default";
+      case "confirmation": return "destructive";
+      default: return "default";
+    }
+  };
+
+  const getNotificationLabel = (type: Notification["type"]) => {
+    switch (type) {
+      case "message": return "Wiadomość";
+      case "response": return "Oferta";
+      case "confirmation": return "Do potwierdzenia";
+      default: return "Powiadomienie";
+    }
+  };
+
   return (
-    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative rounded-xl h-11 w-11 hover:bg-primary/10 transition-colors duration-300"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full flex items-center justify-center text-[10px] font-medium text-destructive-foreground">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 rounded-xl p-2" align="end">
-        {loading ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            Ładowanie...
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            Brak nowych powiadomień
-          </div>
-        ) : (
-          <>
-            <div className="px-3 py-2 text-sm font-semibold border-b mb-2 flex items-center justify-between">
-              <span>Powiadomienia ({notifications.length})</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.preventDefault();
-                  clearNotifications();
-                }}
-              >
-                Wyczyść
-              </Button>
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative rounded-xl h-11 w-11 hover:bg-primary/10 transition-colors duration-300"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full flex items-center justify-center text-[10px] font-medium text-destructive-foreground">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-80 rounded-xl p-2" align="end">
+          {loading ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              Ładowanie...
             </div>
-            {notifications.map((notif) => (
-              <DropdownMenuItem key={notif.id} asChild className="rounded-lg cursor-pointer p-3">
-                <Link to={notif.type === "message" ? `/jobs/${notif.jobId}/chat` : `/jobs/${notif.jobId}`}>
-                  <div className="flex flex-col gap-1 w-full">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={notif.type === "message" ? "secondary" : "default"} className="text-xs">
-                        {notif.type === "message" ? "Wiadomość" : "Oferta"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(notif.createdAt), "dd MMM HH:mm", { locale: pl })}
-                      </span>
+          ) : notifications.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              Brak nowych powiadomień
+            </div>
+          ) : (
+            <>
+              <div className="px-3 py-2 text-sm font-semibold border-b mb-2 flex items-center justify-between">
+                <span>Powiadomienia ({notifications.length})</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    clearNotifications();
+                  }}
+                >
+                  Wyczyść
+                </Button>
+              </div>
+              {notifications.map((notif) => (
+                <DropdownMenuItem 
+                  key={notif.id} 
+                  asChild={notif.type !== "confirmation"}
+                  className="rounded-lg cursor-pointer p-3"
+                  onClick={(e) => handleNotificationClick(notif, e)}
+                >
+                  {notif.type === "confirmation" ? (
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getNotificationBadgeVariant(notif.type)} className="text-xs">
+                          {getNotificationLabel(notif.type)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(notif.createdAt), "dd MMM HH:mm", { locale: pl })}
+                        </span>
+                      </div>
+                      <p className="font-medium text-sm truncate">{notif.jobTitle}</p>
+                      <p className="text-xs text-muted-foreground">
+                        od: {notif.senderName}
+                      </p>
                     </div>
-                    <p className="font-medium text-sm truncate">{notif.jobTitle}</p>
-                    <p className="text-xs text-muted-foreground">
-                      od: {notif.senderName}
-                    </p>
-                  </div>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+                  ) : (
+                    <Link to={notif.type === "message" ? `/jobs/${notif.jobId}/chat` : `/jobs/${notif.jobId}`}>
+                      <div className="flex flex-col gap-1 w-full">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={getNotificationBadgeVariant(notif.type)} className="text-xs">
+                            {getNotificationLabel(notif.type)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(notif.createdAt), "dd MMM HH:mm", { locale: pl })}
+                          </span>
+                        </div>
+                        <p className="font-medium text-sm truncate">{notif.jobTitle}</p>
+                        <p className="text-xs text-muted-foreground">
+                          od: {notif.senderName}
+                        </p>
+                      </div>
+                    </Link>
+                  )}
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={confirmationDialog.open} onOpenChange={(open) => setConfirmationDialog({ open, notification: open ? confirmationDialog.notification : null })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Potwierdzenie zlecenia</DialogTitle>
+            <DialogDescription>
+              Zostałeś wybrany do realizacji zlecenia "{confirmationDialog.notification?.jobTitle}". 
+              Czy akceptujesz to zlecenie?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleRejectJob}
+              disabled={submitting}
+            >
+              Odrzuć
+            </Button>
+            <Button
+              onClick={handleAcceptJob}
+              disabled={submitting}
+            >
+              Akceptuję
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
