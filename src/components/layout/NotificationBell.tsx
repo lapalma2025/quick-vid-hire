@@ -27,6 +27,33 @@ export const NotificationBell = () => {
   const { profile, isClient } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const markMessagesAsRead = async () => {
+    if (!profile || notifications.length === 0) return;
+    
+    const messageIds = notifications
+      .filter(n => n.type === "message")
+      .map(n => n.id);
+    
+    if (messageIds.length > 0) {
+      await supabase
+        .from("chat_messages")
+        .update({ read: true })
+        .in("id", messageIds);
+    }
+    
+    // Clear notifications after marking as read
+    setNotifications([]);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      // Mark as read when opening
+      markMessagesAsRead();
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -141,7 +168,7 @@ export const NotificationBell = () => {
   const count = notifications.length;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
