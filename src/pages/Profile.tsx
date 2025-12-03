@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,13 @@ import { useToast } from '@/hooks/use-toast';
 import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
 import { Loader2, Save, Star } from 'lucide-react';
 import { useViewModeStore } from '@/store/viewModeStore';
+import { CategoryIcon } from '@/components/jobs/CategoryIcon';
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string | null;
+}
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -30,6 +38,8 @@ export default function Profile() {
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -57,8 +67,32 @@ export default function Profile() {
         hourly_rate: profile.hourly_rate?.toString() || '',
         is_available: profile.is_available,
       });
+      fetchWorkerCategories();
     }
   }, [profile]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from('categories')
+      .select('id, name, icon')
+      .order('name');
+    if (data) setCategories(data);
+  };
+
+  const fetchWorkerCategories = async () => {
+    if (!profile) return;
+    const { data } = await supabase
+      .from('worker_categories')
+      .select('category_id')
+      .eq('worker_id', profile.id);
+    if (data) {
+      setSelectedCategories(data.map(wc => wc.category_id));
+    }
+  };
 
   const miasta = form.wojewodztwo ? MIASTA_BY_WOJEWODZTWO[form.wojewodztwo] || [] : [];
 
@@ -72,10 +106,20 @@ export default function Profile() {
     });
   };
 
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
   const handleSave = async () => {
     if (!profile) return;
 
     setLoading(true);
+    
+    // Update profile
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -90,18 +134,46 @@ export default function Profile() {
       })
       .eq('id', profile.id);
 
-    setLoading(false);
-
     if (error) {
       toast({
         title: 'Błąd',
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({ title: 'Profil zaktualizowany!' });
-      refreshProfile();
+      setLoading(false);
+      return;
     }
+
+    // Update worker categories (only in worker view)
+    if (isWorkerView) {
+      // Delete existing categories
+      await supabase
+        .from('worker_categories')
+        .delete()
+        .eq('worker_id', profile.id);
+
+      // Insert new categories
+      if (selectedCategories.length > 0) {
+        const { error: catError } = await supabase
+          .from('worker_categories')
+          .insert(selectedCategories.map(catId => ({
+            worker_id: profile.id,
+            category_id: catId,
+          })));
+
+        if (catError) {
+          toast({
+            title: 'Błąd przy zapisie kategorii',
+            description: catError.message,
+            variant: 'destructive',
+          });
+        }
+      }
+    }
+
+    setLoading(false);
+    toast({ title: 'Profil zaktualizowany!' });
+    refreshProfile();
   };
 
   if (isLoading) {
@@ -223,6 +295,39 @@ export default function Profile() {
                     onChange={(e) => updateForm('hourly_rate', e.target.value)}
                     placeholder="np. 30"
                   />
+                </div>
+
+                {/* Categories section */}
+                <div className="space-y-3">
+                  <Label className="text-base">Moje kategorie usług</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Wybierz kategorie, w których oferujesz swoje usługi. Dzięki temu klienci łatwiej Cię znajdą.
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {categories.map((category) => (
+                      <div
+                        key={category.id}
+                        className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          selectedCategories.includes(category.id)
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:bg-muted/50'
+                        }`}
+                        onClick={() => toggleCategory(category.id)}
+                      >
+                        <Checkbox
+                          checked={selectedCategories.includes(category.id)}
+                          onCheckedChange={() => toggleCategory(category.id)}
+                        />
+                        <CategoryIcon name={category.name} className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium truncate">{category.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedCategories.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Wybrano: {selectedCategories.length} {selectedCategories.length === 1 ? 'kategoria' : selectedCategories.length < 5 ? 'kategorie' : 'kategorii'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
