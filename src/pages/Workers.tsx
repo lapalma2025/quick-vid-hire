@@ -16,9 +16,9 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
+import { StarRating } from '@/components/ui/star-rating';
 import { 
   MapPin, 
-  Star, 
   Banknote, 
   Search,
   Loader2,
@@ -342,8 +342,7 @@ export default function Workers() {
                         </h3>
                         {worker.rating_count > 0 ? (
                           <div className="flex items-center gap-1 text-sm">
-                            <Star className="h-4 w-4 fill-warning text-warning" />
-                            <span className="font-medium">{worker.rating_avg.toFixed(1)}</span>
+                            <StarRating value={worker.rating_avg} readonly size="sm" />
                             <span className="text-muted-foreground">({worker.rating_count})</span>
                           </div>
                         ) : (

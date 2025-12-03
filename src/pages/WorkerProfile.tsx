@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
+import { StarRating } from '@/components/ui/star-rating';
 import { 
   MapPin, 
   Star, 
@@ -172,18 +173,7 @@ export default function WorkerProfile() {
                     
                     {worker.rating_count > 0 && (
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-4 w-4 ${
-                                star <= Math.round(worker.rating_avg)
-                                  ? 'fill-warning text-warning'
-                                  : 'text-muted'
-                              }`}
-                            />
-                          ))}
-                        </div>
+                        <StarRating value={worker.rating_avg} readonly size="sm" />
                         <span className="font-medium">{worker.rating_avg.toFixed(1)}</span>
                         <span className="text-muted-foreground">({worker.rating_count} opinii)</span>
                       </div>
@@ -248,18 +238,7 @@ export default function WorkerProfile() {
                               <span className="font-medium">
                                 {review.reviewer.name || 'Użytkownik'}
                               </span>
-                              <div className="flex items-center gap-0.5">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star
-                                    key={star}
-                                    className={`h-3 w-3 ${
-                                      star <= review.rating
-                                        ? 'fill-warning text-warning'
-                                        : 'text-muted'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                              <StarRating value={review.rating} readonly size="sm" />
                             </div>
                             {review.comment && (
                               <p className="text-sm text-muted-foreground">{review.comment}</p>
