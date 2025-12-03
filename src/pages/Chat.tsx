@@ -5,21 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Send, Loader2, CheckCircle2, Check, X } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -45,11 +34,6 @@ interface JobInfo {
   worker?: { name: string | null; avatar_url: string | null };
 }
 
-interface ResponseInfo {
-  id: string;
-  status: string;
-}
-
 export default function Chat() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -58,15 +42,11 @@ export default function Chat() {
 
   const [job, setJob] = useState<JobInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [myResponse, setMyResponse] = useState<ResponseInfo | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const isSelectedWorker = profile?.id === job?.selected_worker_id;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -80,12 +60,6 @@ export default function Chat() {
       subscribeToMessages();
     }
   }, [id, isAuthenticated]);
-
-  useEffect(() => {
-    if (profile && id) {
-      fetchMyResponse();
-    }
-  }, [profile, id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -112,21 +86,6 @@ export default function Chat() {
 
     if (data) {
       setJob(data as any);
-    }
-  };
-
-  const fetchMyResponse = async () => {
-    if (!profile) return;
-    
-    const { data } = await supabase
-      .from('job_responses')
-      .select('id, status')
-      .eq('job_id', id)
-      .eq('worker_id', profile.id)
-      .maybeSingle();
-
-    if (data) {
-      setMyResponse(data);
     }
   };
 
@@ -162,7 +121,6 @@ export default function Chat() {
           filter: `job_id=eq.${id}`,
         },
         async (payload) => {
-          // Fetch the complete message with sender info
           const { data } = await supabase
             .from('chat_messages')
             .select(`
@@ -217,73 +175,6 @@ export default function Chat() {
     }
   };
 
-  const handleWorkerAccept = async () => {
-    if (!myResponse || !job || !profile) return;
-
-    setSubmitting(true);
-
-    const { error } = await supabase
-      .from('job_responses')
-      .update({ status: 'accepted' })
-      .eq('id', myResponse.id);
-
-    if (error) {
-      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
-    } else {
-      // Send confirmation message
-      await supabase.from('chat_messages').insert({
-        job_id: job.id,
-        sender_id: profile.id,
-        message: '✅ Akceptuję zlecenie! Zaczynam realizację.',
-      });
-      toast({ title: 'Zlecenie zaakceptowane!' });
-      fetchMyResponse();
-      fetchJob();
-    }
-
-    setSubmitting(false);
-  };
-
-  const handleWorkerReject = async () => {
-    if (!myResponse || !job || !profile) return;
-
-    setSubmitting(true);
-
-    // Update response status
-    const { error: responseError } = await supabase
-      .from('job_responses')
-      .update({ status: 'rejected' })
-      .eq('id', myResponse.id);
-
-    if (responseError) {
-      toast({ title: 'Błąd', description: responseError.message, variant: 'destructive' });
-      setSubmitting(false);
-      return;
-    }
-
-    // Clear selected worker and set job back to active
-    const { error: jobError } = await supabase
-      .from('jobs')
-      .update({ selected_worker_id: null, status: 'active' })
-      .eq('id', job.id);
-
-    if (jobError) {
-      toast({ title: 'Błąd', description: jobError.message, variant: 'destructive' });
-    } else {
-      // Send rejection message
-      await supabase.from('chat_messages').insert({
-        job_id: job.id,
-        sender_id: profile.id,
-        message: '❌ Niestety muszę odrzucić to zlecenie.',
-      });
-      toast({ title: 'Zlecenie odrzucone' });
-      fetchMyResponse();
-      fetchJob();
-    }
-
-    setSubmitting(false);
-  };
-
   const handleMarkDone = async () => {
     if (!job) return;
 
@@ -304,8 +195,6 @@ export default function Chat() {
     (profile.id === job.user_id || profile.id === job.selected_worker_id);
 
   const otherParticipant = profile?.id === job?.user_id ? job?.worker : job?.client;
-
-  const showConfirmationPanel = isSelectedWorker && myResponse?.status === 'awaiting_confirmation';
 
   if (loading) {
     return (
@@ -357,44 +246,6 @@ export default function Chat() {
             </Button>
           )}
         </div>
-
-        {/* Worker confirmation panel */}
-        {showConfirmationPanel && (
-          <div className="py-4 px-4 bg-warning/10 border-b border-warning/30 rounded-lg my-4">
-            <p className="font-medium text-center mb-3">
-              Zleceniodawca chce rozpocząć z Tobą realizację tego zlecenia. Czy akceptujesz?
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={handleWorkerAccept} disabled={submitting} className="gap-2">
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                <Check className="h-4 w-4" />
-                Akceptuję
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="gap-2 text-destructive border-destructive hover:bg-destructive/10">
-                    <X className="h-4 w-4" />
-                    Odrzuć
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Odrzucić zlecenie?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Czy na pewno chcesz odrzucić to zlecenie? Zleceniodawca będzie mógł wybrać innego wykonawcę.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleWorkerReject} className="bg-destructive hover:bg-destructive/90">
-                      Tak, odrzuć
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
