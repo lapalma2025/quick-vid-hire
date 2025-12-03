@@ -204,12 +204,12 @@ export default function Workers() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Województwo</Label>
-                  <Select value={filters.wojewodztwo} onValueChange={(v) => updateFilter('wojewodztwo', v)}>
+                  <Select value={filters.wojewodztwo || "__all__"} onValueChange={(v) => updateFilter('wojewodztwo', v === "__all__" ? "" : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Wszystkie" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Wszystkie</SelectItem>
+                      <SelectItem value="__all__">Wszystkie</SelectItem>
                       {WOJEWODZTWA.map((w) => (
                         <SelectItem key={w} value={w}>{w}</SelectItem>
                       ))}
@@ -220,15 +220,15 @@ export default function Workers() {
                 <div className="space-y-2">
                   <Label>Miasto</Label>
                   <Select 
-                    value={filters.miasto} 
-                    onValueChange={(v) => updateFilter('miasto', v)}
+                    value={filters.miasto || "__all__"} 
+                    onValueChange={(v) => updateFilter('miasto', v === "__all__" ? "" : v)}
                     disabled={!filters.wojewodztwo}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Wszystkie" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Wszystkie</SelectItem>
+                      <SelectItem value="__all__">Wszystkie</SelectItem>
                       {miasta.map((m) => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}
@@ -238,12 +238,12 @@ export default function Workers() {
 
                 <div className="space-y-2">
                   <Label>Kategoria</Label>
-                  <Select value={filters.category} onValueChange={(v) => updateFilter('category', v)}>
+                  <Select value={filters.category || "__all__"} onValueChange={(v) => updateFilter('category', v === "__all__" ? "" : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Wszystkie" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Wszystkie</SelectItem>
+                      <SelectItem value="__all__">Wszystkie</SelectItem>
                       {categories.map((c) => (
                         <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                       ))}
@@ -253,12 +253,12 @@ export default function Workers() {
 
                 <div className="space-y-2">
                   <Label>Min. ocena</Label>
-                  <Select value={filters.minRating} onValueChange={(v) => updateFilter('minRating', v)}>
+                  <Select value={filters.minRating || "__all__"} onValueChange={(v) => updateFilter('minRating', v === "__all__" ? "" : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Dowolna" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Dowolna</SelectItem>
+                      <SelectItem value="__all__">Dowolna</SelectItem>
                       <SelectItem value="3">3+ ⭐</SelectItem>
                       <SelectItem value="4">4+ ⭐</SelectItem>
                       <SelectItem value="4.5">4.5+ ⭐</SelectItem>
