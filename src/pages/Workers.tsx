@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -30,6 +29,8 @@ import gsap from 'gsap';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
 import { CitySelect } from '@/components/jobs/CitySelect';
 
+const PAGE_SIZE = 10;
+
 interface Worker {
   id: string;
   name: string | null;
@@ -52,8 +53,12 @@ export default function Workers() {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const [showFilters, setShowFilters] = useState(true);
   const gridRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
     wojewodztwo: '',
@@ -68,30 +73,11 @@ export default function Workers() {
     fetchCategories();
   }, []);
 
-  useEffect(() => {
-    fetchWorkers();
-  }, [filters]);
-
-  useEffect(() => {
-    if (gridRef.current && !loading && workers.length > 0) {
-      gsap.fromTo(
-        gridRef.current.querySelectorAll('.worker-card'),
-        { opacity: 0, y: 30, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out' }
-      );
-    }
-  }, [loading, workers]);
-
-  const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('id, name').order('name');
-    if (data) setCategories(data);
-  };
-
-  const fetchWorkers = async () => {
-    setLoading(true);
+  // Build query with filters
+  const buildQuery = useCallback(() => {
     let query = supabase
       .from('profiles')
-      .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`)
+      .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`, { count: 'exact' })
       .eq('role', 'worker')
       .eq('is_available', true);
 
@@ -101,7 +87,17 @@ export default function Workers() {
     if (filters.maxRate) query = query.lte('hourly_rate', parseFloat(filters.maxRate));
     if (filters.minRating) query = query.gte('rating_avg', parseFloat(filters.minRating));
 
-    const { data, error } = await query.order('rating_avg', { ascending: false });
+    return query.order('rating_avg', { ascending: false });
+  }, [filters]);
+
+  // Initial fetch
+  const fetchWorkers = useCallback(async () => {
+    setLoading(true);
+    setWorkers([]);
+    setHasMore(true);
+
+    const query = buildQuery();
+    const { data, error, count } = await query.range(0, PAGE_SIZE - 1);
 
     if (data && !error) {
       let workersData = data.map((w: any) => ({
@@ -112,8 +108,79 @@ export default function Workers() {
         workersData = workersData.filter((w: Worker) => w.categories.some(c => c.name === filters.category));
       }
       setWorkers(workersData);
+      setTotalCount(count || 0);
+      setHasMore(data.length === PAGE_SIZE);
     }
     setLoading(false);
+  }, [buildQuery, filters.category]);
+
+  // Load more
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    const query = buildQuery();
+    const { data, error } = await query.range(workers.length, workers.length + PAGE_SIZE - 1);
+    
+    if (!error && data) {
+      let newWorkersData = data.map((w: any) => ({
+        ...w,
+        categories: w.worker_categories?.map((wc: any) => wc.category) || [],
+      }));
+      if (filters.category) {
+        newWorkersData = newWorkersData.filter((w: Worker) => w.categories.some(c => c.name === filters.category));
+      }
+      setWorkers(prev => [...prev, ...newWorkersData]);
+      setHasMore(data.length === PAGE_SIZE);
+    }
+    setLoadingMore(false);
+  }, [buildQuery, workers.length, loadingMore, hasMore, filters.category]);
+
+  useEffect(() => {
+    fetchWorkers();
+  }, [fetchWorkers]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, loadMore]);
+
+  useEffect(() => {
+    if (gridRef.current && !loading && workers.length > 0) {
+      gsap.fromTo(
+        gridRef.current.querySelectorAll('.worker-card:not(.animated)'),
+        { opacity: 0, y: 30, scale: 0.95 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1, 
+          duration: 0.5, 
+          stagger: 0.08, 
+          ease: 'power3.out',
+          onComplete: function() {
+            this.targets().forEach((el: Element) => el.classList.add('animated'));
+          }
+        }
+      );
+    }
+  }, [loading, workers]);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase.from('categories').select('id, name').order('name');
+    if (data) setCategories(data);
   };
 
   const updateFilter = (key: string, value: string) => {
@@ -145,7 +212,7 @@ export default function Workers() {
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
               <Sparkles className="h-3.5 w-3.5" />
-              {workers.length} wykonawców
+              {totalCount} wykonawców
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">Znajdź idealnego wykonawcę</h1>
@@ -235,70 +302,85 @@ export default function Workers() {
             <p className="text-muted-foreground">Nie znaleziono wykonawców. Spróbuj zmienić filtry.</p>
           </div>
         ) : (
-          <div ref={gridRef} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workers.map((worker) => (
-              <Link key={worker.id} to={`/worker/${worker.id}`}>
-                <Card className="worker-card card-modern h-full group">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4 mb-4">
-                      <Avatar className="h-16 w-16 rounded-xl border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
-                        <AvatarImage src={worker.avatar_url || ''} />
-                        <AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary-glow text-white rounded-xl">
-                          {worker.name?.charAt(0)?.toUpperCase() || 'W'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display font-bold text-lg truncate group-hover:text-primary transition-colors">
-                          {worker.name || 'Wykonawca'}
-                        </h3>
-                        {worker.rating_count > 0 ? (
-                          <div className="flex items-center gap-1 text-sm">
-                            <StarRating value={worker.rating_avg} readonly size="sm" />
-                            <span className="text-muted-foreground">({worker.rating_count})</span>
+          <>
+            <div ref={gridRef} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {workers.map((worker) => (
+                <Link key={worker.id} to={`/worker/${worker.id}`}>
+                  <Card className="worker-card card-modern h-full group">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4 mb-4">
+                        <Avatar className="h-16 w-16 rounded-xl border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
+                          <AvatarImage src={worker.avatar_url || ''} />
+                          <AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary-glow text-white rounded-xl">
+                            {worker.name?.charAt(0)?.toUpperCase() || 'W'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-display font-bold text-lg truncate group-hover:text-primary transition-colors">
+                            {worker.name || 'Wykonawca'}
+                          </h3>
+                          {worker.rating_count > 0 ? (
+                            <div className="flex items-center gap-1 text-sm">
+                              <StarRating value={worker.rating_avg} readonly size="sm" />
+                              <span className="text-muted-foreground">({worker.rating_count})</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Nowy wykonawca</span>
+                          )}
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <ArrowRight className="h-5 w-5 text-primary" />
                           </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Nowy wykonawca</span>
+                        </div>
+                      </div>
+
+                      {worker.bio && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{worker.bio}</p>}
+
+                      <div className="space-y-2">
+                        {(worker.miasto || worker.wojewodztwo) && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4 text-primary/60" />
+                            {[worker.miasto, worker.wojewodztwo].filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                        {worker.hourly_rate && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Banknote className="h-4 w-4 text-primary" />
+                            <span className="font-display font-bold text-primary">{worker.hourly_rate} zł/h</span>
+                          </div>
                         )}
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <ArrowRight className="h-5 w-5 text-primary" />
-                        </div>
-                      </div>
-                    </div>
 
-                    {worker.bio && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{worker.bio}</p>}
-
-                    <div className="space-y-2">
-                      {(worker.miasto || worker.wojewodztwo) && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 text-primary/60" />
-                          {[worker.miasto, worker.wojewodztwo].filter(Boolean).join(', ')}
+                      {worker.categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-border/50">
+                          {worker.categories.slice(0, 3).map((cat, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs rounded-lg">{cat.name}</Badge>
+                          ))}
+                          {worker.categories.length > 3 && (
+                            <Badge variant="outline" className="text-xs rounded-lg">+{worker.categories.length - 3}</Badge>
+                          )}
                         </div>
                       )}
-                      {worker.hourly_rate && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Banknote className="h-4 w-4 text-primary" />
-                          <span className="font-display font-bold text-primary">{worker.hourly_rate} zł/h</span>
-                        </div>
-                      )}
-                    </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
 
-                    {worker.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-border/50">
-                        {worker.categories.slice(0, 3).map((cat, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs rounded-lg">{cat.name}</Badge>
-                        ))}
-                        {worker.categories.length > 3 && (
-                          <Badge variant="outline" className="text-xs rounded-lg">+{worker.categories.length - 3}</Badge>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+            {/* Load more trigger */}
+            <div ref={loadMoreRef} className="py-8 flex justify-center">
+              {loadingMore && (
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Ładowanie kolejnych...</span>
+                </div>
+              )}
+              {!hasMore && workers.length > 0 && (
+                <p className="text-muted-foreground text-sm">Wyświetlono wszystkich wykonawców ({workers.length})</p>
+              )}
+            </div>
+          </>
         )}
       </div>
     </Layout>
