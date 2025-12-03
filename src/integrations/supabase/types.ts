@@ -395,6 +395,7 @@ export type Database = {
         | "in_progress"
         | "done"
         | "archived"
+        | "closed"
       user_role: "client" | "worker" | "admin"
     }
     CompositeTypes: {
@@ -529,6 +530,7 @@ export const Constants = {
         "in_progress",
         "done",
         "archived",
+        "closed",
       ],
       user_role: ["client", "worker", "admin"],
     },
