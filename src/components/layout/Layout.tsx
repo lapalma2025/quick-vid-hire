@@ -155,7 +155,7 @@ export const Layout = ({ children }: LayoutProps) => {
               </div>
               <span className="font-display font-bold text-xl">Hop Hop</span>
             </div>
-            <p className="text-sm text-muted-foreground">© 2024 ZlecenieTeraz. Wszystkie prawa zastrzeżone.</p>
+            <p className="text-sm text-muted-foreground">© 2025 Hop Hop. Wszystkie prawa zastrzeżone.</p>
           </div>
         </div>
       </footer>
