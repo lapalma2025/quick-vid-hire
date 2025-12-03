@@ -216,12 +216,19 @@ export default function JobDetails() {
   return (
     <Layout>
       <div className="container py-8">
-        <Button variant="ghost" asChild className="mb-6">
-          <Link to="/jobs">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Wróć do listy
-          </Link>
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" asChild>
+            <Link to="/jobs">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Wróć do listy
+            </Link>
+          </Button>
+          {isOwner && job.status === 'active' && (
+            <Button variant="outline" asChild>
+              <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
+            </Button>
+          )}
+        </div>
 
         <div className="grid lg:grid-cols-[1fr_360px] gap-8">
           {/* Main content */}
