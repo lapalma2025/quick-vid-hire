@@ -78,7 +78,6 @@ export default function Workers() {
     let query = supabase
       .from('profiles')
       .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`, { count: 'exact' })
-      .eq('role', 'worker')
       .eq('is_available', true);
 
     if (filters.wojewodztwo) query = query.eq('wojewodztwo', filters.wojewodztwo);
