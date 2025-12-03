@@ -97,17 +97,19 @@ Deno.serve(async (req) => {
             })
             .eq('id', profileData.id)
 
-          // Add categories for this worker
-          if (worker.categories && worker.categories.length > 0) {
-            const categoryInserts = worker.categories.map(categoryId => ({
-              worker_id: profileData.id,
-              category_id: categoryId
-            }))
-            
-            await supabaseAdmin
-              .from('worker_categories')
-              .insert(categoryInserts)
-          }
+          // Add categories for this worker (default to "Inne" if none specified)
+          const workerCategories = (worker.categories && worker.categories.length > 0) 
+            ? worker.categories 
+            : [CATEGORIES.inne]
+          
+          const categoryInserts = workerCategories.map(categoryId => ({
+            worker_id: profileData.id,
+            category_id: categoryId
+          }))
+          
+          await supabaseAdmin
+            .from('worker_categories')
+            .insert(categoryInserts)
 
           createdWorkers.push(worker.name)
         }
