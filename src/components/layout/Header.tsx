@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
-import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard, Users } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
 
@@ -36,7 +36,10 @@ export const Header = () => {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
           <Link to="/jobs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Przeglądaj zlecenia
+            Zlecenia
+          </Link>
+          <Link to="/workers" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Wykonawcy
           </Link>
           {isAuthenticated && isClient && (
             <Button asChild size="sm" className="gap-2">
@@ -119,7 +122,14 @@ export const Header = () => {
                 className="text-lg font-medium"
                 onClick={() => setMobileOpen(false)}
               >
-                Przeglądaj zlecenia
+                Zlecenia
+              </Link>
+              <Link 
+                to="/workers" 
+                className="text-lg font-medium"
+                onClick={() => setMobileOpen(false)}
+              >
+                Znajdź wykonawcę
               </Link>
               {isAuthenticated ? (
                 <>

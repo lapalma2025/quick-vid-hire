@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import WorkerProfile from "./pages/WorkerProfile";
+import Workers from "./pages/Workers";
 import NotFound from "./pages/NotFound";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/worker/:id" element={<WorkerProfile />} />
+          <Route path="/workers" element={<Workers />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/faq" element={<FAQ />} />
