@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { Header } from './Header';
 
 interface LayoutProps {
@@ -16,33 +17,33 @@ export const Layout = ({ children }: LayoutProps) => {
             <div>
               <h4 className="font-semibold mb-3">O nas</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Jak to działa</li>
-                <li>Cennik</li>
-                <li>FAQ</li>
+                <li><Link to="/how-it-works" className="hover:text-foreground transition-colors">Jak to działa</Link></li>
+                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Cennik</Link></li>
+                <li><Link to="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Dla zleceniodawców</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Dodaj zlecenie</li>
-                <li>Porady</li>
-                <li>Bezpieczeństwo</li>
+                <li><Link to="/jobs/new" className="hover:text-foreground transition-colors">Dodaj zlecenie</Link></li>
+                <li><Link to="/client-tips" className="hover:text-foreground transition-colors">Porady</Link></li>
+                <li><Link to="/safety" className="hover:text-foreground transition-colors">Bezpieczeństwo</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Dla wykonawców</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Znajdź zlecenie</li>
-                <li>Jak zacząć</li>
-                <li>Opinie</li>
+                <li><Link to="/jobs" className="hover:text-foreground transition-colors">Znajdź zlecenie</Link></li>
+                <li><Link to="/worker-guide" className="hover:text-foreground transition-colors">Jak zacząć</Link></li>
+                <li><Link to="/reviews" className="hover:text-foreground transition-colors">Opinie</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-3">Kontakt</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>Pomoc</li>
-                <li>Regulamin</li>
-                <li>Polityka prywatności</li>
+                <li><Link to="/help" className="hover:text-foreground transition-colors">Pomoc</Link></li>
+                <li><Link to="/terms" className="hover:text-foreground transition-colors">Regulamin</Link></li>
+                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Polityka prywatności</Link></li>
               </ul>
             </div>
           </div>
