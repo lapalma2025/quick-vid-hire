@@ -1,8 +1,8 @@
-import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Layout } from "@/components/layout/Layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Pricing = () => {
   return (
@@ -26,12 +26,12 @@ const Pricing = () => {
               <CardContent className="pt-6">
                 <ul className="space-y-3">
                   {[
-                    'Publikacja zlecenia na portalu',
-                    'Nieograniczona liczba ofert od wykonawców',
-                    'Czat z wykonawcami',
-                    'Wybór najlepszego wykonawcy',
-                    'System ocen i opinii',
-                    'Wsparcie techniczne'
+                    "Publikacja zlecenia na portalu",
+                    "Nieograniczona liczba ofert od wykonawców",
+                    "Czat z wykonawcami",
+                    "Wybór najlepszego wykonawcy",
+                    "System ocen i opinii",
+                    "Wsparcie techniczne",
                   ].map((feature, i) => (
                     <li key={i} className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-primary" />
@@ -59,12 +59,11 @@ const Pricing = () => {
               <CardContent className="pt-6">
                 <ul className="space-y-3">
                   {[
-                    'Przeglądanie wszystkich zleceń',
-                    'Składanie nieograniczonych ofert',
-                    'Kontakt ze zleceniodawcami',
-                    'Profil wykonawcy',
-                    'Zbieranie opinii i ocen',
-                    'Powiadomienia o nowych zleceniach'
+                    "Przeglądanie wszystkich zleceń",
+                    "Składanie nieograniczonych ofert",
+                    "Kontakt ze zleceniodawcami",
+                    "Zbieranie opinii i ocen",
+                    "Powiadomienia o nowych zleceniach",
                   ].map((feature, i) => (
                     <li key={i} className="flex items-center gap-2">
                       <Check className="w-5 h-5 text-primary" />
@@ -83,10 +82,9 @@ const Pricing = () => {
             <CardContent className="p-6">
               <h3 className="text-xl font-semibold mb-4">Dlaczego 5 zł za zlecenie?</h3>
               <p className="text-muted-foreground">
-                Symboliczna opłata pozwala nam utrzymać platformę i zapewnić wysoką jakość usług. 
-                Dzięki niej filtrujemy niepoważne ogłoszenia i gwarantujemy, że każde zlecenie 
-                jest autentyczne. Płatność odbywa się bezpiecznie przez Stripe - obsługujemy 
-                karty płatnicze oraz BLIK.
+                Symboliczna opłata pozwala nam utrzymać platformę i zapewnić wysoką jakość usług. Dzięki niej filtrujemy
+                niepoważne ogłoszenia i gwarantujemy, że każde zlecenie jest autentyczne. Płatność odbywa się
+                bezpiecznie przez Stripe - obsługujemy karty płatnicze oraz BLIK.
               </p>
             </CardContent>
           </Card>
