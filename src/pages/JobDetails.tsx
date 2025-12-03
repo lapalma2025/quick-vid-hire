@@ -28,19 +28,9 @@ import {
   Loader2,
   ArrowLeft,
   Send,
-  XCircle
+  Play,
+  CheckCircle2
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
@@ -184,10 +174,7 @@ export default function JobDetails() {
 
     const { error } = await supabase
       .from('jobs')
-      .update({ 
-        selected_worker_id: workerId,
-        status: 'in_progress' 
-      })
+      .update({ selected_worker_id: workerId })
       .eq('id', job.id);
 
     if (error) {
@@ -197,17 +184,17 @@ export default function JobDetails() {
         variant: 'destructive',
       });
     } else {
-      toast({ title: 'Wykonawca wybrany!' });
-      navigate(`/jobs/${job.id}/chat`);
+      toast({ title: 'Wykonawca wybrany! Teraz możesz rozpocząć realizację.' });
+      fetchJob();
     }
   };
 
-  const handleCloseJob = async () => {
+  const handleStartProgress = async () => {
     if (!job) return;
 
     const { error } = await supabase
       .from('jobs')
-      .update({ status: 'closed' })
+      .update({ status: 'in_progress' })
       .eq('id', job.id);
 
     if (error) {
@@ -217,7 +204,27 @@ export default function JobDetails() {
         variant: 'destructive',
       });
     } else {
-      toast({ title: 'Ogłoszenie zostało zamknięte' });
+      toast({ title: 'Zlecenie rozpoczęte!' });
+      fetchJob();
+    }
+  };
+
+  const handleMarkDone = async () => {
+    if (!job) return;
+
+    const { error } = await supabase
+      .from('jobs')
+      .update({ status: 'done' })
+      .eq('id', job.id);
+
+    if (error) {
+      toast({
+        title: 'Błąd',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({ title: 'Zlecenie zakończone!' });
       fetchJob();
     }
   };
@@ -255,36 +262,25 @@ export default function JobDetails() {
               Wróć do listy
             </Link>
           </Button>
-          {isOwner && (job.status === 'active' || job.status === 'in_progress') && (
+          {isOwner && (
             <div className="flex gap-2">
-              {job.status === 'active' && (
+              {job.status === 'active' && !job.selected_worker_id && (
                 <Button variant="outline" asChild>
                   <Link to={`/jobs/${job.id}/edit`}>Edytuj zlecenie</Link>
                 </Button>
               )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="gap-2">
-                    <XCircle className="h-4 w-4" />
-                    Zamknij ogłoszenie
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Zamknąć ogłoszenie?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Ogłoszenie zostanie przeniesione do sekcji "Zamknięte" i nie będzie widoczne dla wykonawców. 
-                      Będziesz mógł je zobaczyć w swoim panelu.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleCloseJob}>
-                      Zamknij
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {job.status === 'active' && job.selected_worker_id && (
+                <Button onClick={handleStartProgress} className="gap-2">
+                  <Play className="h-4 w-4" />
+                  Rozpocznij realizację
+                </Button>
+              )}
+              {job.status === 'in_progress' && (
+                <Button onClick={handleMarkDone} variant="secondary" className="gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Oznacz jako zakończone
+                </Button>
+              )}
             </div>
           )}
         </div>
