@@ -14,10 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { StarRating } from '@/components/ui/star-rating';
 import { 
   MapPin, 
   Clock, 
@@ -89,10 +91,16 @@ export default function JobDetails() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   
   const [responseForm, setResponseForm] = useState({
     message: '',
     offer_price: '',
+  });
+
+  const [ratingForm, setRatingForm] = useState({
+    rating: 0,
+    comment: '',
   });
 
   const isOwner = profile?.id === job?.user_id;
@@ -209,13 +217,38 @@ export default function JobDetails() {
     }
   };
 
-  const handleMarkDone = async () => {
+  const handleMarkDone = async (withRating: boolean = false) => {
     if (!job) return;
+
+    setSubmitting(true);
+
+    // If rating is provided, save the review first
+    if (withRating && ratingForm.rating > 0 && job.selected_worker_id && profile) {
+      const { error: reviewError } = await supabase.from('reviews').insert({
+        job_id: job.id,
+        reviewer_id: profile.id,
+        reviewed_id: job.selected_worker_id,
+        rating: ratingForm.rating,
+        comment: ratingForm.comment || null,
+      });
+
+      if (reviewError) {
+        toast({
+          title: 'Błąd przy dodawaniu oceny',
+          description: reviewError.message,
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+        return;
+      }
+    }
 
     const { error } = await supabase
       .from('jobs')
       .update({ status: 'done' })
       .eq('id', job.id);
+
+    setSubmitting(false);
 
     if (error) {
       toast({
@@ -224,7 +257,9 @@ export default function JobDetails() {
         variant: 'destructive',
       });
     } else {
-      toast({ title: 'Zlecenie zakończone!' });
+      toast({ title: withRating && ratingForm.rating > 0 ? 'Zlecenie zakończone i ocena dodana!' : 'Zlecenie zakończone!' });
+      setRatingDialogOpen(false);
+      setRatingForm({ rating: 0, comment: '' });
       fetchJob();
     }
   };
@@ -276,10 +311,55 @@ export default function JobDetails() {
                 </Button>
               )}
               {job.status === 'in_progress' && (
-                <Button onClick={handleMarkDone} variant="secondary" className="gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Oznacz jako zakończone
-                </Button>
+                <Dialog open={ratingDialogOpen} onOpenChange={setRatingDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="secondary" className="gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Oznacz jako zakończone
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Zakończ zlecenie</DialogTitle>
+                      <DialogDescription>
+                        Oceń wykonawcę (opcjonalnie) i zakończ zlecenie
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Ocena wykonawcy</Label>
+                        <StarRating
+                          value={ratingForm.rating}
+                          onChange={(v) => setRatingForm(prev => ({ ...prev, rating: v }))}
+                          size="lg"
+                          showValue
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Kliknij gwiazdki, aby ocenić (możesz wybrać połówki)
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Komentarz (opcjonalnie)</Label>
+                        <Textarea
+                          placeholder="Napisz kilka słów o współpracy..."
+                          value={ratingForm.comment}
+                          onChange={(e) => setRatingForm(prev => ({ ...prev, comment: e.target.value }))}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button 
+                          onClick={() => handleMarkDone(true)} 
+                          disabled={submitting}
+                          className="flex-1"
+                        >
+                          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {ratingForm.rating > 0 ? 'Zakończ i oceń' : 'Zakończ bez oceny'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               )}
             </div>
           )}
