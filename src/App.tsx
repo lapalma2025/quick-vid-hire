@@ -4,12 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Jobs from "./pages/Jobs";
+import JobDetails from "./pages/JobDetails";
+import NewJob from "./pages/NewJob";
 import Dashboard from "./pages/Dashboard";
-import CandidateProfile from "./pages/CandidateProfile";
-import CompanyProfile from "./pages/CompanyProfile";
-import CreateRoom from "./pages/CreateRoom";
-import RoomDetails from "./pages/RoomDetails";
+import Profile from "./pages/Profile";
+import Chat from "./pages/Chat";
+import WorkerProfile from "./pages/WorkerProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,13 +25,15 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/new" element={<NewJob />} />
+          <Route path="/jobs/:id" element={<JobDetails />} />
+          <Route path="/jobs/:id/chat" element={<Chat />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile/candidate" element={<CandidateProfile />} />
-          <Route path="/profile/company" element={<CompanyProfile />} />
-          <Route path="/rooms/create" element={<CreateRoom />} />
-          <Route path="/rooms/:id" element={<RoomDetails />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/worker/:id" element={<WorkerProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
