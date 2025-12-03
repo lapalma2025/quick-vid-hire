@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
-import { Loader2, Save, Star } from 'lucide-react';
+import { Loader2, Save, Star, Camera, X } from 'lucide-react';
 import { useViewModeStore } from '@/store/viewModeStore';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 
@@ -36,10 +36,13 @@ export default function Profile() {
   const { viewMode } = useViewModeStore();
   const isWorkerView = viewMode === 'worker';
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -67,6 +70,7 @@ export default function Profile() {
         hourly_rate: profile.hourly_rate?.toString() || '',
         is_available: profile.is_available,
       });
+      setAvatarUrl(profile.avatar_url);
       fetchWorkerCategories();
     }
   }, [profile]);
@@ -104,6 +108,86 @@ export default function Profile() {
       }
       return updated;
     });
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !profile) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Błąd', description: 'Wybierz plik graficzny', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Błąd', description: 'Plik nie może być większy niż 5MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      // Get user id for folder path
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Nie zalogowany');
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload file
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Add cache buster
+      const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: urlWithCacheBuster })
+        .eq('id', profile.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(urlWithCacheBuster);
+      toast({ title: 'Avatar zaktualizowany!' });
+      refreshProfile();
+    } catch (error: any) {
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!profile) return;
+
+    setUploadingAvatar(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      setAvatarUrl(null);
+      toast({ title: 'Avatar usunięty' });
+      refreshProfile();
+    } catch (error: any) {
+      toast({ title: 'Błąd', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -195,12 +279,41 @@ export default function Profile() {
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex items-center gap-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={avatarUrl || ''} />
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </button>
+                {avatarUrl && (
+                  <button
+                    onClick={handleRemoveAvatar}
+                    disabled={uploadingAvatar}
+                    className="absolute -top-1 -right-1 h-6 w-6 bg-destructive text-white rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
               <div>
                 <h2 className="text-xl font-semibold">{profile?.name || 'Użytkownik'}</h2>
                 <p className="text-muted-foreground capitalize">{profile?.role}</p>
@@ -211,6 +324,9 @@ export default function Profile() {
                     <span className="text-muted-foreground">({profile?.rating_count} opinii)</span>
                   </div>
                 )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  Najedź na zdjęcie, aby zmienić
+                </p>
               </div>
             </div>
           </CardContent>
