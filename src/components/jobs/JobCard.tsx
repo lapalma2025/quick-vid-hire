@@ -105,7 +105,7 @@ export const JobCard = ({ job }: JobCardProps) => {
           <div className={`absolute ${job.is_highlighted ? 'top-10' : 'top-3'} left-3 right-3 flex justify-between items-start gap-2`}>
             <div className="flex gap-2 flex-wrap">
               {job.urgent && (
-                <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
                   ⚡ PILNE
                 </Badge>
               )}
