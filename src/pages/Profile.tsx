@@ -19,7 +19,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { WOJEWODZTWA, MIASTA_BY_WOJEWODZTWO } from '@/lib/constants';
+import { WOJEWODZTWA } from '@/lib/constants';
+import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { Loader2, Save, Star, Camera, X } from 'lucide-react';
 import { useViewModeStore } from '@/store/viewModeStore';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
@@ -98,7 +99,7 @@ export default function Profile() {
     }
   };
 
-  const miasta = form.wojewodztwo ? MIASTA_BY_WOJEWODZTWO[form.wojewodztwo] || [] : [];
+  
 
   const updateForm = (field: string, value: any) => {
     setForm(prev => {
@@ -374,20 +375,11 @@ export default function Profile() {
 
               <div className="space-y-2">
                 <Label>Miasto</Label>
-                <Select 
-                  value={form.miasto} 
-                  onValueChange={(v) => updateForm('miasto', v)}
-                  disabled={!form.wojewodztwo}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Wybierz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {miasta.map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CityAutocomplete
+                  value={form.miasto}
+                  onChange={(v) => updateForm('miasto', v)}
+                  placeholder="Wpisz nazwę miejscowości..."
+                />
               </div>
             </div>
 
