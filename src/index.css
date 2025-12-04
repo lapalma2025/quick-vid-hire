@@ -173,25 +173,46 @@
 
 /* Custom time/date input styling */
 input[type="time"],
-input[type="date"] {
+input[type="date"],
+input[type="datetime-local"] {
   @apply appearance-none cursor-pointer;
   color-scheme: light;
 }
 
 input[type="time"]::-webkit-calendar-picker-indicator,
-input[type="date"]::-webkit-calendar-picker-indicator {
-  @apply cursor-pointer opacity-70 hover:opacity-100 transition-opacity;
-  filter: hue-rotate(90deg) saturate(1.5);
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  @apply cursor-pointer opacity-60 hover:opacity-100 transition-opacity p-1 rounded;
+  background-color: hsl(152 76% 42% / 0.1);
+  filter: invert(48%) sepia(79%) saturate(400%) hue-rotate(100deg) brightness(95%) contrast(92%);
+}
+
+input[type="time"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus {
+  @apply outline-none ring-2 ring-primary/30 border-primary;
+}
+
+/* Override accent color for form elements */
+input[type="time"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="checkbox"],
+input[type="radio"],
+select {
+  accent-color: hsl(152 76% 42%);
 }
 
 .dark input[type="time"],
-.dark input[type="date"] {
+.dark input[type="date"],
+.dark input[type="datetime-local"] {
   color-scheme: dark;
 }
 
 .dark input[type="time"]::-webkit-calendar-picker-indicator,
-.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) hue-rotate(90deg) saturate(1.5);
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) invert(48%) sepia(79%) saturate(400%) hue-rotate(100deg) brightness(120%) contrast(92%);
 }
 
 /* Scrollbar styling */
