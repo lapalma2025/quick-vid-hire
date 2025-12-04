@@ -14,7 +14,7 @@ interface CityAutocompleteProps {
 interface CitySuggestion {
   display_name: string;
   name: string;
-  type: string;
+  region: string;
 }
 
 export function CityAutocomplete({ 
@@ -45,16 +45,15 @@ export function CityAutocomplete({
 
     setIsLoading(true);
     try {
-      // Use Nominatim API for Polish cities
+      // Use Nominatim API - search for places in Poland
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?` + 
         new URLSearchParams({
-          q: query,
+          q: `${query}, Polska`,
           format: 'json',
           addressdetails: '1',
-          limit: '8',
+          limit: '10',
           countrycodes: 'pl',
-          featuretype: 'city',
           'accept-language': 'pl'
         }),
         {
@@ -66,21 +65,46 @@ export function CityAutocomplete({
       
       if (response.ok) {
         const data = await response.json();
+        
+        // Extract city/town names from results
         const cities = data
-          .filter((item: any) => 
-            item.type === 'city' || 
-            item.type === 'town' || 
-            item.type === 'village' ||
-            item.type === 'administrative'
-          )
-          .map((item: any) => ({
-            display_name: item.display_name,
-            name: item.name || item.display_name.split(',')[0],
-            type: item.type
-          }))
+          .map((item: any) => {
+            // Get city name from address details
+            const cityName = item.address?.city || 
+                           item.address?.town || 
+                           item.address?.village ||
+                           item.address?.municipality ||
+                           (item.type === 'city' || item.type === 'town' || item.type === 'village' ? item.name : null);
+            
+            if (!cityName) return null;
+            
+            const wojewodztwo = item.address?.state?.replace('województwo ', '') || '';
+            
+            return {
+              display_name: item.display_name,
+              name: cityName,
+              region: wojewodztwo
+            };
+          })
+          .filter((item: CitySuggestion | null): item is CitySuggestion => item !== null)
+          // Remove duplicates by city name
           .filter((item: CitySuggestion, index: number, self: CitySuggestion[]) => 
-            index === self.findIndex(t => t.name === item.name)
-          );
+            index === self.findIndex(t => t.name.toLowerCase() === item.name.toLowerCase())
+          )
+          // Sort by relevance (exact match first, then starts with, then contains)
+          .sort((a: CitySuggestion, b: CitySuggestion) => {
+            const queryLower = query.toLowerCase();
+            const aLower = a.name.toLowerCase();
+            const bLower = b.name.toLowerCase();
+            
+            if (aLower === queryLower) return -1;
+            if (bLower === queryLower) return 1;
+            if (aLower.startsWith(queryLower) && !bLower.startsWith(queryLower)) return -1;
+            if (bLower.startsWith(queryLower) && !aLower.startsWith(queryLower)) return 1;
+            return 0;
+          })
+          .slice(0, 8);
+          
         setSuggestions(cities);
       }
     } catch (error) {
@@ -201,10 +225,10 @@ export function CityAutocomplete({
             >
               <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{city.name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {city.display_name.split(',').slice(1, 3).join(',')}
-                </p>
+                <p className="font-medium">{city.name}</p>
+                {city.region && (
+                  <p className="text-xs text-muted-foreground">{city.region}</p>
+                )}
               </div>
             </li>
           ))}
