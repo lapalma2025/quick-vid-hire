@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { StarRating } from '@/components/ui/star-rating';
+import { Input } from '@/components/ui/input';
 import { 
   MapPin, 
   Banknote, 
@@ -23,7 +24,8 @@ import {
   Filter,
   X,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Clock
 } from 'lucide-react';
 import gsap from 'gsap';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
@@ -42,6 +44,8 @@ interface Worker {
   rating_avg: number;
   rating_count: number;
   categories: { name: string }[];
+  available_from: string | null;
+  available_to: string | null;
 }
 
 interface Category {
@@ -67,6 +71,7 @@ export default function Workers() {
     minRate: '',
     maxRate: '',
     minRating: '',
+    availableAt: '',
   });
 
   useEffect(() => {
@@ -109,7 +114,7 @@ export default function Workers() {
 
       let query = supabase
         .from('profiles')
-        .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`, { count: 'exact' })
+        .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`, { count: 'exact' })
         .eq('is_available', true);
 
       // Apply category filter via worker IDs
@@ -135,10 +140,20 @@ export default function Workers() {
         .range(0, PAGE_SIZE - 1);
 
       if (data && !error) {
-        const workersData = data.map((w: any) => ({
+        let workersData = data.map((w: any) => ({
           ...w,
           categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
         }));
+        
+        // Client-side filtering for availability hours
+        if (filters.availableAt) {
+          const filterTime = filters.availableAt;
+          workersData = workersData.filter((w: Worker) => {
+            if (!w.available_from || !w.available_to) return true; // Show workers without set hours
+            return filterTime >= w.available_from && filterTime <= w.available_to;
+          });
+        }
+        
         setWorkers(workersData);
         setTotalCount(count || 0);
         setHasMore(data.length === PAGE_SIZE);
@@ -178,7 +193,7 @@ export default function Workers() {
 
       let query = supabase
         .from('profiles')
-        .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, worker_categories(category:categories(name))`)
+        .select(`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`)
         .eq('is_available', true);
 
       if (workerIdsWithCategory !== null) {
@@ -201,10 +216,20 @@ export default function Workers() {
         .range(workers.length, workers.length + PAGE_SIZE - 1);
       
       if (!error && data) {
-        const newWorkersData = data.map((w: any) => ({
+        let newWorkersData = data.map((w: any) => ({
           ...w,
           categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
         }));
+        
+        // Client-side filtering for availability hours
+        if (filters.availableAt) {
+          const filterTime = filters.availableAt;
+          newWorkersData = newWorkersData.filter((w: Worker) => {
+            if (!w.available_from || !w.available_to) return true;
+            return filterTime >= w.available_from && filterTime <= w.available_to;
+          });
+        }
+        
         setWorkers(prev => [...prev, ...newWorkersData]);
         setHasMore(data.length === PAGE_SIZE);
       }
@@ -270,7 +295,7 @@ export default function Workers() {
   };
 
   const clearFilters = () => {
-    setFilters({ wojewodztwo: '', miasto: '', category: '', minRate: '', maxRate: '', minRating: '' });
+    setFilters({ wojewodztwo: '', miasto: '', category: '', minRate: '', maxRate: '', minRating: '', availableAt: '' });
   };
 
   const hasActiveFilters = Object.values(filters).some(v => v !== '');
@@ -339,6 +364,20 @@ export default function Workers() {
                       {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Dostępny o godzinie</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="time"
+                      value={filters.availableAt}
+                      onChange={(e) => updateFilter('availableAt', e.target.value)}
+                      className="h-11 rounded-xl pl-10"
+                      placeholder="np. 16:00"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Pokaż tylko wykonawców dostępnych o tej godzinie</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium">Min. ocena</Label>

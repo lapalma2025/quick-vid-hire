@@ -8,6 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +53,8 @@ import {
   Play,
   CheckCircle2,
   X,
-  Check
+  Check,
+  Users
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -68,6 +77,9 @@ interface JobDetails {
   selected_worker_id: string | null;
   category: { name: string; icon: string } | null;
   job_images: { image_url: string }[];
+  allows_group: boolean | null;
+  min_workers: number | null;
+  max_workers: number | null;
   profile: {
     id: string;
     name: string | null;
@@ -84,6 +96,9 @@ interface Response {
   proposed_time: string | null;
   status: string;
   created_at: string;
+  is_group_application: boolean | null;
+  group_size: number | null;
+  group_members: string[] | null;
   worker: {
     id: string;
     name: string | null;
@@ -112,6 +127,9 @@ export default function JobDetails() {
   const [responseForm, setResponseForm] = useState({
     message: '',
     offer_price: '',
+    is_group: false,
+    group_size: '2',
+    group_members: '',
   });
 
   const [ratingForm, setRatingForm] = useState({
@@ -202,6 +220,9 @@ export default function JobDetails() {
         proposed_time,
         status,
         created_at,
+        is_group_application,
+        group_size,
+        group_members,
         worker:profiles!job_responses_worker_id_fkey(id, name, avatar_url, rating_avg, rating_count, bio)
       `)
       .eq('job_id', id)
@@ -216,11 +237,18 @@ export default function JobDetails() {
     if (!profile || !id) return;
 
     setSubmitting(true);
+    const groupMembers = responseForm.is_group && responseForm.group_members 
+      ? responseForm.group_members.split(',').map(m => m.trim()).filter(Boolean)
+      : null;
+    
     const { error } = await supabase.from('job_responses').insert({
       job_id: id,
       worker_id: profile.id,
       message: responseForm.message || null,
       offer_price: responseForm.offer_price ? parseFloat(responseForm.offer_price) : null,
+      is_group_application: responseForm.is_group,
+      group_size: responseForm.is_group ? parseInt(responseForm.group_size) : 1,
+      group_members: groupMembers,
     });
     setSubmitting(false);
 
@@ -233,7 +261,7 @@ export default function JobDetails() {
     } else {
       toast({ title: 'Oferta wysłana!' });
       setDialogOpen(false);
-      setResponseForm({ message: '', offer_price: '' });
+      setResponseForm({ message: '', offer_price: '', is_group: false, group_size: '2', group_members: '' });
       fetchResponses();
     }
   };
@@ -638,6 +666,12 @@ export default function JobDetails() {
                   </Badge>
                 )}
                 {job.urgent && <Badge className="badge-urgent">PILNE</Badge>}
+                {job.allows_group && (
+                  <Badge className="bg-purple-500 text-white gap-1">
+                    <Users className="h-3 w-3" />
+                    GRUPA {job.min_workers}-{job.max_workers}
+                  </Badge>
+                )}
                 <Badge variant="outline">{job.status}</Badge>
               </div>
               <h1 className="text-2xl md:text-3xl font-bold">{job.title}</h1>
@@ -872,13 +906,67 @@ export default function JobDetails() {
                               rows={4}
                             />
                           </div>
+                          
+                          {/* Group application section */}
+                          {job.allows_group && (
+                            <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-9 w-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                    <Users className="h-4 w-4 text-purple-500" />
+                                  </div>
+                                  <div>
+                                    <Label className="text-sm font-medium">Zgłoś się jako grupa</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                      Min. {job.min_workers} - max. {job.max_workers} osób
+                                    </p>
+                                  </div>
+                                </div>
+                                <Switch
+                                  checked={responseForm.is_group}
+                                  onCheckedChange={(v) => setResponseForm(p => ({ ...p, is_group: v }))}
+                                />
+                              </div>
+                              
+                              {responseForm.is_group && (
+                                <div className="space-y-3 pt-2 animate-fade-in">
+                                  <div className="space-y-2">
+                                    <Label className="text-sm">Liczba osób w grupie</Label>
+                                    <Select 
+                                      value={responseForm.group_size} 
+                                      onValueChange={(v) => setResponseForm(p => ({ ...p, group_size: v }))}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Array.from({ length: (job.max_workers || 5) - (job.min_workers || 1) + 1 }, (_, i) => (job.min_workers || 1) + i).map(n => (
+                                          <SelectItem key={n} value={n.toString()}>{n} osób</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-sm">Imiona członków grupy (opcjonalnie)</Label>
+                                    <Input
+                                      placeholder="np. Jan, Anna, Piotr"
+                                      value={responseForm.group_members}
+                                      onChange={(e) => setResponseForm(p => ({ ...p, group_members: e.target.value }))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Oddziel imiona przecinkami</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
                           <Button 
                             className="w-full" 
                             onClick={handleSubmitResponse}
                             disabled={submitting}
                           >
                             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Wyślij ofertę
+                            {responseForm.is_group ? `Wyślij ofertę grupową (${responseForm.group_size} os.)` : 'Wyślij ofertę'}
                           </Button>
                         </div>
                       </DialogContent>
