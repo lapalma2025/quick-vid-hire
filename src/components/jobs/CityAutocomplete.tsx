@@ -217,7 +217,10 @@ export function CityAutocomplete({
           {suggestions.map((city, index) => (
             <li
               key={`${city.name}-${index}`}
-              onClick={() => handleSelect(city)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(city);
+              }}
               className={cn(
                 "px-3 py-2 cursor-pointer flex items-center gap-2 text-sm",
                 highlightedIndex === index 
