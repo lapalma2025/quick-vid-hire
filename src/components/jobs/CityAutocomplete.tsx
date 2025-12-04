@@ -49,12 +49,13 @@ export function CityAutocomplete({
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?` + 
         new URLSearchParams({
-          q: `${query}, Polska`,
+          q: query,
           format: 'json',
           addressdetails: '1',
-          limit: '10',
+          limit: '20',
           countrycodes: 'pl',
-          'accept-language': 'pl'
+          'accept-language': 'pl',
+          dedupe: '1'
         }),
         {
           headers: {
@@ -91,18 +92,14 @@ export function CityAutocomplete({
           .filter((item: CitySuggestion, index: number, self: CitySuggestion[]) => 
             index === self.findIndex(t => t.name.toLowerCase() === item.name.toLowerCase())
           )
-          // Sort by relevance (exact match first, then starts with, then contains)
-          .sort((a: CitySuggestion, b: CitySuggestion) => {
-            const queryLower = query.toLowerCase();
-            const aLower = a.name.toLowerCase();
-            const bLower = b.name.toLowerCase();
-            
-            if (aLower === queryLower) return -1;
-            if (bLower === queryLower) return 1;
-            if (aLower.startsWith(queryLower) && !bLower.startsWith(queryLower)) return -1;
-            if (bLower.startsWith(queryLower) && !aLower.startsWith(queryLower)) return 1;
-            return 0;
-          })
+          // Filter to show only cities that START WITH the query (case insensitive)
+          .filter((item: CitySuggestion) => 
+            item.name.toLowerCase().startsWith(query.toLowerCase())
+          )
+          // Sort alphabetically
+          .sort((a: CitySuggestion, b: CitySuggestion) => 
+            a.name.localeCompare(b.name, 'pl')
+          )
           .slice(0, 8);
           
         setSuggestions(cities);
