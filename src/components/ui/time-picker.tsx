@@ -28,8 +28,8 @@ export function TimePicker({
   disabled 
 }: TimePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [selectedHour, setSelectedHour] = React.useState<string>(value?.split(':')[0] || '');
-  const [selectedMinute, setSelectedMinute] = React.useState<string>(value?.split(':')[1] || '');
+  const [selectedHour, setSelectedHour] = React.useState<string>('');
+  const [selectedMinute, setSelectedMinute] = React.useState<string>('');
 
   React.useEffect(() => {
     if (value) {
@@ -44,14 +44,24 @@ export function TimePicker({
 
   const handleHourSelect = (hour: string) => {
     setSelectedHour(hour);
-    const minute = selectedMinute || '00';
-    onChange(`${hour}:${minute}`);
+    // If minute is already selected, update the value and close
+    if (selectedMinute) {
+      onChange(`${hour}:${selectedMinute}`);
+      setOpen(false);
+    }
   };
 
   const handleMinuteSelect = (minute: string) => {
     setSelectedMinute(minute);
-    const hour = selectedHour || '08';
-    onChange(`${hour}:${minute}`);
+    // If hour is already selected, update the value and close
+    if (selectedHour) {
+      onChange(`${selectedHour}:${minute}`);
+      setOpen(false);
+    }
+  };
+
+  const handleQuickSelect = (time: string) => {
+    onChange(time);
     setOpen(false);
   };
 
@@ -132,10 +142,7 @@ export function TimePicker({
             {['08:00', '12:00', '16:00', '18:00', '20:00'].map((time) => (
               <button
                 key={time}
-                onClick={() => {
-                  onChange(time);
-                  setOpen(false);
-                }}
+                onClick={() => handleQuickSelect(time)}
                 className={cn(
                   "px-2 py-1 text-xs rounded-md transition-all",
                   value === time
