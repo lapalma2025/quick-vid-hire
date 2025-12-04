@@ -611,7 +611,7 @@ export default function JobDetails() {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_360px] gap-8">
+        <div className="max-w-4xl mx-auto">
           {/* Main content */}
           <div className="space-y-6">
             {/* Images */}
@@ -832,39 +832,8 @@ export default function JobDetails() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Owner card */}
-            {job.profile && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Zleceniodawca</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={job.profile.avatar_url || ''} />
-                      <AvatarFallback>
-                        {job.profile.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{job.profile.name || 'Użytkownik'}</p>
-                      {job.profile.rating_count > 0 && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Star className="h-3 w-3 fill-warning text-warning" />
-                          {job.profile.rating_avg.toFixed(1)} ({job.profile.rating_count})
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Actions */}
+            {/* Worker response action - inline */}
             {isAuthenticated && isWorkerView && !isOwner && job.status === 'active' && !job.selected_worker_id && (
               <Card>
                 <CardContent className="p-6">
@@ -917,16 +886,6 @@ export default function JobDetails() {
                   )}
                 </CardContent>
               </Card>
-            )}
-
-            {/* Chat button if worker selected */}
-            {(isOwner || isSelectedWorker) && job.selected_worker_id && (
-              <Button asChild className="w-full gap-2">
-                <Link to={`/jobs/${job.id}/chat`}>
-                  <MessageSquare className="h-4 w-4" />
-                  Przejdź do czatu
-                </Link>
-              </Button>
             )}
 
             {/* Worker rating for client (after job is done) */}
