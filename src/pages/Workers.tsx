@@ -337,78 +337,78 @@ export default function Workers() {
         </div>
 
         {showFilters && (
-          <Card className="mb-8 card-modern">
-            <CardContent className="p-6">
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-medium">Województwo</Label>
-                  <WojewodztwoSelect
-                    value={filters.wojewodztwo}
-                    onChange={(v) => updateFilter('wojewodztwo', v)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-medium">Miasto</Label>
-                  <CityAutocomplete
-                    value={filters.miasto}
-                    onChange={(v) => updateFilter('miasto', v)}
-                    onRegionChange={(region) => {
-                      const normalizedRegion = region.toLowerCase();
-                      const matchedWojewodztwo = WOJEWODZTWA.find(
-                        w => w.toLowerCase() === normalizedRegion
-                      );
-                      if (matchedWojewodztwo && matchedWojewodztwo !== filters.wojewodztwo) {
-                        setFilters(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
-                      }
-                    }}
-                    placeholder="Wpisz miasto..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-medium">Kategoria</Label>
-                  <Select value={filters.category || "__all__"} onValueChange={(v) => updateFilter('category', v === "__all__" ? "" : v)}>
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Wszystkie</SelectItem>
-                      {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-medium">Dostępny o godzinie</Label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="lg:sticky lg:top-24 lg:z-10 mb-8">
+            <Card className="card-modern">
+              <CardContent className="p-6">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="space-y-2">
+                    <Label className="font-medium">Województwo</Label>
+                    <WojewodztwoSelect
+                      value={filters.wojewodztwo}
+                      onChange={(v) => updateFilter('wojewodztwo', v)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-medium">Miasto</Label>
+                    <CityAutocomplete
+                      value={filters.miasto}
+                      onChange={(v) => updateFilter('miasto', v)}
+                      onRegionChange={(region) => {
+                        const normalizedRegion = region.toLowerCase();
+                        const matchedWojewodztwo = WOJEWODZTWA.find(
+                          w => w.toLowerCase() === normalizedRegion
+                        );
+                        if (matchedWojewodztwo && matchedWojewodztwo !== filters.wojewodztwo) {
+                          setFilters(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
+                        }
+                      }}
+                      placeholder="Wpisz miasto..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-medium">Kategoria</Label>
+                    <Select value={filters.category || "__all__"} onValueChange={(v) => updateFilter('category', v === "__all__" ? "" : v)}>
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Wszystkie" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Wszystkie</SelectItem>
+                        {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-medium flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" />
+                      Godzina
+                    </Label>
                     <Input
                       type="time"
                       value={filters.availableAt}
                       onChange={(e) => updateFilter('availableAt', e.target.value)}
-                      className="h-11 rounded-xl pl-10"
-                      placeholder="np. 16:00"
+                      className="h-11 rounded-xl border-primary/20 focus:border-primary focus:ring-primary/20"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Pokaż tylko wykonawców dostępnych o tej godzinie</p>
+                  <div className="space-y-2">
+                    <Label className="font-medium">Min. ocena</Label>
+                    <Select value={filters.minRating || "__all__"} onValueChange={(v) => updateFilter('minRating', v === "__all__" ? "" : v)}>
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Dowolna" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Dowolna</SelectItem>
+                        <SelectItem value="3">3+ ⭐</SelectItem>
+                        <SelectItem value="4">4+ ⭐</SelectItem>
+                        <SelectItem value="4.5">4.5+ ⭐</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="font-medium">Min. ocena</Label>
-                  <Select value={filters.minRating || "__all__"} onValueChange={(v) => updateFilter('minRating', v === "__all__" ? "" : v)}>
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Dowolna" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Dowolna</SelectItem>
-                      <SelectItem value="3">3+ ⭐</SelectItem>
-                      <SelectItem value="4">4+ ⭐</SelectItem>
-                      <SelectItem value="4.5">4.5+ ⭐</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="mt-4 gap-2">
-                  <X className="h-4 w-4" />
-                  Wyczyść filtry
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="mt-4 gap-2">
+                    <X className="h-4 w-4" />
+                    Wyczyść filtry
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Workers Grid */}

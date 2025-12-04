@@ -264,8 +264,8 @@ export default function Jobs() {
 
       <div className="container py-10">
         <div className="grid lg:grid-cols-[300px_1fr] gap-10">
-          <aside className="space-y-4">
-            <div className="sticky top-28">
+          <aside className="lg:self-start">
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:pr-2 lg:scrollbar-thin">
               <JobFilters onFiltersChange={setFilters} />
             </div>
           </aside>
