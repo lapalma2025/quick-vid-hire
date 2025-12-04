@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Calendar, Banknote, ArrowRight, Globe } from 'lucide-react';
+import { MapPin, Clock, Calendar, Banknote, ArrowRight, Globe, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from './CategoryIcon';
@@ -23,6 +23,9 @@ interface Job {
   created_at: string;
   category?: { name: string; icon: string } | null;
   job_images?: { image_url: string }[];
+  allows_group?: boolean | null;
+  min_workers?: number | null;
+  max_workers?: number | null;
 }
 
 interface JobCardProps {
@@ -52,7 +55,7 @@ export const JobCard = ({ job }: JobCardProps) => {
           
           {/* Badges container */}
           <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {job.urgent && (
                 <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
                   PILNE
@@ -62,6 +65,12 @@ export const JobCard = ({ job }: JobCardProps) => {
                 <Badge className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   ZAGRANICA
+                </Badge>
+              )}
+              {job.allows_group && (
+                <Badge className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  GRUPA {job.min_workers}-{job.max_workers}
                 </Badge>
               )}
             </div>

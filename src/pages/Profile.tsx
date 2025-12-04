@@ -52,6 +52,8 @@ export default function Profile() {
     bio: '',
     hourly_rate: '',
     is_available: true,
+    available_from: '',
+    available_to: '',
   });
 
   useEffect(() => {
@@ -70,6 +72,8 @@ export default function Profile() {
         bio: profile.bio || '',
         hourly_rate: profile.hourly_rate?.toString() || '',
         is_available: profile.is_available,
+        available_from: (profile as any).available_from || '',
+        available_to: (profile as any).available_to || '',
       });
       setAvatarUrl(profile.avatar_url);
       fetchWorkerCategories();
@@ -215,6 +219,8 @@ export default function Profile() {
         bio: form.bio || null,
         hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
         is_available: form.is_available,
+        available_from: form.available_from || null,
+        available_to: form.available_to || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', profile.id);
@@ -447,6 +453,34 @@ export default function Profile() {
                       Wybrano: {selectedCategories.length} {selectedCategories.length === 1 ? 'kategoria' : selectedCategories.length < 5 ? 'kategorie' : 'kategorii'}
                     </p>
                   )}
+                </div>
+
+                {/* Availability hours */}
+                <div className="space-y-3">
+                  <Label className="text-base">Godziny dostępności</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Określ, w jakich godzinach jesteś dostępny do pracy. Klienci będą mogli Cię filtrować po tych godzinach.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Od godziny</Label>
+                      <Input
+                        type="time"
+                        value={form.available_from}
+                        onChange={(e) => updateForm('available_from', e.target.value)}
+                        placeholder="08:00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Do godziny</Label>
+                      <Input
+                        type="time"
+                        value={form.available_to}
+                        onChange={(e) => updateForm('available_to', e.target.value)}
+                        placeholder="18:00"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">

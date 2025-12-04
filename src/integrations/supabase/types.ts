@@ -112,7 +112,10 @@ export type Database = {
       job_responses: {
         Row: {
           created_at: string | null
+          group_members: string[] | null
+          group_size: number | null
           id: string
+          is_group_application: boolean | null
           job_id: string
           message: string | null
           offer_price: number | null
@@ -122,7 +125,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          group_members?: string[] | null
+          group_size?: number | null
           id?: string
+          is_group_application?: boolean | null
           job_id: string
           message?: string | null
           offer_price?: number | null
@@ -132,7 +138,10 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          group_members?: string[] | null
+          group_size?: number | null
           id?: string
+          is_group_application?: boolean | null
           job_id?: string
           message?: string | null
           offer_price?: number | null
@@ -159,6 +168,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          allows_group: boolean | null
           budget: number | null
           budget_type: string | null
           category_id: string | null
@@ -168,7 +178,9 @@ export type Database = {
           duration_hours: number | null
           id: string
           is_foreign: boolean | null
+          max_workers: number | null
           miasto: string
+          min_workers: number | null
           paid: boolean | null
           selected_worker_id: string | null
           start_time: string | null
@@ -181,6 +193,7 @@ export type Database = {
           wojewodztwo: string
         }
         Insert: {
+          allows_group?: boolean | null
           budget?: number | null
           budget_type?: string | null
           category_id?: string | null
@@ -190,7 +203,9 @@ export type Database = {
           duration_hours?: number | null
           id?: string
           is_foreign?: boolean | null
+          max_workers?: number | null
           miasto: string
+          min_workers?: number | null
           paid?: boolean | null
           selected_worker_id?: string | null
           start_time?: string | null
@@ -203,6 +218,7 @@ export type Database = {
           wojewodztwo: string
         }
         Update: {
+          allows_group?: boolean | null
           budget?: number | null
           budget_type?: string | null
           category_id?: string | null
@@ -212,7 +228,9 @@ export type Database = {
           duration_hours?: number | null
           id?: string
           is_foreign?: boolean | null
+          max_workers?: number | null
           miasto?: string
+          min_workers?: number | null
           paid?: boolean | null
           selected_worker_id?: string | null
           start_time?: string | null
@@ -250,6 +268,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          available_from: string | null
+          available_to: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
@@ -267,6 +287,8 @@ export type Database = {
           wojewodztwo: string | null
         }
         Insert: {
+          available_from?: string | null
+          available_to?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
@@ -284,6 +306,8 @@ export type Database = {
           wojewodztwo?: string | null
         }
         Update: {
+          available_from?: string | null
+          available_to?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null

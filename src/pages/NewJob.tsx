@@ -17,7 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle, Users } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CitySelect } from '@/components/jobs/CitySelect';
@@ -58,6 +58,9 @@ export default function NewJob() {
     budget_type: 'fixed' as 'fixed' | 'hourly',
     urgent: false,
     images: [] as string[],
+    allows_group: false,
+    min_workers: '1',
+    max_workers: '1',
   });
 
   useEffect(() => {
@@ -136,6 +139,9 @@ export default function NewJob() {
         urgent: form.urgent,
         status: 'active',
         paid: true,
+        allows_group: form.allows_group,
+        min_workers: form.allows_group ? parseInt(form.min_workers) : 1,
+        max_workers: form.allows_group ? parseInt(form.max_workers) : 1,
       })
       .select()
       .single();
@@ -252,6 +258,58 @@ export default function NewJob() {
                   checked={form.urgent}
                   onCheckedChange={(v) => updateForm('urgent', v)}
                 />
+              </div>
+
+              {/* Group application toggle */}
+              <div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Zgłoszenia grupowe</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Wykonawcy mogą zgłosić się jako grupa (np. rozładunek, przeprowadzka)
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={form.allows_group}
+                    onCheckedChange={(v) => updateForm('allows_group', v)}
+                  />
+                </div>
+
+                {form.allows_group && (
+                  <div className="grid grid-cols-2 gap-4 pt-2 animate-fade-in">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Min. osób</Label>
+                      <Select value={form.min_workers} onValueChange={(v) => updateForm('min_workers', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Max. osób</Label>
+                      <Select value={form.max_workers} onValueChange={(v) => updateForm('max_workers', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[2, 3, 4, 5, 6, 7, 8, 10].filter(n => n >= parseInt(form.min_workers)).map(n => (
+                            <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
