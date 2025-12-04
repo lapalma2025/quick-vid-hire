@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle, Users, Sparkles, Crown, Star, Zap, AlertTriangle } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
 import { CountrySelect } from '@/components/jobs/CountrySelect';
@@ -503,10 +504,10 @@ export default function NewJob() {
 
               <div className="space-y-2">
                 <Label>Data i godzina rozpoczęcia</Label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.start_time}
-                  onChange={(e) => updateForm('start_time', e.target.value)}
+                  onChange={(v) => updateForm('start_time', v)}
+                  placeholder="Wybierz datę i godzinę"
                 />
               </div>
 
