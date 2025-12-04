@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard, Wrench } from "lucide-react";
+import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard, Wrench, Crown, BarChart3 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { NotificationBell } from "./NotificationBell";
@@ -135,6 +135,18 @@ export const Header = () => {
                     Profil
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  <Link to="/subscription">
+                    <Crown className="mr-2 h-4 w-4" />
+                    Subskrypcja
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  <Link to="/statistics">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Statystyki
+                  </Link>
+                </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                     <Link to="/admin">
@@ -243,6 +255,22 @@ export const Header = () => {
                     >
                       <User className="h-5 w-5" />
                       Profil
+                    </Link>
+                    <Link
+                      to="/subscription"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Crown className="h-5 w-5" />
+                      Subskrypcja
+                    </Link>
+                    <Link
+                      to="/statistics"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <BarChart3 className="h-5 w-5" />
+                      Statystyki
                     </Link>
                   </>
                 ) : null}
