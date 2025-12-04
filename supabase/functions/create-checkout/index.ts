@@ -44,8 +44,8 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { email: user.email });
 
-    const { type, jobId, addons } = await req.json();
-    logStep("Request data", { type, jobId, addons });
+    const { type, plan, jobId, addons } = await req.json();
+    logStep("Request data", { type, plan, jobId, addons });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -63,7 +63,6 @@ serve(async (req) => {
 
     if (type === "subscription") {
       // Subscription checkout
-      const { plan } = await req.json().catch(() => ({ plan: "basic" }));
       const priceId = PRICES[plan as keyof typeof PRICES] || PRICES.basic;
       
       session = await stripe.checkout.sessions.create({
