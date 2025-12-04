@@ -143,19 +143,36 @@ serve(async (req) => {
       }
     } else {
       logStep("No active subscription");
+      // Clear subscription data if no active subscription
+      if (profile?.subscription_plan) {
+        await supabaseClient
+          .from("profiles")
+          .update({ 
+            subscription_plan: null,
+            subscription_period_end: null,
+            remaining_listings: 0,
+            remaining_highlights: 0,
+            is_trusted: false,
+          })
+          .eq("user_id", user.id);
+        logStep("Profile subscription data cleared");
+      }
     }
+
+    // Re-fetch profile to get latest values after any updates
+    const { data: updatedProfile } = await supabaseClient
+      .from("profiles")
+      .select("remaining_listings, remaining_highlights, is_trusted")
+      .eq("user_id", user.id)
+      .single();
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       plan,
       subscription_end: subscriptionEnd,
-      remaining_listings: hasActiveSub && plan ? (
-        plan === "basic" ? 10 : plan === "pro" ? 30 : 100
-      ) : (profile?.remaining_listings || 0),
-      remaining_highlights: hasActiveSub && plan ? (
-        plan === "basic" ? 1 : plan === "pro" ? 5 : 15
-      ) : (profile?.remaining_highlights || 0),
-      is_trusted: hasActiveSub && (plan === "pro" || plan === "boost") ? true : (profile?.is_trusted || false),
+      remaining_listings: updatedProfile?.remaining_listings || 0,
+      remaining_highlights: updatedProfile?.remaining_highlights || 0,
+      is_trusted: updatedProfile?.is_trusted || false,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

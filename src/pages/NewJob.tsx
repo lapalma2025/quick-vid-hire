@@ -587,15 +587,29 @@ export default function NewJob() {
 
               {/* Subscription info */}
               {subscribed && (
-                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div className={`rounded-lg border p-4 ${remainingListings > 0 ? 'border-primary/30 bg-primary/5' : 'border-destructive/30 bg-destructive/5'}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Crown className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Masz aktywny pakiet {plan?.toUpperCase()}</span>
+                    {remainingListings > 0 ? (
+                      <Crown className="h-5 w-5 text-primary" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                    )}
+                    <span className="font-medium">
+                      {remainingListings > 0 
+                        ? `Masz aktywny pakiet ${plan?.toUpperCase()}`
+                        : 'Wyczerpano limit ogłoszeń!'
+                      }
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Pozostałe ogłoszenia: <strong>{remainingListings}</strong> | 
+                    Pozostałe ogłoszenia: <strong className={remainingListings === 0 ? 'text-destructive' : ''}>{remainingListings}</strong> | 
                     Wyróżnienia: <strong>{remainingHighlights}</strong>
                   </p>
+                  {remainingListings === 0 && (
+                    <p className="text-sm text-destructive mt-2">
+                      Aby dodać więcej ogłoszeń, odnów pakiet lub zapłać jednorazowo 5 zł.
+                    </p>
+                  )}
                 </div>
               )}
 
