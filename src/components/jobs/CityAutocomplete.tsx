@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 interface CityAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
+  onRegionChange?: (region: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -19,7 +20,8 @@ interface CitySuggestion {
 
 export function CityAutocomplete({ 
   value, 
-  onChange, 
+  onChange,
+  onRegionChange,
   placeholder = "Wpisz nazwę miejscowości...",
   disabled,
   className
@@ -130,6 +132,9 @@ export function CityAutocomplete({
   const handleSelect = (city: CitySuggestion) => {
     setInputValue(city.name);
     onChange(city.name);
+    if (onRegionChange && city.region) {
+      onRegionChange(city.region);
+    }
     setIsOpen(false);
     setSuggestions([]);
   };
