@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { WOJEWODZTWA } from '@/lib/constants';
 import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { Loader2, Save, Star, Camera, X } from 'lucide-react';
+import { TimePicker } from '@/components/ui/time-picker';
 import { useViewModeStore } from '@/store/viewModeStore';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 
@@ -464,22 +465,18 @@ export default function Profile() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-sm">Od godziny</Label>
-                      <Input
-                        type="time"
+                      <TimePicker
                         value={form.available_from}
-                        onChange={(e) => updateForm('available_from', e.target.value)}
+                        onChange={(v) => updateForm('available_from', v)}
                         placeholder="08:00"
-                        className="h-11 rounded-xl border-primary/20 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm">Do godziny</Label>
-                      <Input
-                        type="time"
+                      <TimePicker
                         value={form.available_to}
-                        onChange={(e) => updateForm('available_to', e.target.value)}
+                        onChange={(v) => updateForm('available_to', v)}
                         placeholder="18:00"
-                        className="h-11 rounded-xl border-primary/20 focus:border-primary"
                       />
                     </div>
                   </div>
