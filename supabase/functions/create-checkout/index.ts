@@ -89,6 +89,7 @@ serve(async (req) => {
         customer_email: customerId ? undefined : user.email,
         line_items: lineItems,
         mode: "payment",
+        payment_method_types: ["card", "blik", "p24"],
         success_url: `${origin}/jobs/new?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/jobs/new?canceled=true`,
         metadata: { 
@@ -114,6 +115,7 @@ serve(async (req) => {
         customer_email: customerId ? undefined : user.email,
         line_items: lineItems,
         mode: "payment",
+        payment_method_types: ["card", "blik", "p24"],
         success_url: `${origin}/jobs/new?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/jobs/new?canceled=true`,
         metadata: { 
