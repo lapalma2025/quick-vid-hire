@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, X, SlidersHorizontal, MapPin, Globe, Users, Clock } from 'lucide-react';
+import { Search, X, SlidersHorizontal, MapPin, Globe, Users } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -24,6 +24,7 @@ import { WojewodztwoSelect } from './WojewodztwoSelect';
 import { CityAutocomplete } from './CityAutocomplete';
 import { CountrySelect } from './CountrySelect';
 import { ForeignCitySelect } from './ForeignCitySelect';
+import { TimePicker } from '@/components/ui/time-picker';
 import { cn } from '@/lib/utils';
 import { WOJEWODZTWA } from '@/lib/constants';
 
@@ -232,15 +233,11 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label className="font-medium flex items-center gap-2">
-          <Clock className="h-4 w-4 text-primary" />
-          Godzina rozpoczęcia
-        </Label>
-        <Input
-          type="time"
+        <Label className="font-medium">Godzina rozpoczęcia</Label>
+        <TimePicker
           value={filters.availableAt}
-          onChange={(e) => updateFilter('availableAt', e.target.value)}
-          className="h-11 rounded-xl border-primary/20 focus:border-primary focus:ring-primary/20"
+          onChange={(v) => updateFilter('availableAt', v)}
+          placeholder="Wybierz godzinę"
         />
         <p className="text-xs text-muted-foreground">Lub bez ustalonego terminu</p>
       </div>

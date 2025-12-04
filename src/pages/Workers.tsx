@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { StarRating } from '@/components/ui/star-rating';
+import { TimePicker } from '@/components/ui/time-picker';
 import { Input } from '@/components/ui/input';
 import { 
   MapPin, 
@@ -24,8 +25,7 @@ import {
   Filter,
   X,
   Sparkles,
-  ArrowRight,
-  Clock
+  ArrowRight
 } from 'lucide-react';
 import gsap from 'gsap';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
@@ -375,15 +375,11 @@ export default function Workers() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-medium flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                    Godzina
-                  </Label>
-                  <Input
-                    type="time"
+                  <Label className="font-medium">Godzina</Label>
+                  <TimePicker
                     value={filters.availableAt}
-                    onChange={(e) => updateFilter('availableAt', e.target.value)}
-                    className="h-11 rounded-xl border-primary/20 focus:border-primary focus:ring-primary/20"
+                    onChange={(v) => updateFilter('availableAt', v)}
+                    placeholder="Wybierz godzinę"
                   />
                 </div>
                 <div className="space-y-2">
