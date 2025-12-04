@@ -23,6 +23,26 @@ interface DateTimePickerProps {
 const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const minutes = ['00', '15', '30', '45'];
 
+// Helper to format date as local datetime-local string (YYYY-MM-DDTHH:mm)
+const formatLocalDateTime = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const mins = date.getMinutes().toString().padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${mins}`;
+};
+
+// Helper to parse local datetime string
+const parseLocalDateTime = (value: string): Date | undefined => {
+  if (!value) return undefined;
+  const [datePart, timePart] = value.split('T');
+  if (!datePart) return undefined;
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, mins] = (timePart || '12:00').split(':').map(Number);
+  return new Date(year, month - 1, day, hours || 0, mins || 0);
+};
+
 export function DateTimePicker({
   value,
   onChange,
@@ -33,34 +53,36 @@ export function DateTimePicker({
   const [dateOpen, setDateOpen] = React.useState(false);
   const [timeOpen, setTimeOpen] = React.useState(false);
   
-  // Parse value to date and time
-  const dateValue = value ? new Date(value) : undefined;
-  const timeValue = value ? format(new Date(value), 'HH:mm') : '';
+  // Parse value to date and time (local time, not UTC)
+  const dateValue = parseLocalDateTime(value);
+  const timeValue = value ? value.split('T')[1]?.slice(0, 5) || '' : '';
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       const currentTime = timeValue || '12:00';
       const [h, m] = currentTime.split(':');
       date.setHours(parseInt(h), parseInt(m));
-      onChange(date.toISOString().slice(0, 16));
+      onChange(formatLocalDateTime(date));
     }
     setDateOpen(false);
   };
 
-  const handleTimeChange = (time: string) => {
+  const handleTimeChange = (time: string, shouldClose: boolean) => {
     if (dateValue) {
       const [h, m] = time.split(':');
       const newDate = new Date(dateValue);
       newDate.setHours(parseInt(h), parseInt(m));
-      onChange(newDate.toISOString().slice(0, 16));
+      onChange(formatLocalDateTime(newDate));
     } else {
       // If no date selected, use today
       const today = new Date();
       const [h, m] = time.split(':');
       today.setHours(parseInt(h), parseInt(m));
-      onChange(today.toISOString().slice(0, 16));
+      onChange(formatLocalDateTime(today));
     }
-    setTimeOpen(false);
+    if (shouldClose) {
+      setTimeOpen(false);
+    }
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -134,7 +156,10 @@ export function DateTimePicker({
       </Popover>
 
       {/* Time Picker */}
-      <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+      <Popover open={timeOpen} onOpenChange={(open) => {
+        // Only allow opening, not closing from outside
+        if (open) setTimeOpen(true);
+      }}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -148,8 +173,17 @@ export function DateTimePicker({
             <span className="flex-1">{timeValue || "Godzina"}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 rounded-xl border-primary/20 shadow-xl" align="start">
-          <TimeSelector value={timeValue} onChange={handleTimeChange} />
+        <PopoverContent 
+          className="w-auto p-0 rounded-xl border-primary/20 shadow-xl" 
+          align="start"
+          onInteractOutside={() => setTimeOpen(false)}
+          onEscapeKeyDown={() => setTimeOpen(false)}
+        >
+          <TimeSelector 
+            value={timeValue} 
+            onChange={handleTimeChange}
+            onClose={() => setTimeOpen(false)}
+          />
         </PopoverContent>
       </Popover>
 
@@ -171,43 +205,49 @@ export function DateTimePicker({
 // Internal Time Selector component
 function TimeSelector({ 
   value, 
-  onChange 
+  onChange,
+  onClose
 }: { 
   value: string; 
-  onChange: (time: string) => void;
+  onChange: (time: string, shouldClose: boolean) => void;
+  onClose: () => void;
 }) {
-  const [selectedHour, setSelectedHour] = React.useState<string>('');
-  const [selectedMinute, setSelectedMinute] = React.useState<string>('');
-
-  React.useEffect(() => {
+  const [selectedHour, setSelectedHour] = React.useState<string>(() => {
     if (value) {
-      const [h, m] = value.split(':');
-      setSelectedHour(h || '');
-      setSelectedMinute(m || '');
-    } else {
-      setSelectedHour('');
-      setSelectedMinute('');
+      const [h] = value.split(':');
+      return h || '';
     }
-  }, [value]);
+    return '';
+  });
+  const [selectedMinute, setSelectedMinute] = React.useState<string>(() => {
+    if (value) {
+      const [, m] = value.split(':');
+      return m || '';
+    }
+    return '';
+  });
 
   const handleHourSelect = (hour: string) => {
     setSelectedHour(hour);
-    // Only close if minute is already selected
+    // If minute already selected, complete the selection
     if (selectedMinute) {
-      onChange(`${hour}:${selectedMinute}`);
+      onChange(`${hour}:${selectedMinute}`, true);
     }
   };
 
   const handleMinuteSelect = (minute: string) => {
     setSelectedMinute(minute);
-    // Only close if hour is already selected
+    // If hour already selected, complete the selection
     if (selectedHour) {
-      onChange(`${selectedHour}:${minute}`);
+      onChange(`${selectedHour}:${minute}`, true);
     }
   };
 
   const handleQuickSelect = (time: string) => {
-    onChange(time);
+    const [h, m] = time.split(':');
+    setSelectedHour(h);
+    setSelectedMinute(m);
+    onChange(time, true);
   };
 
   return (
@@ -223,7 +263,12 @@ function TimeSelector({
               {hours.map((hour) => (
                 <button
                   key={hour}
-                  onClick={() => handleHourSelect(hour)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleHourSelect(hour);
+                  }}
                   className={cn(
                     "w-full px-3 py-2 text-sm rounded-lg transition-all duration-200 text-center font-medium",
                     selectedHour === hour
@@ -248,7 +293,12 @@ function TimeSelector({
               {minutes.map((minute) => (
                 <button
                   key={minute}
-                  onClick={() => handleMinuteSelect(minute)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleMinuteSelect(minute);
+                  }}
                   className={cn(
                     "w-full px-3 py-2 text-sm rounded-lg transition-all duration-200 text-center font-medium",
                     selectedMinute === minute
@@ -271,7 +321,12 @@ function TimeSelector({
           {['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'].map((time) => (
             <button
               key={time}
-              onClick={() => handleQuickSelect(time)}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleQuickSelect(time);
+              }}
               className={cn(
                 "px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-200",
                 value === time
