@@ -20,12 +20,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
-import { CitySelect } from '@/components/jobs/CitySelect';
+import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
 import { CountrySelect } from '@/components/jobs/CountrySelect';
 import { ForeignCitySelect } from '@/components/jobs/ForeignCitySelect';
 import { LocationTypeToggle } from '@/components/jobs/LocationTypeToggle';
 import { Link } from 'react-router-dom';
+import { WOJEWODZTWA } from '@/lib/constants';
 
 interface Category {
   id: string;
@@ -297,11 +298,19 @@ export default function EditJob() {
 
                   <div className="space-y-2">
                     <Label>Miasto *</Label>
-                    <CitySelect
-                      wojewodztwo={form.wojewodztwo}
+                    <CityAutocomplete
                       value={form.miasto}
                       onChange={(v) => updateForm('miasto', v)}
-                      disabled={!form.wojewodztwo}
+                      onRegionChange={(region) => {
+                        const normalizedRegion = region.toLowerCase();
+                        const matchedWojewodztwo = WOJEWODZTWA.find(
+                          w => w.toLowerCase() === normalizedRegion
+                        );
+                        if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
+                          setForm(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
+                        }
+                      }}
+                      placeholder="Wpisz miasto..."
                     />
                   </div>
                 </div>

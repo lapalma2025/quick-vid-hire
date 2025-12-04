@@ -28,6 +28,9 @@ interface Job {
   created_at: string;
   category: { name: string; icon: string } | null;
   job_images: { image_url: string }[];
+  allows_group: boolean | null;
+  min_workers: number | null;
+  max_workers: number | null;
 }
 
 export default function Jobs() {
@@ -44,6 +47,7 @@ export default function Jobs() {
     country: '',
     category_id: '',
     urgent: false,
+    groupOnly: false,
     sortBy: 'newest',
   });
 
@@ -70,6 +74,9 @@ export default function Jobs() {
         urgent,
         status,
         created_at,
+        allows_group,
+        min_workers,
+        max_workers,
         category:categories(name, icon),
         job_images(image_url)
       `, { count: 'exact' })
@@ -102,6 +109,9 @@ export default function Jobs() {
     }
     if (filters.urgent) {
       query = query.eq('urgent', true);
+    }
+    if (filters.groupOnly) {
+      query = query.eq('allows_group', true);
     }
 
     switch (filters.sortBy) {

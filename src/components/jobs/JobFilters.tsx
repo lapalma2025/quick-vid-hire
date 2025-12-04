@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, X, SlidersHorizontal, MapPin, Globe } from 'lucide-react';
+import { Search, X, SlidersHorizontal, MapPin, Globe, Users } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -21,10 +21,11 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { WojewodztwoSelect } from './WojewodztwoSelect';
-import { CitySelect } from './CitySelect';
+import { CityAutocomplete } from './CityAutocomplete';
 import { CountrySelect } from './CountrySelect';
 import { ForeignCitySelect } from './ForeignCitySelect';
 import { cn } from '@/lib/utils';
+import { WOJEWODZTWA } from '@/lib/constants';
 
 interface Category {
   id: string;
@@ -43,6 +44,7 @@ export interface JobFilters {
   country: string;
   category_id: string;
   urgent: boolean;
+  groupOnly: boolean;
   sortBy: 'newest' | 'budget_high' | 'start_soon';
 }
 
@@ -56,6 +58,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
     country: '',
     category_id: '',
     urgent: false,
+    groupOnly: false,
     sortBy: 'newest',
   });
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -94,13 +97,14 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       country: '',
       category_id: '',
       urgent: false,
+      groupOnly: false,
       sortBy: 'newest',
     };
     setFilters(cleared);
     onFiltersChange(cleared);
   };
 
-  const hasActiveFilters = filters.locationType !== 'all' || filters.wojewodztwo || filters.miasto || filters.country || filters.category_id || filters.urgent;
+  const hasActiveFilters = filters.locationType !== 'all' || filters.wojewodztwo || filters.miasto || filters.country || filters.category_id || filters.urgent || filters.groupOnly;
 
   const LocationTypeSelector = () => (
     <div className="grid grid-cols-3 gap-2">
@@ -148,11 +152,20 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 
           <div className="space-y-2">
             <Label className="font-medium">Miasto</Label>
-            <CitySelect
-              wojewodztwo={filters.wojewodztwo}
+            <CityAutocomplete
               value={filters.miasto}
               onChange={(v) => updateFilter('miasto', v)}
-              disabled={!filters.wojewodztwo}
+              onRegionChange={(region) => {
+                const normalizedRegion = region.toLowerCase();
+                const matchedWojewodztwo = WOJEWODZTWA.find(
+                  w => w.toLowerCase() === normalizedRegion
+                );
+                if (matchedWojewodztwo && matchedWojewodztwo !== filters.wojewodztwo) {
+                  setFilters(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
+                  onFiltersChange({ ...filters, wojewodztwo: matchedWojewodztwo });
+                }
+              }}
+              placeholder="Wpisz miasto..."
             />
           </div>
         </div>
@@ -201,6 +214,17 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
         <Switch 
           checked={filters.urgent} 
           onCheckedChange={(v) => updateFilter('urgent', v)} 
+        />
+      </div>
+
+      <div className="flex items-center justify-between py-2">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-purple-500" />
+          <Label className="font-medium">Tylko grupowe</Label>
+        </div>
+        <Switch 
+          checked={filters.groupOnly} 
+          onCheckedChange={(v) => updateFilter('groupOnly', v)} 
         />
       </div>
 
