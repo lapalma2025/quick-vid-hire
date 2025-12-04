@@ -192,6 +192,7 @@ function TimeSelector({
 
   const handleHourSelect = (hour: string) => {
     setSelectedHour(hour);
+    // Only close if minute is already selected
     if (selectedMinute) {
       onChange(`${hour}:${selectedMinute}`);
     }
@@ -199,6 +200,7 @@ function TimeSelector({
 
   const handleMinuteSelect = (minute: string) => {
     setSelectedMinute(minute);
+    // Only close if hour is already selected
     if (selectedHour) {
       onChange(`${selectedHour}:${minute}`);
     }
