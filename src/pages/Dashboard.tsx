@@ -24,7 +24,6 @@ import {
   CheckCircle2,
   Archive,
   Loader2,
-  Filter,
   ArrowUpDown,
   AlertCircle
 } from 'lucide-react';
@@ -62,7 +61,7 @@ export default function Dashboard() {
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
-  const [filterResponses, setFilterResponses] = useState<'all' | 'with_responses'>('all');
+  const [showOnlyWithResponses, setShowOnlyWithResponses] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -124,21 +123,14 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  const sortedAndFilteredJobs = useMemo(() => {
-    let filtered = [...jobs];
-    
-    if (filterResponses === 'with_responses') {
-      filtered = filtered.filter(j => (j.responses_count || 0) > 0);
-    }
-    
-    filtered.sort((a, b) => {
+  const sortedJobs = useMemo(() => {
+    const sorted = [...jobs].sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
-    
-    return filtered;
-  }, [jobs, sortOrder, filterResponses]);
+    return sorted;
+  }, [jobs, sortOrder]);
 
   if (isLoading || loading) {
     return (
@@ -150,9 +142,10 @@ export default function Dashboard() {
     );
   }
 
-  const activeJobs = sortedAndFilteredJobs.filter(j => j.status === 'active');
-  const inProgressJobs = sortedAndFilteredJobs.filter(j => j.status === 'in_progress');
-  const doneJobs = sortedAndFilteredJobs.filter(j => j.status === 'done' || j.status === 'archived' || j.status === 'closed');
+  const activeJobs = sortedJobs.filter(j => j.status === 'active');
+  const activeJobsFiltered = showOnlyWithResponses ? activeJobs.filter(j => (j.responses_count || 0) > 0) : activeJobs;
+  const inProgressJobs = sortedJobs.filter(j => j.status === 'in_progress');
+  const doneJobs = sortedJobs.filter(j => j.status === 'done' || j.status === 'archived' || j.status === 'closed');
 
   return (
     <Layout>
@@ -302,28 +295,16 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Moje zlecenia</CardTitle>
-              <div className="flex items-center gap-2">
-                <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'newest' | 'oldest')}>
-                  <SelectTrigger className="w-[140px] h-9">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">Od najnowszych</SelectItem>
-                    <SelectItem value="oldest">Od najstarszych</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterResponses} onValueChange={(v) => setFilterResponses(v as 'all' | 'with_responses')}>
-                  <SelectTrigger className="w-[160px] h-9">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Wszystkie</SelectItem>
-                    <SelectItem value="with_responses">Ze zgłoszeniami</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'newest' | 'oldest')}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Od najnowszych</SelectItem>
+                  <SelectItem value="oldest">Od najstarszych</SelectItem>
+                </SelectContent>
+              </Select>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="active">
@@ -334,10 +315,39 @@ export default function Dashboard() {
                 </TabsList>
                 
                 <TabsContent value="active" className="space-y-4 mt-4">
-                  {activeJobs.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">Brak aktywnych zleceń</p>
+                  {/* Filter toggle for active jobs */}
+                  {activeJobs.length > 0 && (
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <button
+                        onClick={() => setShowOnlyWithResponses(false)}
+                        className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                          !showOnlyWithResponses 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        Wszystkie ({activeJobs.length})
+                      </button>
+                      <button
+                        onClick={() => setShowOnlyWithResponses(true)}
+                        className={`px-3 py-1.5 text-sm rounded-full transition-colors flex items-center gap-1.5 ${
+                          showOnlyWithResponses 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Ze zgłoszeniami ({activeJobs.filter(j => (j.responses_count || 0) > 0).length})
+                      </button>
+                    </div>
+                  )}
+                  
+                  {activeJobsFiltered.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      {showOnlyWithResponses ? 'Brak zleceń ze zgłoszeniami' : 'Brak aktywnych zleceń'}
+                    </p>
                   ) : (
-                    activeJobs.map((job) => (
+                    activeJobsFiltered.map((job) => (
                       <Link key={job.id} to={`/jobs/${job.id}`} className="block">
                         <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
                           <div>
