@@ -156,14 +156,12 @@ export function DateTimePicker({
       </Popover>
 
       {/* Time Picker */}
-      <Popover open={timeOpen} onOpenChange={(open) => {
-        // Only allow opening, not closing from outside
-        if (open) setTimeOpen(true);
-      }}>
+      <Popover open={timeOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             disabled={disabled}
+            onClick={() => setTimeOpen(true)}
             className={cn(
               "w-[140px] h-11 justify-start text-left font-normal rounded-xl border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group",
               !timeValue && "text-muted-foreground"
@@ -176,13 +174,21 @@ export function DateTimePicker({
         <PopoverContent 
           className="w-auto p-0 rounded-xl border-primary/20 shadow-xl" 
           align="start"
-          onInteractOutside={() => setTimeOpen(false)}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={() => setTimeOpen(false)}
           onEscapeKeyDown={() => setTimeOpen(false)}
+          onFocusOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
         >
           <TimeSelector 
             value={timeValue} 
-            onChange={handleTimeChange}
-            onClose={() => setTimeOpen(false)}
+            onChange={(time) => {
+              handleTimeChange(time, false);
+            }}
+            onComplete={(time) => {
+              handleTimeChange(time, true);
+            }}
           />
         </PopoverContent>
       </Popover>
@@ -206,11 +212,11 @@ export function DateTimePicker({
 function TimeSelector({ 
   value, 
   onChange,
-  onClose
+  onComplete
 }: { 
   value: string; 
-  onChange: (time: string, shouldClose: boolean) => void;
-  onClose: () => void;
+  onChange: (time: string) => void;
+  onComplete: (time: string) => void;
 }) {
   const [selectedHour, setSelectedHour] = React.useState<string>(() => {
     if (value) {
@@ -231,7 +237,7 @@ function TimeSelector({
     setSelectedHour(hour);
     // If minute already selected, complete the selection
     if (selectedMinute) {
-      onChange(`${hour}:${selectedMinute}`, true);
+      onComplete(`${hour}:${selectedMinute}`);
     }
   };
 
@@ -239,7 +245,7 @@ function TimeSelector({
     setSelectedMinute(minute);
     // If hour already selected, complete the selection
     if (selectedHour) {
-      onChange(`${selectedHour}:${minute}`, true);
+      onComplete(`${selectedHour}:${minute}`);
     }
   };
 
@@ -247,7 +253,7 @@ function TimeSelector({
     const [h, m] = time.split(':');
     setSelectedHour(h);
     setSelectedMinute(m);
-    onChange(time, true);
+    onComplete(time);
   };
 
   return (
