@@ -224,10 +224,8 @@ export default function Chat() {
       <div className="container max-w-3xl py-4 h-[calc(100vh-8rem)] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-4 pb-4 border-b">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to={`/jobs/${job.id}`}>
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <Avatar className="h-10 w-10">
             <AvatarImage src={otherParticipant?.avatar_url || ''} />
