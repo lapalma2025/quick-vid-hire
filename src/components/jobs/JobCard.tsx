@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Calendar, Banknote, ArrowRight, Globe, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { MapPin, Clock, Calendar, Banknote, ArrowRight, Globe, Users, Star, Zap } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from './CategoryIcon';
 
@@ -26,6 +26,9 @@ interface Job {
   allows_group?: boolean | null;
   min_workers?: number | null;
   max_workers?: number | null;
+  is_highlighted?: boolean | null;
+  is_promoted?: boolean | null;
+  promotion_expires_at?: string | null;
 }
 
 interface JobCardProps {
@@ -34,10 +37,35 @@ interface JobCardProps {
 
 export const JobCard = ({ job }: JobCardProps) => {
   const firstImage = job.job_images?.[0]?.image_url;
+  
+  // Check if promotion is still active
+  const isPromotionActive = job.is_promoted && 
+    (!job.promotion_expires_at || new Date(job.promotion_expires_at) > new Date());
+  
+  // Calculate remaining promotion time
+  const getPromotionTimeLeft = () => {
+    if (!job.promotion_expires_at) return null;
+    const expiresAt = new Date(job.promotion_expires_at);
+    if (expiresAt <= new Date()) return null;
+    return formatDistanceToNow(expiresAt, { locale: pl, addSuffix: false });
+  };
+  
+  const promotionTimeLeft = getPromotionTimeLeft();
+
+  // Dynamic card classes based on premium options
+  const cardClasses = [
+    "group card-modern overflow-hidden h-full transition-all duration-300",
+    job.is_highlighted 
+      ? "ring-2 ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-900/10 dark:to-card" 
+      : "bg-card hover:bg-card",
+    isPromotionActive && !job.is_highlighted
+      ? "bg-gradient-to-br from-primary/5 to-card ring-1 ring-primary/20"
+      : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <Link to={`/jobs/${job.id}`}>
-      <Card className="group card-modern overflow-hidden h-full bg-card hover:bg-card">
+      <Card className={cardClasses}>
         <div className="relative aspect-[4/3] bg-muted overflow-hidden">
           {firstImage ? (
             <img 
@@ -53,12 +81,32 @@ export const JobCard = ({ job }: JobCardProps) => {
           {/* Overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
+          {/* Highlighted badge - top corner */}
+          {job.is_highlighted && (
+            <div className="absolute top-0 right-0">
+              <div className="bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-bl-lg shadow-lg flex items-center gap-1">
+                <Star className="h-3 w-3 fill-current" />
+                WYRÓŻNIONE
+              </div>
+            </div>
+          )}
+          
+          {/* Promotion timer badge */}
+          {isPromotionActive && promotionTimeLeft && (
+            <div className="absolute top-0 left-0">
+              <div className="bg-gradient-to-r from-primary to-primary/80 text-white text-xs font-medium px-3 py-1.5 rounded-br-lg shadow-lg flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                Promowane: {promotionTimeLeft}
+              </div>
+            </div>
+          )}
+          
           {/* Badges container */}
-          <div className="absolute top-3 left-3 right-3 flex justify-between items-start gap-2">
+          <div className={`absolute ${job.is_highlighted ? 'top-10' : 'top-3'} left-3 right-3 flex justify-between items-start gap-2`}>
             <div className="flex gap-2 flex-wrap">
               {job.urgent && (
-                <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                  PILNE
+                <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                  ⚡ PILNE
                 </Badge>
               )}
               {job.is_foreign && (
@@ -74,7 +122,7 @@ export const JobCard = ({ job }: JobCardProps) => {
                 </Badge>
               )}
             </div>
-            {job.category && (
+            {job.category && !job.is_highlighted && (
               <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-medium shadow-sm">
                 {job.category.name}
               </Badge>
@@ -83,17 +131,24 @@ export const JobCard = ({ job }: JobCardProps) => {
 
           {/* View button on hover */}
           <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-            <div className="h-10 w-10 rounded-full bg-white shadow-lg flex items-center justify-center">
-              <ArrowRight className="h-5 w-5 text-primary" />
+            <div className={`h-10 w-10 rounded-full shadow-lg flex items-center justify-center ${job.is_highlighted ? 'bg-amber-400' : 'bg-white'}`}>
+              <ArrowRight className={`h-5 w-5 ${job.is_highlighted ? 'text-white' : 'text-primary'}`} />
             </div>
           </div>
         </div>
         
         <CardContent className="p-5 space-y-4">
           <div>
-            <h3 className="font-display font-bold text-lg line-clamp-2 group-hover:text-primary transition-colors duration-300">
+            <h3 className={`font-display font-bold text-lg line-clamp-2 transition-colors duration-300 ${
+              job.is_highlighted 
+                ? 'text-amber-700 dark:text-amber-400 group-hover:text-amber-600' 
+                : 'group-hover:text-primary'
+            }`}>
               {job.title}
             </h3>
+            {job.category && job.is_highlighted && (
+              <span className="text-xs text-muted-foreground">{job.category.name}</span>
+            )}
           </div>
 
           <div className="space-y-2 text-sm">
@@ -126,10 +181,12 @@ export const JobCard = ({ job }: JobCardProps) => {
           </div>
 
           {job.budget && (
-            <div className="pt-3 border-t border-border/50">
+            <div className={`pt-3 border-t ${job.is_highlighted ? 'border-amber-200 dark:border-amber-800/30' : 'border-border/50'}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Budżet</span>
-                <div className="flex items-center gap-1.5 font-display font-bold text-lg text-primary">
+                <div className={`flex items-center gap-1.5 font-display font-bold text-lg ${
+                  job.is_highlighted ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
+                }`}>
                   <Banknote className="h-5 w-5" />
                   <span>{job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}</span>
                 </div>

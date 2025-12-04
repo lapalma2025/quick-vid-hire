@@ -31,6 +31,9 @@ interface Job {
   allows_group: boolean | null;
   min_workers: number | null;
   max_workers: number | null;
+  is_highlighted: boolean | null;
+  is_promoted: boolean | null;
+  promotion_expires_at: string | null;
 }
 
 export default function Jobs() {
@@ -78,6 +81,9 @@ export default function Jobs() {
         allows_group,
         min_workers,
         max_workers,
+        is_highlighted,
+        is_promoted,
+        promotion_expires_at,
         category:categories(name, icon),
         job_images(image_url)
       `, { count: 'exact' })
@@ -139,7 +145,7 @@ export default function Jobs() {
     const { data, error, count } = await query.range(0, PAGE_SIZE - 1);
     
     if (!error && data) {
-      let jobsData = data as any[];
+      let jobsData = data as Job[];
       
       // Client-side filtering for time
       if (filters.availableAt) {
@@ -150,6 +156,21 @@ export default function Jobs() {
           return jobHour === filterTime;
         });
       }
+      
+      // Sort: highlighted first, then promoted (active), then rest
+      jobsData.sort((a, b) => {
+        // Highlighted jobs always first
+        if (a.is_highlighted && !b.is_highlighted) return -1;
+        if (!a.is_highlighted && b.is_highlighted) return 1;
+        
+        // Then promoted jobs (check if promotion is still active)
+        const aPromoted = a.is_promoted && (!a.promotion_expires_at || new Date(a.promotion_expires_at) > new Date());
+        const bPromoted = b.is_promoted && (!b.promotion_expires_at || new Date(b.promotion_expires_at) > new Date());
+        if (aPromoted && !bPromoted) return -1;
+        if (!aPromoted && bPromoted) return 1;
+        
+        return 0; // Keep original order for non-premium jobs
+      });
       
       setJobs(jobsData);
       setTotalCount(count || 0);
@@ -167,7 +188,7 @@ export default function Jobs() {
     const { data, error } = await query.range(jobs.length, jobs.length + PAGE_SIZE - 1);
     
     if (!error && data) {
-      let newJobsData = data as any[];
+      let newJobsData = data as Job[];
       
       // Client-side filtering for time
       if (filters.availableAt) {
