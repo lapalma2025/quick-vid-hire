@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Clock } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -44,7 +44,6 @@ export function TimePicker({
 
   const handleHourSelect = (hour: string) => {
     setSelectedHour(hour);
-    // If minute is already selected, update the value and close
     if (selectedMinute) {
       onChange(`${hour}:${selectedMinute}`);
       setOpen(false);
@@ -53,7 +52,6 @@ export function TimePicker({
 
   const handleMinuteSelect = (minute: string) => {
     setSelectedMinute(minute);
-    // If hour is already selected, update the value and close
     if (selectedHour) {
       onChange(`${selectedHour}:${minute}`);
       setOpen(false);
@@ -62,6 +60,14 @@ export function TimePicker({
 
   const handleQuickSelect = (time: string) => {
     onChange(time);
+    setOpen(false);
+  };
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange('');
+    setSelectedHour('');
+    setSelectedMinute('');
     setOpen(false);
   };
 
@@ -74,13 +80,21 @@ export function TimePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "w-full h-11 justify-start text-left font-normal rounded-xl border-primary/20 hover:border-primary/40 hover:bg-primary/5",
+            "w-full h-11 justify-start text-left font-normal rounded-xl border-primary/20 hover:border-primary/40 hover:bg-primary/5 group",
             !value && "text-muted-foreground",
             className
           )}
         >
           <Clock className="mr-2 h-4 w-4 text-primary" />
-          {displayValue}
+          <span className="flex-1">{displayValue}</span>
+          {value && (
+            <span
+              onClick={handleClear}
+              className="ml-2 h-5 w-5 rounded-full bg-muted hover:bg-destructive/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 rounded-xl border-primary/20 shadow-xl" align="start">
@@ -136,9 +150,9 @@ export function TimePicker({
           </div>
         </div>
         
-        {/* Quick select */}
+        {/* Quick select & Clear */}
         <div className="p-2 border-t border-border bg-muted/30 rounded-b-xl">
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-1 flex-wrap items-center">
             {['08:00', '12:00', '16:00', '18:00', '20:00'].map((time) => (
               <button
                 key={time}
@@ -153,6 +167,14 @@ export function TimePicker({
                 {time}
               </button>
             ))}
+            {value && (
+              <button
+                onClick={handleClear}
+                className="px-2 py-1 text-xs rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all ml-auto"
+              >
+                Wyczyść
+              </button>
+            )}
           </div>
         </div>
       </PopoverContent>
