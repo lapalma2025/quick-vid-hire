@@ -27,6 +27,8 @@ import Reviews from "./pages/Reviews";
 import Help from "./pages/Help";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Subscription from "./pages/Subscription";
+import Statistics from "./pages/Statistics";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/worker/:id" element={<WorkerProfile />} />
           <Route path="/workers" element={<Workers />} />
+          <Route path="/subscription" element={<Subscription />} />
+          <Route path="/statistics" element={<Statistics />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/faq" element={<FAQ />} />
