@@ -378,6 +378,17 @@ export default function Profile() {
                 <CityAutocomplete
                   value={form.miasto}
                   onChange={(v) => updateForm('miasto', v)}
+                  onRegionChange={(region) => {
+                    // Normalize region name to match WOJEWODZTWA format
+                    const normalizedRegion = region.toLowerCase();
+                    const matchedWojewodztwo = WOJEWODZTWA.find(
+                      w => w.toLowerCase() === normalizedRegion
+                    );
+                    if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
+                      // Update województwo without clearing miasto
+                      setForm(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
+                    }
+                  }}
                   placeholder="Wpisz nazwę miejscowości..."
                 />
               </div>
