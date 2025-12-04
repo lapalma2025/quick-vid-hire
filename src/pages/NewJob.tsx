@@ -622,8 +622,13 @@ export default function NewJob() {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Pozostałe ogłoszenia: <strong className={remainingListings === 0 ? 'text-destructive' : ''}>{remainingListings}</strong> | 
-                    Wyróżnienia: <strong>{remainingHighlights}</strong>
+                    Pozostałe ogłoszenia: <strong className={remainingListings === 0 ? 'text-destructive' : ''}>{remainingListings}</strong>
+                    {!hasPremiumPlan && (
+                      <> | Wyróżnienia: <strong>{remainingHighlights}</strong></>
+                    )}
+                    {hasPremiumPlan && (
+                      <> | <span className="text-primary">Opcje premium: bez limitu</span></>
+                    )}
                   </p>
                   {remainingListings === 0 && (
                     <p className="text-sm text-destructive mt-2">
