@@ -236,9 +236,9 @@ export default function Statistics() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Twoje ogłoszenia
+                  Najlepsze ogłoszenia
                 </CardTitle>
-                <CardDescription>Ranking wg liczby wyświetleń ({stats.allJobs.length} ogłoszeń)</CardDescription>
+                <CardDescription>Top 5 wg liczby wyświetleń</CardDescription>
               </div>
               {stats.allJobs.length > 5 && (
                 <Button
