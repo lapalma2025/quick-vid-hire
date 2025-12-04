@@ -162,11 +162,53 @@ export default function JobDetails() {
     }
   }, [id]);
 
+  // Track job view when loaded (only for non-owners)
+  useEffect(() => {
+    if (job && id) {
+      // Track view for logged-in non-owners or anonymous users
+      const isOwner = profile?.id === job.user_id;
+      if (!isOwner) {
+        recordJobView();
+      }
+    }
+  }, [job?.id, profile?.id]);
+
   useEffect(() => {
     if (job && profile && job.status === 'done') {
       checkExistingRatings();
     }
   }, [job, profile]);
+
+  const recordJobView = async () => {
+    if (!job) return;
+    
+    // Check if this user already viewed this job (to prevent duplicates)
+    if (profile) {
+      const { data: existingView } = await supabase
+        .from('job_views')
+        .select('id')
+        .eq('job_id', job.id)
+        .eq('viewer_id', profile.id)
+        .maybeSingle();
+      
+      if (existingView) {
+        // Already viewed, skip
+        return;
+      }
+    }
+    
+    // Record the view
+    const { error } = await supabase
+      .from('job_views')
+      .insert({
+        job_id: job.id,
+        viewer_id: profile?.id || null,
+      });
+    
+    if (error) {
+      console.log('Error recording view:', error.message);
+    }
+  };
 
   const checkExistingRatings = async () => {
     if (!job || !profile) return;
