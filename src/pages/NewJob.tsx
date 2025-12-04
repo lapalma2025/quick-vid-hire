@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -16,8 +17,9 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle, Users } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle, Users, Sparkles, Crown, Star, Zap, AlertTriangle } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
@@ -26,6 +28,7 @@ import { CountrySelect } from '@/components/jobs/CountrySelect';
 import { ForeignCitySelect } from '@/components/jobs/ForeignCitySelect';
 import { LocationTypeToggle } from '@/components/jobs/LocationTypeToggle';
 import { WOJEWODZTWA } from '@/lib/constants';
+import { PREMIUM_ADDONS } from '@/lib/stripe';
 
 interface Category {
   id: string;
@@ -36,7 +39,9 @@ type Step = 1 | 2 | 3 | 4;
 
 export default function NewJob() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { profile, isAuthenticated } = useAuth();
+  const { subscribed, plan, remainingListings, remainingHighlights, checkSubscription } = useSubscription();
   const { toast } = useToast();
 
   const [step, setStep] = useState<Step>(1);
@@ -63,6 +68,22 @@ export default function NewJob() {
     min_workers: '1',
     max_workers: '1',
   });
+
+  const [addons, setAddons] = useState({
+    highlight: false,
+    promote: false,
+    urgent: false,
+    promote_24h: false,
+  });
+
+  // Check for success callback from Stripe
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      setPaymentComplete(true);
+      checkSubscription();
+      toast({ title: 'Płatność zakończona!', description: 'Możesz teraz opublikować zlecenie.' });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -109,12 +130,107 @@ export default function NewJob() {
     return true;
   };
 
+  // Calculate total price
+  const calculatePrice = () => {
+    let total = 0;
+    const details: string[] = [];
+
+    // Base price (if no subscription or no remaining listings)
+    if (!subscribed || remainingListings <= 0) {
+      total += 5;
+      details.push('Publikacja: 5 zł');
+    } else {
+      details.push('Publikacja: z pakietu');
+    }
+
+    // Addons
+    if (addons.highlight) {
+      if (remainingHighlights > 0) {
+        details.push('Wyróżnienie: z pakietu');
+      } else {
+        total += PREMIUM_ADDONS.highlight.price;
+        details.push(`Wyróżnienie: ${PREMIUM_ADDONS.highlight.price} zł`);
+      }
+    }
+    if (addons.promote) {
+      total += PREMIUM_ADDONS.promote.price;
+      details.push(`Podświetlenie: ${PREMIUM_ADDONS.promote.price} zł`);
+    }
+    if (addons.urgent) {
+      total += PREMIUM_ADDONS.urgent.price;
+      details.push(`PILNE: ${PREMIUM_ADDONS.urgent.price} zł`);
+    }
+    if (addons.promote_24h) {
+      total += PREMIUM_ADDONS.promote_24h.price;
+      details.push(`Promowanie 24h: ${PREMIUM_ADDONS.promote_24h.price} zł`);
+    }
+
+    return { total, details };
+  };
+
   const handlePayment = async () => {
+    if (!profile) return;
+    
+    const { total } = calculatePrice();
+    
+    // If user has subscription with remaining listings and total is 0
+    if (subscribed && remainingListings > 0 && total === 0) {
+      // Use from subscription - deduct listing
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          remaining_listings: remainingListings - 1,
+          remaining_highlights: addons.highlight && remainingHighlights > 0 
+            ? remainingHighlights - 1 
+            : remainingHighlights
+        })
+        .eq('id', profile.id);
+
+      if (!error) {
+        setPaymentComplete(true);
+        checkSubscription();
+        toast({ title: 'Ogłoszenie odliczone z pakietu!' });
+      }
+      return;
+    }
+
+    // Proceed with Stripe checkout
     setPaymentProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setPaymentProcessing(false);
-    setPaymentComplete(true);
-    toast({ title: 'Płatność zakończona!', description: 'Testowa płatność 5 zł została przetworzona.' });
+    
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const checkoutType = subscribed && remainingListings > 0 ? 'addons_only' : 'single_listing';
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { 
+          type: checkoutType, 
+          addons: {
+            highlight: addons.highlight && remainingHighlights <= 0,
+            promote: addons.promote,
+            urgent: addons.urgent,
+            promote_24h: addons.promote_24h,
+          }
+        },
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      toast({ title: 'Błąd', description: 'Nie udało się utworzyć płatności', variant: 'destructive' });
+    } finally {
+      setPaymentProcessing(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -137,12 +253,17 @@ export default function NewJob() {
         duration_hours: form.duration_hours ? parseInt(form.duration_hours) : null,
         budget: form.budget ? parseFloat(form.budget) : null,
         budget_type: form.budget_type,
-        urgent: form.urgent,
+        urgent: form.urgent || addons.urgent,
         status: 'active',
         paid: true,
         allows_group: form.allows_group,
         min_workers: form.allows_group ? parseInt(form.min_workers) : 1,
         max_workers: form.allows_group ? parseInt(form.max_workers) : 1,
+        is_highlighted: addons.highlight,
+        is_promoted: addons.promote || addons.promote_24h,
+        promotion_expires_at: addons.promote_24h 
+          ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() 
+          : null,
       })
       .select()
       .single();
@@ -169,6 +290,8 @@ export default function NewJob() {
     toast({ title: 'Zlecenie dodane!' });
     navigate(`/jobs/${job.id}`);
   };
+
+  const { total: totalPrice, details: priceDetails } = calculatePrice();
 
   return (
     <Layout>
@@ -318,7 +441,6 @@ export default function NewJob() {
               <CardDescription>Gdzie i kiedy potrzebujesz pomocy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Location type toggle */}
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Rodzaj lokalizacji *</Label>
                 <LocationTypeToggle
@@ -327,7 +449,6 @@ export default function NewJob() {
                 />
               </div>
 
-              {/* Polish location */}
               {!form.is_foreign && (
                 <div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
                   <div className="space-y-2">
@@ -358,7 +479,6 @@ export default function NewJob() {
                 </div>
               )}
 
-              {/* Foreign location */}
               {form.is_foreign && (
                 <div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
                   <div className="space-y-2">
@@ -464,13 +584,74 @@ export default function NewJob() {
                 {form.urgent && <p className="text-sm text-destructive font-medium">⚡ Zlecenie pilne</p>}
               </div>
 
-              {/* Payment */}
+              {/* Subscription info */}
+              {subscribed && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Crown className="h-5 w-5 text-primary" />
+                    <span className="font-medium">Masz aktywny pakiet {plan?.toUpperCase()}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Pozostałe ogłoszenia: <strong>{remainingListings}</strong> | 
+                    Wyróżnienia: <strong>{remainingHighlights}</strong>
+                  </p>
+                </div>
+              )}
+
+              {/* Premium addons */}
+              <div className="space-y-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  Opcje premium
+                </h4>
+                <div className="grid gap-3">
+                  {(Object.entries(PREMIUM_ADDONS) as [keyof typeof PREMIUM_ADDONS, typeof PREMIUM_ADDONS[keyof typeof PREMIUM_ADDONS]][]).map(([key, addon]) => {
+                    const isFreeHighlight = key === 'highlight' && remainingHighlights > 0;
+                    return (
+                      <label
+                        key={key}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          addons[key] ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                        }`}
+                      >
+                        <Checkbox
+                          checked={addons[key]}
+                          onCheckedChange={(checked) => setAddons(prev => ({ ...prev, [key]: !!checked }))}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{addon.name}</span>
+                            {isFreeHighlight && (
+                              <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
+                                z pakietu
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{addon.description}</p>
+                        </div>
+                        <span className={`font-medium ${isFreeHighlight ? 'line-through text-muted-foreground' : ''}`}>
+                          {addon.price} zł
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Payment summary */}
               <div className="space-y-4">
-                <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
-                  <CreditCard className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-sm flex-1">
-                    <p className="font-medium">Opłata za publikację: 5 zł</p>
-                    <p className="text-muted-foreground">Karta lub BLIK (tryb testowy)</p>
+                <div className="bg-muted rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Podsumowanie kosztów</span>
+                  </div>
+                  {priceDetails.map((detail, i) => (
+                    <p key={i} className="text-sm text-muted-foreground">{detail}</p>
+                  ))}
+                  <div className="border-t pt-2 mt-2">
+                    <p className="font-bold text-lg">
+                      Do zapłaty: {totalPrice > 0 ? `${totalPrice} zł` : 'GRATIS (z pakietu)'}
+                    </p>
                   </div>
                 </div>
 
@@ -481,12 +662,28 @@ export default function NewJob() {
                     disabled={paymentProcessing}
                   >
                     {paymentProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {paymentProcessing ? 'Przetwarzanie...' : 'Zapłać 5 zł (test)'}
+                    {paymentProcessing 
+                      ? 'Przekierowywanie...' 
+                      : totalPrice > 0 
+                        ? `Zapłać ${totalPrice} zł` 
+                        : 'Użyj z pakietu'
+                    }
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 text-primary">
                     <CheckCircle className="h-5 w-5" />
                     <span className="font-medium">Płatność zakończona</span>
+                  </div>
+                )}
+
+                {!subscribed && (
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Publikujesz regularnie?
+                    </p>
+                    <Button variant="link" onClick={() => navigate('/subscription')}>
+                      Sprawdź nasze pakiety →
+                    </Button>
                   </div>
                 )}
               </div>

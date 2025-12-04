@@ -166,6 +166,42 @@ export type Database = {
           },
         ]
       }
+      job_views: {
+        Row: {
+          id: string
+          job_id: string
+          viewed_at: string | null
+          viewer_id: string | null
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          viewed_at?: string | null
+          viewer_id?: string | null
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          viewed_at?: string | null
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_views_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           allows_group: boolean | null
@@ -178,10 +214,13 @@ export type Database = {
           duration_hours: number | null
           id: string
           is_foreign: boolean | null
+          is_highlighted: boolean | null
+          is_promoted: boolean | null
           max_workers: number | null
           miasto: string
           min_workers: number | null
           paid: boolean | null
+          promotion_expires_at: string | null
           selected_worker_id: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["job_status"] | null
@@ -203,10 +242,13 @@ export type Database = {
           duration_hours?: number | null
           id?: string
           is_foreign?: boolean | null
+          is_highlighted?: boolean | null
+          is_promoted?: boolean | null
           max_workers?: number | null
           miasto: string
           min_workers?: number | null
           paid?: boolean | null
+          promotion_expires_at?: string | null
           selected_worker_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
@@ -228,10 +270,13 @@ export type Database = {
           duration_hours?: number | null
           id?: string
           is_foreign?: boolean | null
+          is_highlighted?: boolean | null
+          is_promoted?: boolean | null
           max_workers?: number | null
           miasto?: string
           min_workers?: number | null
           paid?: boolean | null
+          promotion_expires_at?: string | null
           selected_worker_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
@@ -266,6 +311,53 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          metadata: Json | null
+          status: string | null
+          stripe_payment_id: string | null
+          stripe_session_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          stripe_payment_id?: string | null
+          stripe_session_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           available_from: string | null
@@ -273,15 +365,23 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          extended_description: string | null
           hourly_rate: number | null
           id: string
           is_available: boolean | null
+          is_trusted: boolean | null
+          logo_url: string | null
           miasto: string | null
           name: string | null
           phone: string | null
           rating_avg: number | null
           rating_count: number | null
+          remaining_highlights: number | null
+          remaining_listings: number | null
           role: Database["public"]["Enums"]["user_role"]
+          stripe_customer_id: string | null
+          subscription_period_end: string | null
+          subscription_plan: string | null
           updated_at: string | null
           user_id: string
           wojewodztwo: string | null
@@ -292,15 +392,23 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          extended_description?: string | null
           hourly_rate?: number | null
           id?: string
           is_available?: boolean | null
+          is_trusted?: boolean | null
+          logo_url?: string | null
           miasto?: string | null
           name?: string | null
           phone?: string | null
           rating_avg?: number | null
           rating_count?: number | null
+          remaining_highlights?: number | null
+          remaining_listings?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          stripe_customer_id?: string | null
+          subscription_period_end?: string | null
+          subscription_plan?: string | null
           updated_at?: string | null
           user_id: string
           wojewodztwo?: string | null
@@ -311,15 +419,23 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          extended_description?: string | null
           hourly_rate?: number | null
           id?: string
           is_available?: boolean | null
+          is_trusted?: boolean | null
+          logo_url?: string | null
           miasto?: string | null
           name?: string | null
           phone?: string | null
           rating_avg?: number | null
           rating_count?: number | null
+          remaining_highlights?: number | null
+          remaining_listings?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          stripe_customer_id?: string | null
+          subscription_period_end?: string | null
+          subscription_plan?: string | null
           updated_at?: string | null
           user_id?: string
           wojewodztwo?: string | null
