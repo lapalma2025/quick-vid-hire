@@ -48,6 +48,7 @@ export default function Jobs() {
     category_id: '',
     urgent: false,
     groupOnly: false,
+    availableAt: '',
     sortBy: 'newest',
   });
 
@@ -138,12 +139,24 @@ export default function Jobs() {
     const { data, error, count } = await query.range(0, PAGE_SIZE - 1);
     
     if (!error && data) {
-      setJobs(data as any);
+      let jobsData = data as any[];
+      
+      // Client-side filtering for time
+      if (filters.availableAt) {
+        const filterTime = filters.availableAt;
+        jobsData = jobsData.filter((job: Job) => {
+          if (!job.start_time) return true; // Jobs without set time always show
+          const jobHour = new Date(job.start_time).toTimeString().slice(0, 5);
+          return jobHour === filterTime;
+        });
+      }
+      
+      setJobs(jobsData);
       setTotalCount(count || 0);
       setHasMore(data.length === PAGE_SIZE);
     }
     setLoading(false);
-  }, [buildQuery]);
+  }, [buildQuery, filters.availableAt]);
 
   // Load more
   const loadMore = useCallback(async () => {
@@ -154,11 +167,23 @@ export default function Jobs() {
     const { data, error } = await query.range(jobs.length, jobs.length + PAGE_SIZE - 1);
     
     if (!error && data) {
-      setJobs(prev => [...prev, ...(data as any)]);
+      let newJobsData = data as any[];
+      
+      // Client-side filtering for time
+      if (filters.availableAt) {
+        const filterTime = filters.availableAt;
+        newJobsData = newJobsData.filter((job: Job) => {
+          if (!job.start_time) return true;
+          const jobHour = new Date(job.start_time).toTimeString().slice(0, 5);
+          return jobHour === filterTime;
+        });
+      }
+      
+      setJobs(prev => [...prev, ...newJobsData]);
       setHasMore(data.length === PAGE_SIZE);
     }
     setLoadingMore(false);
-  }, [buildQuery, jobs.length, loadingMore, hasMore]);
+  }, [buildQuery, jobs.length, loadingMore, hasMore, filters.availableAt]);
 
   useEffect(() => {
     fetchJobs();

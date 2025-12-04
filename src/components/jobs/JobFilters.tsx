@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, X, SlidersHorizontal, MapPin, Globe, Users } from 'lucide-react';
+import { Search, X, SlidersHorizontal, MapPin, Globe, Users, Clock } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -45,6 +45,7 @@ export interface JobFilters {
   category_id: string;
   urgent: boolean;
   groupOnly: boolean;
+  availableAt: string;
   sortBy: 'newest' | 'budget_high' | 'start_soon';
 }
 
@@ -59,6 +60,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
     category_id: '',
     urgent: false,
     groupOnly: false,
+    availableAt: '',
     sortBy: 'newest',
   });
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -98,13 +100,14 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       category_id: '',
       urgent: false,
       groupOnly: false,
+      availableAt: '',
       sortBy: 'newest',
     };
     setFilters(cleared);
     onFiltersChange(cleared);
   };
 
-  const hasActiveFilters = filters.locationType !== 'all' || filters.wojewodztwo || filters.miasto || filters.country || filters.category_id || filters.urgent || filters.groupOnly;
+  const hasActiveFilters = filters.locationType !== 'all' || filters.wojewodztwo || filters.miasto || filters.country || filters.category_id || filters.urgent || filters.groupOnly || filters.availableAt;
 
   const LocationTypeSelector = () => (
     <div className="grid grid-cols-3 gap-2">
@@ -226,6 +229,20 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
           checked={filters.groupOnly} 
           onCheckedChange={(v) => updateFilter('groupOnly', v)} 
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="font-medium">Dostępny o godzinie</Label>
+        <div className="relative">
+          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="time"
+            value={filters.availableAt}
+            onChange={(e) => updateFilter('availableAt', e.target.value)}
+            className="h-11 rounded-xl pl-10"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">Pokaż zlecenia zaczynające się o tej godzinie (lub bez ustalonego terminu)</p>
       </div>
 
       <div className="space-y-2">
