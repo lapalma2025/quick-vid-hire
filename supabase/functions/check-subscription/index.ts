@@ -87,6 +87,7 @@ serve(async (req) => {
       status: "active",
       limit: 1,
     });
+    logStep("Subscriptions fetched", { count: subscriptions.data.length });
 
     const hasActiveSub = subscriptions.data.length > 0;
     let plan = null;
@@ -94,15 +95,52 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      const productId = subscription.items.data[0].price.product as string;
+      logStep("Processing subscription", { 
+        id: subscription.id, 
+        current_period_end: subscription.current_period_end,
+        status: subscription.status 
+      });
+      
+      // Safely convert timestamp to ISO string
+      if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+        subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      }
+      
+      const priceData = subscription.items.data[0]?.price;
+      const productId = priceData?.product as string;
+      logStep("Product ID from subscription", { productId });
       
       // Determine plan from product ID
       if (productId === PRODUCTS.basic) plan = "basic";
       else if (productId === PRODUCTS.pro) plan = "pro";
       else if (productId === PRODUCTS.boost) plan = "boost";
       
-      logStep("Active subscription found", { plan, subscriptionEnd });
+      logStep("Active subscription found", { plan, subscriptionEnd, productId });
+      
+      // Update profile with subscription info if not already set
+      if (plan && profile) {
+        const planLimits = {
+          basic: { listings: 10, highlights: 1, is_trusted: false },
+          pro: { listings: 30, highlights: 5, is_trusted: true },
+          boost: { listings: 100, highlights: 15, is_trusted: true },
+        };
+        const limits = planLimits[plan as keyof typeof planLimits];
+        
+        // Only update if profile doesn't have current subscription data
+        if (profile.subscription_plan !== plan) {
+          await supabaseClient
+            .from("profiles")
+            .update({ 
+              subscription_plan: plan,
+              subscription_period_end: subscriptionEnd,
+              remaining_listings: limits.listings,
+              remaining_highlights: limits.highlights,
+              is_trusted: limits.is_trusted,
+            })
+            .eq("user_id", user.id);
+          logStep("Profile updated with subscription data");
+        }
+      }
     } else {
       logStep("No active subscription");
     }
@@ -111,9 +149,13 @@ serve(async (req) => {
       subscribed: hasActiveSub,
       plan,
       subscription_end: subscriptionEnd,
-      remaining_listings: profile?.remaining_listings || 0,
-      remaining_highlights: profile?.remaining_highlights || 0,
-      is_trusted: profile?.is_trusted || false,
+      remaining_listings: hasActiveSub && plan ? (
+        plan === "basic" ? 10 : plan === "pro" ? 30 : 100
+      ) : (profile?.remaining_listings || 0),
+      remaining_highlights: hasActiveSub && plan ? (
+        plan === "basic" ? 1 : plan === "pro" ? 5 : 15
+      ) : (profile?.remaining_highlights || 0),
+      is_trusted: hasActiveSub && (plan === "pro" || plan === "boost") ? true : (profile?.is_trusted || false),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
