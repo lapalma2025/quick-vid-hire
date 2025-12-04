@@ -232,17 +232,17 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label className="font-medium">Dostępny o godzinie</Label>
-        <div className="relative">
-          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="time"
-            value={filters.availableAt}
-            onChange={(e) => updateFilter('availableAt', e.target.value)}
-            className="h-11 rounded-xl pl-10"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">Pokaż zlecenia zaczynające się o tej godzinie (lub bez ustalonego terminu)</p>
+        <Label className="font-medium flex items-center gap-2">
+          <Clock className="h-4 w-4 text-primary" />
+          Godzina rozpoczęcia
+        </Label>
+        <Input
+          type="time"
+          value={filters.availableAt}
+          onChange={(e) => updateFilter('availableAt', e.target.value)}
+          className="h-11 rounded-xl border-primary/20 focus:border-primary focus:ring-primary/20"
+        />
+        <p className="text-xs text-muted-foreground">Lub bez ustalonego terminu</p>
       </div>
 
       <div className="space-y-2">

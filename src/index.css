@@ -171,6 +171,46 @@
   }
 }
 
+/* Custom time/date input styling */
+input[type="time"],
+input[type="date"] {
+  @apply appearance-none cursor-pointer;
+  color-scheme: light;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  @apply cursor-pointer opacity-70 hover:opacity-100 transition-opacity;
+  filter: hue-rotate(90deg) saturate(1.5);
+}
+
+.dark input[type="time"],
+.dark input[type="date"] {
+  color-scheme: dark;
+}
+
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) hue-rotate(90deg) saturate(1.5);
+}
+
+/* Scrollbar styling */
+.lg\:scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.lg\:scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.lg\:scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-primary/20 rounded-full;
+}
+
+.lg\:scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/40;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
