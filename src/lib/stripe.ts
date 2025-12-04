@@ -24,6 +24,7 @@ export const SUBSCRIPTION_PLANS = {
       "Rozszerzony opis profilu",
     ],
     is_trusted: false,
+    free_addons: false,
   },
   pro: {
     name: "Pro",
@@ -33,11 +34,12 @@ export const SUBSCRIPTION_PLANS = {
     features: [
       "30 ogłoszeń miesięcznie",
       "5 wyróżnień",
-      "Podświetlanie ogłoszeń",
+      "Wszystkie opcje premium GRATIS",
       "Statystyki profilu",
       "Odznaka Zaufany Profil",
     ],
     is_trusted: true,
+    free_addons: true,
   },
   boost: {
     name: "Boost",
@@ -47,11 +49,13 @@ export const SUBSCRIPTION_PLANS = {
     features: [
       "100 ogłoszeń miesięcznie",
       "15 wyróżnień",
+      "Wszystkie opcje premium GRATIS",
       "Najwyższy priorytet wyświetlania",
       "Możliwość masowej publikacji",
       "Odznaka Zaufany Profil",
     ],
     is_trusted: true,
+    free_addons: true,
   },
 } as const;
 

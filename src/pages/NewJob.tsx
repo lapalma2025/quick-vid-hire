@@ -131,6 +131,9 @@ export default function NewJob() {
     return true;
   };
 
+  // Check if user has Pro or Boost plan (addons included free)
+  const hasPremiumPlan = subscribed && (plan === 'pro' || plan === 'boost');
+
   // Calculate total price
   const calculatePrice = () => {
     let total = 0;
@@ -144,26 +147,38 @@ export default function NewJob() {
       details.push('Publikacja: z pakietu');
     }
 
-    // Addons
+    // Addons - free for Pro and Boost plans
     if (addons.highlight) {
-      if (remainingHighlights > 0) {
-        details.push('Wyróżnienie: z pakietu');
+      if (hasPremiumPlan || remainingHighlights > 0) {
+        details.push('Wyróżnienie: GRATIS (w pakiecie)');
       } else {
         total += PREMIUM_ADDONS.highlight.price;
         details.push(`Wyróżnienie: ${PREMIUM_ADDONS.highlight.price} zł`);
       }
     }
     if (addons.promote) {
-      total += PREMIUM_ADDONS.promote.price;
-      details.push(`Podświetlenie: ${PREMIUM_ADDONS.promote.price} zł`);
+      if (hasPremiumPlan) {
+        details.push('Podświetlenie: GRATIS (w pakiecie)');
+      } else {
+        total += PREMIUM_ADDONS.promote.price;
+        details.push(`Podświetlenie: ${PREMIUM_ADDONS.promote.price} zł`);
+      }
     }
     if (addons.urgent) {
-      total += PREMIUM_ADDONS.urgent.price;
-      details.push(`PILNE: ${PREMIUM_ADDONS.urgent.price} zł`);
+      if (hasPremiumPlan) {
+        details.push('PILNE: GRATIS (w pakiecie)');
+      } else {
+        total += PREMIUM_ADDONS.urgent.price;
+        details.push(`PILNE: ${PREMIUM_ADDONS.urgent.price} zł`);
+      }
     }
     if (addons.promote_24h) {
-      total += PREMIUM_ADDONS.promote_24h.price;
-      details.push(`Promowanie 24h: ${PREMIUM_ADDONS.promote_24h.price} zł`);
+      if (hasPremiumPlan) {
+        details.push('Promowanie 24h: GRATIS (w pakiecie)');
+      } else {
+        total += PREMIUM_ADDONS.promote_24h.price;
+        details.push(`Promowanie 24h: ${PREMIUM_ADDONS.promote_24h.price} zł`);
+      }
     }
 
     return { total, details };
@@ -176,12 +191,14 @@ export default function NewJob() {
     
     // If user has subscription with remaining listings and total is 0
     if (subscribed && remainingListings > 0 && total === 0) {
-      // Use from subscription - deduct listing
+      // Use from subscription - deduct listing and highlight if used from quota
+      const highlightFromQuota = addons.highlight && remainingHighlights > 0 && !hasPremiumPlan;
+      
       const { error } = await supabase
         .from('profiles')
         .update({ 
           remaining_listings: remainingListings - 1,
-          remaining_highlights: addons.highlight && remainingHighlights > 0 
+          remaining_highlights: highlightFromQuota 
             ? remainingHighlights - 1 
             : remainingHighlights
         })
@@ -206,15 +223,18 @@ export default function NewJob() {
 
       const checkoutType = subscribed && remainingListings > 0 ? 'addons_only' : 'single_listing';
       
+      // Only send addons to Stripe if they are NOT free in plan
+      const paidAddons = {
+        highlight: addons.highlight && !hasPremiumPlan && remainingHighlights <= 0,
+        promote: addons.promote && !hasPremiumPlan,
+        urgent: addons.urgent && !hasPremiumPlan,
+        promote_24h: addons.promote_24h && !hasPremiumPlan,
+      };
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { 
           type: checkoutType, 
-          addons: {
-            highlight: addons.highlight && remainingHighlights <= 0,
-            promote: addons.promote,
-            urgent: addons.urgent,
-            promote_24h: addons.promote_24h,
-          }
+          addons: paidAddons
         },
         headers: {
           Authorization: `Bearer ${session.session.access_token}`,
@@ -615,13 +635,21 @@ export default function NewJob() {
 
               {/* Premium addons */}
               <div className="space-y-3">
-                <h4 className="font-medium flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-amber-500" />
-                  Opcje premium
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-amber-500" />
+                    Opcje premium
+                  </h4>
+                  {hasPremiumPlan && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
+                      Wszystkie GRATIS w planie {plan?.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                
                 <div className="grid gap-3">
                   {(Object.entries(PREMIUM_ADDONS) as [keyof typeof PREMIUM_ADDONS, typeof PREMIUM_ADDONS[keyof typeof PREMIUM_ADDONS]][]).map(([key, addon]) => {
-                    const isFreeHighlight = key === 'highlight' && remainingHighlights > 0;
+                    const isFree = hasPremiumPlan || (key === 'highlight' && remainingHighlights > 0);
                     return (
                       <label
                         key={key}
@@ -636,20 +664,39 @@ export default function NewJob() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{addon.name}</span>
-                            {isFreeHighlight && (
+                            {isFree && (
                               <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
-                                z pakietu
+                                GRATIS
                               </span>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">{addon.description}</p>
                         </div>
-                        <span className={`font-medium ${isFreeHighlight ? 'line-through text-muted-foreground' : ''}`}>
+                        <span className={`font-medium ${isFree ? 'line-through text-muted-foreground' : ''}`}>
                           {addon.price} zł
                         </span>
                       </label>
                     );
                   })}
+                </div>
+
+                {/* Explanation of how premium options work */}
+                <div className="mt-4 p-4 rounded-lg bg-muted/50 text-sm space-y-3">
+                  <h5 className="font-medium text-foreground">Jak działają opcje premium?</h5>
+                  <div className="space-y-2 text-muted-foreground">
+                    <p>
+                      <strong className="text-foreground">⭐ Wyróżnienie</strong> – Twoje ogłoszenie otrzymuje złotą ramkę i pojawia się wyżej na liście ogłoszeń. Efekt trwa do końca aktywności ogłoszenia.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">💡 Podświetlenie</strong> – Ogłoszenie ma wyróżniające się tło, co przyciąga wzrok przeglądających. Efekt stały.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">⚡ PILNE</strong> – Czerwona odznaka "PILNE" widoczna przy ogłoszeniu. Idealne gdy potrzebujesz kogoś szybko.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">🚀 Promowanie 24h</strong> – Ogłoszenie jest promowane przez dokładnie 24 godziny od publikacji. Po tym czasie wraca do normalnego wyświetlania. Możesz sprawdzić czas pozostały w szczegółach ogłoszenia.
+                    </p>
+                  </div>
                 </div>
               </div>
 
