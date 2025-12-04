@@ -5,8 +5,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, BarChart3, Eye, MessageSquare, Clock, TrendingUp, Lock } from "lucide-react";
+import { Loader2, BarChart3, Eye, MessageSquare, Clock, TrendingUp, Lock, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface JobStats {
   id: string;
@@ -29,16 +30,17 @@ export default function Statistics() {
     totalViews: number;
     totalResponses: number;
     bestHour: number | null;
-    topJobs: JobStats[];
+    allJobs: JobStats[];
     hourlyData: HourlyStats[];
   }>({
     totalViews: 0,
     totalResponses: 0,
     bestHour: null,
-    topJobs: [],
+    allJobs: [],
     hourlyData: [],
   });
   const [loading, setLoading] = useState(true);
+  const [showAllJobs, setShowAllJobs] = useState(false);
 
   const hasAccess = subscribed && (plan === "pro" || plan === "boost");
 
@@ -109,22 +111,25 @@ export default function Statistics() {
         }
       });
 
-      // Top jobs by engagement
-      const topJobs = jobs
+      // All jobs sorted by views (primary) and responses (secondary)
+      const allJobs = jobs
         .map(j => ({
           id: j.id,
           title: j.title,
           views: viewsByJob.get(j.id) || 0,
           responses: responsesByJob.get(j.id) || 0,
         }))
-        .sort((a, b) => (b.views + b.responses * 5) - (a.views + a.responses * 5))
-        .slice(0, 5);
+        .sort((a, b) => {
+          // Sort by views first, then by responses
+          if (b.views !== a.views) return b.views - a.views;
+          return b.responses - a.responses;
+        });
 
       setStats({
         totalViews: views?.length || 0,
         totalResponses: responses?.length || 0,
         bestHour: maxViews > 0 ? bestHour : null,
-        topJobs,
+        allJobs,
         hourlyData: hourlyViews.map((views, hour) => ({ hour, views })),
       });
     } catch (err) {
@@ -224,46 +229,76 @@ export default function Statistics() {
           </Card>
         </div>
 
-        {/* Top jobs */}
+        {/* All jobs */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Najlepsze ogłoszenia
-            </CardTitle>
-            <CardDescription>Ranking wg zaangażowania</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Twoje ogłoszenia
+                </CardTitle>
+                <CardDescription>Ranking wg liczby wyświetleń ({stats.allJobs.length} ogłoszeń)</CardDescription>
+              </div>
+              {stats.allJobs.length > 5 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAllJobs(!showAllJobs)}
+                  className="gap-2"
+                >
+                  {showAllJobs ? (
+                    <>
+                      <ChevronUp className="h-4 w-4" />
+                      Pokaż mniej
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      Pokaż wszystkie ({stats.allJobs.length})
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            {stats.topJobs.length > 0 ? (
-              <div className="space-y-3">
-                {stats.topJobs.map((job, i) => (
-                  <div
-                    key={job.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    onClick={() => navigate(`/jobs/${job.id}`)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-muted-foreground w-6">
-                        #{i + 1}
-                      </span>
-                      <span className="font-medium">{job.title}</span>
+            {stats.allJobs.length > 0 ? (
+              <ScrollArea className={showAllJobs ? "h-[400px]" : ""}>
+                <div className="space-y-3 pr-4">
+                  {(showAllJobs ? stats.allJobs : stats.allJobs.slice(0, 5)).map((job, i) => (
+                    <div
+                      key={job.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                      onClick={() => navigate(`/jobs/${job.id}`)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className={`text-lg font-bold w-8 flex-shrink-0 ${
+                          i === 0 ? 'text-amber-500' : 
+                          i === 1 ? 'text-slate-400' : 
+                          i === 2 ? 'text-amber-700' : 'text-muted-foreground'
+                        }`}>
+                          #{i + 1}
+                        </span>
+                        <span className="font-medium truncate">{job.title}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-shrink-0">
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-4 w-4" />
+                          {job.views}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="h-4 w-4" />
+                          {job.responses}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        {job.views}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="h-4 w-4" />
-                        {job.responses}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </ScrollArea>
             ) : (
               <p className="text-muted-foreground text-center py-8">
-                Brak danych do wyświetlenia
+                Brak ogłoszeń do wyświetlenia
               </p>
             )}
           </CardContent>
