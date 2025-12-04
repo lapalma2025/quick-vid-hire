@@ -171,38 +171,47 @@
   }
 }
 
-/* Custom time/date input styling */
+/* Custom time/date input styling - Green theme */
 input[type="time"],
 input[type="date"],
 input[type="datetime-local"] {
-  @apply appearance-none cursor-pointer;
+  @apply cursor-pointer bg-background;
+  accent-color: hsl(152 76% 42%);
   color-scheme: light;
 }
 
+/* Style the clock/calendar icon */
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  @apply cursor-pointer opacity-60 hover:opacity-100 transition-opacity p-1 rounded;
+  @apply cursor-pointer rounded-md p-1.5 transition-all duration-200;
   background-color: hsl(152 76% 42% / 0.1);
-  filter: invert(48%) sepia(79%) saturate(400%) hue-rotate(100deg) brightness(95%) contrast(92%);
+  /* Green filter */
+  filter: brightness(0) saturate(100%) invert(45%) sepia(52%) saturate(600%) hue-rotate(110deg) brightness(96%) contrast(90%);
 }
 
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  background-color: hsl(152 76% 42% / 0.2);
+  transform: scale(1.1);
+}
+
+/* Focus states */
 input[type="time"]:focus,
 input[type="date"]:focus,
 input[type="datetime-local"]:focus {
-  @apply outline-none ring-2 ring-primary/30 border-primary;
+  @apply outline-none ring-2 ring-offset-2;
+  --tw-ring-color: hsl(152 76% 42% / 0.3);
+  border-color: hsl(152 76% 42%);
 }
 
-/* Override accent color for form elements */
-input[type="time"],
-input[type="date"],
-input[type="datetime-local"],
-input[type="checkbox"],
-input[type="radio"],
-select {
+/* Override accent color for all form elements */
+:root {
   accent-color: hsl(152 76% 42%);
 }
 
+/* Dark mode */
 .dark input[type="time"],
 .dark input[type="date"],
 .dark input[type="datetime-local"] {
@@ -212,7 +221,17 @@ select {
 .dark input[type="time"]::-webkit-calendar-picker-indicator,
 .dark input[type="date"]::-webkit-calendar-picker-indicator,
 .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) invert(48%) sepia(79%) saturate(400%) hue-rotate(100deg) brightness(120%) contrast(92%);
+  background-color: hsl(152 76% 48% / 0.15);
+  filter: brightness(0) saturate(100%) invert(65%) sepia(52%) saturate(500%) hue-rotate(110deg) brightness(100%) contrast(90%);
+}
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+  input[type="time"],
+  input[type="date"],
+  input[type="datetime-local"] {
+    accent-color: hsl(152 76% 42%);
+  }
 }
 
 /* Scrollbar styling */

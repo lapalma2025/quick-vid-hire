@@ -469,6 +469,7 @@ export default function Profile() {
                         value={form.available_from}
                         onChange={(e) => updateForm('available_from', e.target.value)}
                         placeholder="08:00"
+                        className="h-11 rounded-xl border-primary/20 focus:border-primary"
                       />
                     </div>
                     <div className="space-y-2">
@@ -478,6 +479,7 @@ export default function Profile() {
                         value={form.available_to}
                         onChange={(e) => updateForm('available_to', e.target.value)}
                         placeholder="18:00"
+                        className="h-11 rounded-xl border-primary/20 focus:border-primary"
                       />
                     </div>
                   </div>
