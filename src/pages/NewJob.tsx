@@ -20,11 +20,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight, ArrowLeft, CreditCard, CheckCircle, Users } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
-import { CitySelect } from '@/components/jobs/CitySelect';
+import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
 import { CountrySelect } from '@/components/jobs/CountrySelect';
 import { ForeignCitySelect } from '@/components/jobs/ForeignCitySelect';
 import { LocationTypeToggle } from '@/components/jobs/LocationTypeToggle';
+import { WOJEWODZTWA } from '@/lib/constants';
 
 interface Category {
   id: string;
@@ -284,29 +285,23 @@ export default function NewJob() {
                   <div className="grid grid-cols-2 gap-4 pt-2 animate-fade-in">
                     <div className="space-y-2">
                       <Label className="text-sm">Min. osób</Label>
-                      <Select value={form.min_workers} onValueChange={(v) => updateForm('min_workers', v)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={form.min_workers}
+                        onChange={(e) => updateForm('min_workers', e.target.value)}
+                        placeholder="np. 2"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-sm">Max. osób</Label>
-                      <Select value={form.max_workers} onValueChange={(v) => updateForm('max_workers', v)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[2, 3, 4, 5, 6, 7, 8, 10].filter(n => n >= parseInt(form.min_workers)).map(n => (
-                            <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        type="number"
+                        min={form.min_workers || '1'}
+                        value={form.max_workers}
+                        onChange={(e) => updateForm('max_workers', e.target.value)}
+                        placeholder="np. 5"
+                      />
                     </div>
                   </div>
                 )}
@@ -345,11 +340,19 @@ export default function NewJob() {
 
                   <div className="space-y-2">
                     <Label>Miasto *</Label>
-                    <CitySelect
-                      wojewodztwo={form.wojewodztwo}
+                    <CityAutocomplete
                       value={form.miasto}
                       onChange={(v) => updateForm('miasto', v)}
-                      disabled={!form.wojewodztwo}
+                      onRegionChange={(region) => {
+                        const normalizedRegion = region.toLowerCase();
+                        const matchedWojewodztwo = WOJEWODZTWA.find(
+                          w => w.toLowerCase() === normalizedRegion
+                        );
+                        if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
+                          setForm(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
+                        }
+                      }}
+                      placeholder="Wpisz miasto..."
                     />
                   </div>
                 </div>

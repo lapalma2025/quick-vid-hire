@@ -29,7 +29,8 @@ import {
 } from 'lucide-react';
 import gsap from 'gsap';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
-import { CitySelect } from '@/components/jobs/CitySelect';
+import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
+import { WOJEWODZTWA } from '@/lib/constants';
 
 const PAGE_SIZE = 10;
 
@@ -348,11 +349,19 @@ export default function Workers() {
                 </div>
                 <div className="space-y-2">
                   <Label className="font-medium">Miasto</Label>
-                  <CitySelect
-                    wojewodztwo={filters.wojewodztwo}
+                  <CityAutocomplete
                     value={filters.miasto}
                     onChange={(v) => updateFilter('miasto', v)}
-                    disabled={!filters.wojewodztwo}
+                    onRegionChange={(region) => {
+                      const normalizedRegion = region.toLowerCase();
+                      const matchedWojewodztwo = WOJEWODZTWA.find(
+                        w => w.toLowerCase() === normalizedRegion
+                      );
+                      if (matchedWojewodztwo && matchedWojewodztwo !== filters.wojewodztwo) {
+                        setFilters(prev => ({ ...prev, wojewodztwo: matchedWojewodztwo }));
+                      }
+                    }}
+                    placeholder="Wpisz miasto..."
                   />
                 </div>
                 <div className="space-y-2">
