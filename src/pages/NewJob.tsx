@@ -41,7 +41,7 @@ type Step = 1 | 2 | 3 | 4;
 export default function NewJob() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, isLoading: authLoading } = useAuth();
   const { subscribed, plan, remainingListings, remainingHighlights, checkSubscription } = useSubscription();
   const { toast } = useToast();
 
@@ -87,13 +87,16 @@ export default function NewJob() {
   }, [searchParams]);
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
     
     fetchCategories();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id, name').order('name');
