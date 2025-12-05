@@ -77,12 +77,37 @@ export default function NewJob() {
     promote_24h: false,
   });
 
+  // Restore form data from localStorage on mount (for Stripe return)
+  useEffect(() => {
+    const savedFormData = localStorage.getItem('newJobFormData');
+    const savedAddons = localStorage.getItem('newJobAddons');
+    
+    if (savedFormData) {
+      try {
+        const parsed = JSON.parse(savedFormData);
+        setForm(parsed);
+      } catch (e) {
+        console.error('Failed to parse saved form data:', e);
+      }
+    }
+    
+    if (savedAddons) {
+      try {
+        const parsed = JSON.parse(savedAddons);
+        setAddons(parsed);
+      } catch (e) {
+        console.error('Failed to parse saved addons:', e);
+      }
+    }
+  }, []);
+
   // Check for success callback from Stripe
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setPaymentComplete(true);
+      setStep(4); // Go to summary step
       checkSubscription();
-      toast({ title: 'Płatność zakończona!', description: 'Możesz teraz opublikować zlecenie.' });
+      toast({ title: 'Płatność zakończona!', description: 'Kliknij "Opublikuj" aby dodać zlecenie.' });
     }
   }, [searchParams]);
 
@@ -247,6 +272,9 @@ export default function NewJob() {
       if (error) throw error;
       
       if (data?.url) {
+        // Save form data to localStorage before redirecting to Stripe
+        localStorage.setItem('newJobFormData', JSON.stringify(form));
+        localStorage.setItem('newJobAddons', JSON.stringify(addons));
         window.location.href = data.url;
       }
     } catch (err) {
@@ -311,6 +339,11 @@ export default function NewJob() {
     }
 
     setLoading(false);
+    
+    // Clear saved form data from localStorage
+    localStorage.removeItem('newJobFormData');
+    localStorage.removeItem('newJobAddons');
+    
     toast({ title: 'Zlecenie dodane!' });
     navigate(`/jobs/${job.id}`);
   };
