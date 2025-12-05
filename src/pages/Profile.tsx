@@ -37,7 +37,7 @@ interface Category {
 export default function Profile() {
   const navigate = useNavigate();
   const { profile, isAuthenticated, isLoading, refreshProfile } = useAuth();
-  const { subscribed, plan, isTrusted, loading: subscriptionLoading } = useSubscription();
+  const { subscribed, plan, isTrusted } = useSubscription();
   const { viewMode } = useViewModeStore();
   const isWorkerView = viewMode === 'worker';
   const { toast } = useToast();
@@ -348,12 +348,11 @@ export default function Profile() {
     refreshProfile();
   };
 
-  if (isLoading || subscriptionLoading) {
+  if (isLoading) {
     return (
       <Layout>
-        <div className="container py-16 flex flex-col items-center gap-3">
+        <div className="container py-16 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">Ładowanie profilu...</p>
         </div>
       </Layout>
     );
