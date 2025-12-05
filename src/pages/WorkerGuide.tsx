@@ -1,41 +1,43 @@
-import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { UserPlus, Search, Send, MessageSquare, CheckCircle, Star } from 'lucide-react';
+import { Layout } from "@/components/layout/Layout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { UserPlus, Search, Send, MessageSquare, CheckCircle, Star } from "lucide-react";
 
 const WorkerGuide = () => {
   const steps = [
     {
       icon: UserPlus,
-      title: 'Załóż konto wykonawcy',
-      description: 'Zarejestruj się i wybierz rolę wykonawcy. Uzupełnij swój profil - dodaj zdjęcie, opis i kategorie usług.'
+      title: "Załóż konto",
+      description: "Zarejestruj się. Uzupełnij swój profil - dodaj zdjęcie, opis i kategorie usług.",
     },
     {
       icon: Search,
-      title: 'Przeglądaj zlecenia',
-      description: 'Szukaj zleceń w swojej okolicy i kategorii. Używaj filtrów, aby znaleźć idealne zlecenia dla siebie.'
+      title: "Przeglądaj zlecenia",
+      description:
+        "Szukaj zleceń w swojej okolicy i kategorii. Używaj filtrów, aby znaleźć idealne zlecenia dla siebie.",
     },
     {
       icon: Send,
-      title: 'Składaj oferty',
-      description: 'Znalazłeś ciekawe zlecenie? Złóż ofertę z proponowaną ceną i terminem realizacji. Wyróżnij się!'
+      title: "Składaj oferty",
+      description: "Znalazłeś ciekawe zlecenie? Złóż ofertę z proponowaną ceną i terminem realizacji. Wyróżnij się!",
     },
     {
       icon: MessageSquare,
-      title: 'Rozmawiaj ze zleceniodawcą',
-      description: 'Po zaakceptowaniu oferty skontaktuj się przez czat. Ustal szczegóły i potwierdź warunki współpracy.'
+      title: "Rozmawiaj ze zleceniodawcą",
+      description:
+        "Po zaakceptowaniu oferty skontaktuj się przez czat. Ustal szczegóły i potwierdź warunki współpracy.",
     },
     {
       icon: CheckCircle,
-      title: 'Wykonaj zlecenie',
-      description: 'Zrealizuj zlecenie zgodnie z ustaleniami. Dbaj o jakość - to buduje Twoją reputację.'
+      title: "Wykonaj zlecenie",
+      description: "Zrealizuj zlecenie zgodnie z ustaleniami. Dbaj o jakość - to buduje Twoją reputację.",
     },
     {
       icon: Star,
-      title: 'Zbieraj opinie',
-      description: 'Dobre opinie przyciągają więcej klientów. Proś o ocenę po każdym udanym zleceniu.'
-    }
+      title: "Zbieraj opinie",
+      description: "Dobre opinie przyciągają więcej klientów. Proś o ocenę po każdym udanym zleceniu.",
+    },
   ];
 
   return (
@@ -69,9 +71,7 @@ const WorkerGuide = () => {
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="p-6 text-center">
               <h3 className="text-xl font-semibold mb-2">Gotowy do działania?</h3>
-              <p className="text-muted-foreground mb-4">
-                Dołącz do tysięcy wykonawców i zacznij zarabiać już dziś!
-              </p>
+              <p className="text-muted-foreground mb-4">Dołącz do tysięcy wykonawców i zacznij zarabiać już dziś!</p>
               <div className="flex gap-4 justify-center">
                 <Button asChild>
                   <Link to="/register">Zarejestruj się</Link>
