@@ -138,140 +138,138 @@ export default function WorkerProfile() {
 
   return (
     <Layout>
-      <div className="container max-w-4xl py-8">
+      <div className="container py-8">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Wróć
         </Button>
 
-        <div className="grid lg:grid-cols-[1fr_320px] gap-8">
-          {/* Main */}
-          <div className="space-y-6">
-            {/* Header */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-6">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={worker.avatar_url || ''} />
-                    <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                      {worker.name?.charAt(0)?.toUpperCase() || 'W'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-2xl font-bold">{worker.name || 'Wykonawca'}</h1>
-                      {worker.is_available ? (
-                        <Badge className="bg-success">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Dostępny
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">Niedostępny</Badge>
-                      )}
+        <div className="space-y-6">
+          {/* Header */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-6">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={worker.avatar_url || ''} />
+                  <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
+                    {worker.name?.charAt(0)?.toUpperCase() || 'W'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-2xl font-bold">{worker.name || 'Wykonawca'}</h1>
+                    {worker.is_available ? (
+                      <Badge className="bg-success">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Dostępny
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Niedostępny</Badge>
+                    )}
+                  </div>
+                  
+                  {worker.rating_count > 0 && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <StarRating value={worker.rating_avg} readonly size="sm" />
+                      <span className="font-medium">{worker.rating_avg.toFixed(1)}</span>
+                      <span className="text-muted-foreground">({worker.rating_count} opinii)</span>
                     </div>
-                    
-                    {worker.rating_count > 0 && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <StarRating value={worker.rating_avg} readonly size="sm" />
-                        <span className="font-medium">{worker.rating_avg.toFixed(1)}</span>
-                        <span className="text-muted-foreground">({worker.rating_count} opinii)</span>
+                  )}
+
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    {worker.miasto && worker.wojewodztwo && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {worker.miasto}, {worker.wojewodztwo}
                       </div>
                     )}
-
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      {worker.miasto && worker.wojewodztwo && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {worker.miasto}, {worker.wojewodztwo}
-                        </div>
-                      )}
-                      {worker.hourly_rate && (
-                        <div className="flex items-center gap-1">
-                          <Banknote className="h-4 w-4" />
-                          {worker.hourly_rate} zł/h
-                        </div>
-                      )}
+                    {worker.hourly_rate && (
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        Od {format(new Date(worker.created_at), 'MMMM yyyy', { locale: pl })}
+                        <Banknote className="h-4 w-4" />
+                        {worker.hourly_rate} zł/h
                       </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      Od {format(new Date(worker.created_at), 'MMMM yyyy', { locale: pl })}
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Two column layout for Bio/Reviews and Categories */}
+          <div className="grid lg:grid-cols-2 gap-6">
             {/* Bio */}
-            {worker.bio && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>O mnie</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-wrap">{worker.bio}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Reviews */}
             <Card>
               <CardHeader>
-                <CardTitle>Opinie ({worker.rating_count})</CardTitle>
+                <CardTitle>O mnie</CardTitle>
               </CardHeader>
               <CardContent>
-                {reviews.length === 0 ? (
-                  <p className="text-muted-foreground">Brak opinii</p>
-                ) : (
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="border-b pb-4 last:border-0 last:pb-0">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={review.reviewer.avatar_url || ''} />
-                            <AvatarFallback>
-                              {review.reviewer.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">
-                                {review.reviewer.name || 'Użytkownik'}
-                              </span>
-                              <StarRating value={review.rating} readonly size="sm" />
-                            </div>
-                            {review.comment && (
-                              <p className="text-sm text-muted-foreground">{review.comment}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {review.job.title} • {format(new Date(review.created_at), 'dd MMM yyyy', { locale: pl })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <p className="whitespace-pre-wrap">{worker.bio || 'Brak opisu'}</p>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {categories.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Specjalizacje</CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* Specializations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Specjalizacje</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {categories.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (
                       <Badge key={cat.id} variant="secondary">{cat.name}</Badge>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-muted-foreground">Brak specjalizacji</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Reviews - Full width */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Opinie ({worker.rating_count})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {reviews.length === 0 ? (
+                <p className="text-muted-foreground">Brak opinii</p>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="border rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={review.reviewer.avatar_url || ''} />
+                          <AvatarFallback>
+                            {review.reviewer.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">
+                              {review.reviewer.name || 'Użytkownik'}
+                            </span>
+                            <StarRating value={review.rating} readonly size="sm" />
+                          </div>
+                          {review.comment && (
+                            <p className="text-sm text-muted-foreground">{review.comment}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {review.job.title} • {format(new Date(review.created_at), 'dd MMM yyyy', { locale: pl })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>
