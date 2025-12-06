@@ -450,8 +450,8 @@ export default function Index() {
 								</h2>
 
 								<p className="text-lg text-white/80 max-w-lg mx-auto">
-									Dołącz do społeczności ZlecenieTeraz i zacznij realizować
-									zlecenia lub znajdź wykonawcę już dziś
+									Dołącz do społeczności i zacznij realizować zlecenia lub
+									znajdź wykonawcę już dziś
 								</p>
 
 								<div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
