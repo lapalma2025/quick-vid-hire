@@ -198,7 +198,7 @@ export function CityAutocomplete({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="pr-8"
+          className="h-11 rounded-xl pr-8"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {isLoading ? (
