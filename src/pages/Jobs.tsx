@@ -286,7 +286,7 @@ export default function Jobs() {
       <div className="container py-10">
         <div className="grid lg:grid-cols-[300px_1fr] gap-10">
           <aside className="hidden lg:block">
-            <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-transparent pr-1">
+            <div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/40 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 pr-2">
               <JobFilters onFiltersChange={setFilters} />
             </div>
           </aside>
