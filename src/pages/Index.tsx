@@ -340,69 +340,33 @@ export default function Index() {
       </section>
 
       {/* CTA */}
-      <section ref={ctaRef} className="py-24 md:py-32 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
-        
-        <div className="container relative z-10">
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary to-primary-glow p-1">
-            {/* Inner glow border */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 rounded-[2.5rem]" />
+      <section ref={ctaRef} className="py-16 md:py-20">
+        <div className="container">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/80 p-8 md:p-12">
+            {/* Subtle background decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
             
-            <div className="relative bg-gradient-to-br from-primary via-primary/95 to-primary-glow rounded-[2.3rem] p-10 md:p-20">
-              {/* Animated decorative elements */}
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] animate-pulse" />
-              <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/15 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1s' }} />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px]" />
-              
-              {/* Floating shapes */}
-              <div className="absolute top-10 left-10 w-20 h-20 border border-white/20 rounded-2xl rotate-12 animate-float" />
-              <div className="absolute bottom-10 right-10 w-16 h-16 border border-white/20 rounded-full animate-float" style={{ animationDelay: '0.5s' }} />
-              <div className="absolute top-1/4 right-1/4 w-8 h-8 bg-white/20 rounded-lg rotate-45 animate-float" style={{ animationDelay: '1s' }} />
-              
-              <div className="relative z-10 space-y-8 max-w-3xl mx-auto text-center">
-                {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
-                  <Zap className="w-4 h-4 text-white" />
-                  <span className="text-sm font-medium text-white">Rozpocznij w 2 minuty</span>
-                </div>
-                
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight">
-                  Gotowy do<br />
-                  <span className="bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">działania?</span>
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="text-center md:text-left">
+                <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
+                  Gotowy do działania?
                 </h2>
-                
-                <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-xl mx-auto">
-                  Dołącz do tysięcy użytkowników, którzy już korzystają z ZlecenieTeraz i znajdź idealnego wykonawcę
+                <p className="text-white/70 text-sm md:text-base max-w-md">
+                  Dołącz do tysięcy użytkowników i znajdź idealnego wykonawcę
                 </p>
-                
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                  <Button size="lg" asChild className="group h-16 px-10 text-lg rounded-2xl bg-white text-primary hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-2xl shadow-black/20">
-                    <Link to="/register" className="flex items-center gap-3">
-                      Zarejestruj się za darmo
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" className="h-16 px-10 text-lg rounded-2xl bg-white/10 border-2 border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 transition-all duration-300 backdrop-blur-sm" asChild>
-                    <Link to="/jobs">Zobacz zlecenia</Link>
-                  </Button>
-                </div>
-                
-                {/* Trust indicators */}
-                <div className="flex flex-wrap items-center justify-center gap-6 pt-8 text-white/60 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-white/80" />
-                    <span>Bez zobowiązań</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-white/80" />
-                    <span>Bezpieczne płatności</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-white/80" />
-                    <span>Tysiące wykonawców</span>
-                  </div>
-                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button size="lg" asChild className="h-12 px-6 rounded-xl bg-white text-primary hover:bg-white/90 transition-all">
+                  <Link to="/register" className="flex items-center gap-2">
+                    Zarejestruj się
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="ghost" className="h-12 px-6 rounded-xl text-white border border-white/20 hover:bg-white/10" asChild>
+                  <Link to="/jobs">Zobacz zlecenia</Link>
+                </Button>
               </div>
             </div>
           </div>
