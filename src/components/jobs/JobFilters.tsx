@@ -302,7 +302,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
       </div>
 
       {/* Desktop filters */}
-      <div className="hidden md:block card-modern p-6">
+      <div className="hidden md:block bg-card/80 backdrop-blur-sm border border-border/50 rounded-2xl p-6">
         <h3 className="font-display font-bold text-lg mb-5">Filtry</h3>
         <FilterContent />
       </div>
