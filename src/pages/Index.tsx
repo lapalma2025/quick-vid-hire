@@ -429,91 +429,63 @@ export default function Index() {
 			</section>
 
 			{/* CTA */}
-			<section ref={ctaRef} className="py-24 md:py-32 relative overflow-hidden">
-				{/* Background decoration */}
-				<div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
-
-				<div className="container relative z-10">
-					<div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary to-primary-glow p-1">
-						{/* Inner glow border */}
-						<div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 rounded-[2.5rem]" />
-
-						<div className="relative bg-gradient-to-br from-primary via-primary/95 to-primary-glow rounded-[2.3rem] p-10 md:p-20">
-							{/* Animated decorative elements */}
-							<div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] animate-pulse" />
+			<section ref={ctaRef} className="py-20 md:py-28">
+				<div className="container">
+					<div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-primary to-emerald-600">
+						{/* Background pattern */}
+						<div className="absolute inset-0 opacity-30">
 							<div
-								className="absolute bottom-0 left-0 w-72 h-72 bg-white/15 rounded-full blur-[80px] animate-pulse"
-								style={{ animationDelay: "1s" }}
+								className="absolute top-0 left-0 w-full h-full"
+								style={{
+									backgroundImage:
+										"radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 40%)",
+								}}
 							/>
-							<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px]" />
+						</div>
 
-							{/* Floating shapes */}
-							<div className="absolute top-10 left-10 w-20 h-20 border border-white/20 rounded-2xl rotate-12 animate-float" />
-							<div
-								className="absolute bottom-10 right-10 w-16 h-16 border border-white/20 rounded-full animate-float"
-								style={{ animationDelay: "0.5s" }}
-							/>
-							<div
-								className="absolute top-1/4 right-1/4 w-8 h-8 bg-white/20 rounded-lg rotate-45 animate-float"
-								style={{ animationDelay: "1s" }}
-							/>
-
-							<div className="relative z-10 space-y-8 max-w-3xl mx-auto text-center">
-								{/* Badge */}
-								<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
-									<Zap className="w-4 h-4 text-white" />
-									<span className="text-sm font-medium text-white">
-										Rozpocznij w 2 minuty
-									</span>
-								</div>
-
-								<h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight">
-									Gotowy do
-									<br />
-									<span className="bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
-										działania?
-									</span>
+						<div className="relative z-10 px-8 py-16 md:px-16 md:py-20">
+							<div className="max-w-2xl mx-auto text-center space-y-6">
+								<h2 className="text-3xl md:text-5xl font-display font-bold text-white leading-tight">
+									Gotowy do działania?
 								</h2>
 
-								<p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-xl mx-auto">
-									Dołącz do tysięcy użytkowników, którzy już korzystają z
-									ZlecenieTeraz i znajdź idealnego wykonawcę
+								<p className="text-lg text-white/80 max-w-lg mx-auto">
+									Dołącz do społeczności ZlecenieTeraz i zacznij realizować
+									zlecenia lub znajdź wykonawcę już dziś
 								</p>
 
-								<div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+								<div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
 									<Button
 										size="lg"
 										asChild
-										className="group h-16 px-10 text-lg rounded-2xl bg-white text-primary hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-2xl shadow-black/20"
+										className="group h-14 px-8 text-base rounded-xl bg-white text-primary font-semibold hover:bg-white/95 hover:scale-[1.02] transition-all duration-200 shadow-lg"
 									>
-										<Link to="/register" className="flex items-center gap-3">
+										<Link to="/register" className="flex items-center gap-2">
 											Zarejestruj się za darmo
-											<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+											<ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
 										</Link>
 									</Button>
 									<Button
 										size="lg"
-										variant="outline"
-										className="h-16 px-10 text-lg rounded-2xl bg-white/10 border-2 border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 transition-all duration-300 backdrop-blur-sm"
+										className="h-14 px-8 text-base rounded-xl bg-white/15 border-0 text-white font-medium hover:bg-white/25 transition-all duration-200 backdrop-blur-sm"
 										asChild
 									>
-										<Link to="/jobs">Zobacz zlecenia</Link>
+										<Link to="/jobs">Przeglądaj zlecenia</Link>
 									</Button>
 								</div>
 
-								{/* Trust indicators */}
-								<div className="flex flex-wrap items-center justify-center gap-6 pt-8 text-white/60 text-sm">
+								<div className="flex items-center justify-center gap-6 pt-6 text-white/70 text-sm">
 									<div className="flex items-center gap-2">
-										<CheckCircle2 className="w-4 h-4 text-white/80" />
+										<CheckCircle2 className="w-4 h-4" />
 										<span>Bez zobowiązań</span>
 									</div>
 									<div className="flex items-center gap-2">
-										<Shield className="w-4 h-4 text-white/80" />
-										<span>Bezpieczne płatności</span>
+										<Shield className="w-4 h-4" />
+										<span>Bezpieczne</span>
 									</div>
 									<div className="flex items-center gap-2">
-										<Users className="w-4 h-4 text-white/80" />
-										<span>Tysiące wykonawców</span>
+										<Zap className="w-4 h-4" />
+										<span>Szybki start</span>
 									</div>
 								</div>
 							</div>

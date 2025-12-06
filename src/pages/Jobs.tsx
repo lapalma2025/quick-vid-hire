@@ -292,6 +292,7 @@ export default function Jobs() {
 							<Search className="h-6 w-6 text-primary" />
 						</div>
 						<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+							<Sparkles className="h-3.5 w-3.5" />
 							{totalCount} zleceń
 						</div>
 					</div>
@@ -305,10 +306,17 @@ export default function Jobs() {
 			</div>
 
 			<div className="container py-10">
-				<div className="grid lg:grid-cols-[320px_1fr] gap-8">
-					<aside className="lg:sticky lg:top-28 lg:self-start lg:h-fit">
-						<JobFilters onFiltersChange={setFilters} />
+				<div className="grid lg:grid-cols-[300px_1fr] gap-10">
+					<aside className="hidden lg:block">
+						<div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/40 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 pr-2">
+							<JobFilters onFiltersChange={setFilters} />
+						</div>
 					</aside>
+
+					{/* Mobile filters */}
+					<div className="lg:hidden">
+						<JobFilters onFiltersChange={setFilters} />
+					</div>
 
 					<div>
 						{loading ? (
