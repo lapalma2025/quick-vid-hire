@@ -441,12 +441,6 @@ export default function Profile() {
 										</p>
 									</div>
 								</div>
-								{isTrusted && (
-									<Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0">
-										<Star className="h-3 w-3 mr-1 fill-current" />
-										Zaufany Profil
-									</Badge>
-								)}
 							</div>
 						</CardContent>
 					</Card>
@@ -500,9 +494,6 @@ export default function Profile() {
 										<Star className="h-5 w-5 text-amber-500 fill-amber-500" />
 									)}
 								</div>
-								<p className="text-muted-foreground capitalize">
-									{profile?.role}
-								</p>
 								{profile?.rating_count! > 0 && (
 									<div className="flex items-center gap-1 mt-1">
 										<Star className="h-4 w-4 fill-warning text-warning" />
