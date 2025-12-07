@@ -111,26 +111,41 @@ serve(async (req) => {
         } else if (session.mode === "payment") {
           // One-time payment
           const metadata = session.metadata || {};
-          const addons = metadata.addons ? JSON.parse(metadata.addons) : {};
-          const jobId = metadata.job_id;
+          const paymentType = metadata.type;
           
-          if (jobId) {
-            // Update job with premium features
-            const updates: any = {};
-            if (addons.highlight) updates.is_highlighted = true;
-            if (addons.promote) updates.is_promoted = true;
-            if (addons.urgent) updates.urgent = true;
-            if (addons.promote_24h) {
-              updates.is_promoted = true;
-              updates.promotion_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-            }
-            
-            if (Object.keys(updates).length > 0) {
+          if (paymentType === "worker_visibility") {
+            // Worker visibility payment
+            const profileId = metadata.profile_id;
+            if (profileId) {
               await supabaseClient
-                .from("jobs")
-                .update(updates)
-                .eq("id", jobId);
-              logStep("Job updated with premium features", { jobId, updates });
+                .from("profiles")
+                .update({ worker_visibility_paid: true })
+                .eq("id", profileId);
+              logStep("Worker visibility activated", { profileId });
+            }
+          } else {
+            // Job premium features payment
+            const addons = metadata.addons ? JSON.parse(metadata.addons) : {};
+            const jobId = metadata.job_id;
+            
+            if (jobId) {
+              // Update job with premium features
+              const updates: any = {};
+              if (addons.highlight) updates.is_highlighted = true;
+              if (addons.promote) updates.is_promoted = true;
+              if (addons.urgent) updates.urgent = true;
+              if (addons.promote_24h) {
+                updates.is_promoted = true;
+                updates.promotion_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+              }
+              
+              if (Object.keys(updates).length > 0) {
+                await supabaseClient
+                  .from("jobs")
+                  .update(updates)
+                  .eq("id", jobId);
+                logStep("Job updated with premium features", { jobId, updates });
+              }
             }
           }
         }

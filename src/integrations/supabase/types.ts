@@ -385,6 +385,8 @@ export type Database = {
           updated_at: string | null
           user_id: string
           wojewodztwo: string | null
+          worker_profile_completed: boolean | null
+          worker_visibility_paid: boolean | null
         }
         Insert: {
           available_from?: string | null
@@ -412,6 +414,8 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           wojewodztwo?: string | null
+          worker_profile_completed?: boolean | null
+          worker_visibility_paid?: boolean | null
         }
         Update: {
           available_from?: string | null
@@ -439,6 +443,8 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           wojewodztwo?: string | null
+          worker_profile_completed?: boolean | null
+          worker_visibility_paid?: boolean | null
         }
         Relationships: []
       }
