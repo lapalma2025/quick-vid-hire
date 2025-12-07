@@ -83,7 +83,7 @@ export default function WorkerOnboarding() {
     }
   }, [selectedCategories, formInitialized]);
 
-  // Handle visibility payment success - auto-activate profile and redirect
+  // Handle visibility payment success - verify with Stripe API and auto-activate profile
   useEffect(() => {
     if (visibilityHandled) return;
     
@@ -95,9 +95,24 @@ export default function WorkerOnboarding() {
       // Clean URL immediately
       window.history.replaceState({}, "", "/worker-onboarding");
       
-      // Auto-activate profile after successful payment
-      const autoActivateProfile = async () => {
+      // Verify payment with Stripe API and auto-activate profile
+      const verifyAndActivateProfile = async () => {
         try {
+          // First, verify the payment with Stripe API (bypasses webhook issues)
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke("verify-visibility-payment");
+          
+          if (verifyError) {
+            console.error("Verification error:", verifyError);
+            toast.error("Błąd weryfikacji płatności - spróbuj ponownie");
+            return;
+          }
+          
+          if (!verifyData?.success) {
+            console.error("Payment not verified:", verifyData);
+            toast.error("Płatność nie została potwierdzona - skontaktuj się z obsługą");
+            return;
+          }
+          
           // Get form data from state or localStorage
           const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
           const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
@@ -105,7 +120,7 @@ export default function WorkerOnboarding() {
           const formData = savedForm ? JSON.parse(savedForm) : form;
           const categories = savedCategories ? JSON.parse(savedCategories) : selectedCategories;
           
-          // Update profile
+          // Update profile with all data + mark as completed
           await supabase
             .from("profiles")
             .update({
@@ -117,6 +132,7 @@ export default function WorkerOnboarding() {
               hourly_rate: parseFloat(formData.hourly_rate),
               avatar_url: avatarUrl,
               worker_profile_completed: true,
+              worker_visibility_paid: true, // Ensure this is set
               is_available: true,
               updated_at: new Date().toISOString(),
             })
@@ -140,6 +156,7 @@ export default function WorkerOnboarding() {
           localStorage.removeItem(FORM_STORAGE_KEY);
           localStorage.removeItem(CATEGORIES_STORAGE_KEY);
           
+          await refreshProfile();
           toast.success("Profil wykonawcy aktywowany! Jesteś widoczny w katalogu wykonawców.");
           navigate("/workers");
         } catch (error) {
@@ -148,7 +165,7 @@ export default function WorkerOnboarding() {
         }
       };
       
-      autoActivateProfile();
+      verifyAndActivateProfile();
     }
     
     if (isCancelled) {
@@ -156,7 +173,7 @@ export default function WorkerOnboarding() {
       toast.info("Płatność została anulowana");
       window.history.replaceState({}, "", "/worker-onboarding");
     }
-  }, [searchParams, visibilityHandled, profile, formInitialized, form, selectedCategories, avatarUrl, navigate]);
+  }, [searchParams, visibilityHandled, profile, formInitialized, form, selectedCategories, avatarUrl, navigate, refreshProfile]);
 
   // Initialize form - restore from localStorage or profile
   useEffect(() => {
