@@ -57,6 +57,7 @@ export default function WorkerOnboarding() {
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [visibilitySuccess, setVisibilitySuccess] = useState(false);
   const [formInitialized, setFormInitialized] = useState(false);
+  const [visibilityHandled, setVisibilityHandled] = useState(false);
   
   const [form, setForm] = useState({
     name: "",
@@ -76,16 +77,22 @@ export default function WorkerOnboarding() {
     }
   }, [form, formInitialized]);
 
-  // Save selected categories to localStorage
+  // Save selected categories to localStorage (even empty array to track that user visited)
   useEffect(() => {
-    if (formInitialized && selectedCategories.length > 0) {
+    if (formInitialized) {
       localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(selectedCategories));
     }
   }, [selectedCategories, formInitialized]);
 
-  // Handle visibility payment success
+  // Handle visibility payment success - only once
   useEffect(() => {
-    if (searchParams.get("visibility_success") === "true") {
+    if (visibilityHandled) return;
+    
+    const isSuccess = searchParams.get("visibility_success") === "true";
+    const isCancelled = searchParams.get("visibility_cancelled") === "true";
+    
+    if (isSuccess) {
+      setVisibilityHandled(true);
       setVisibilitySuccess(true);
       refreshProfile();
       // Clean URL
@@ -95,11 +102,12 @@ export default function WorkerOnboarding() {
         setVisibilitySuccess(false);
       }, 3000);
     }
-    if (searchParams.get("visibility_cancelled") === "true") {
+    if (isCancelled) {
+      setVisibilityHandled(true);
       toast.info("Płatność została anulowana");
       window.history.replaceState({}, "", "/worker-onboarding");
     }
-  }, [searchParams, refreshProfile]);
+  }, [searchParams, visibilityHandled]);
 
   // Initialize form - restore from localStorage or profile
   useEffect(() => {
