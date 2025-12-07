@@ -412,7 +412,10 @@ export default function WorkerOnboarding() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Miasto *</Label>
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Miasto *
+                  </Label>
                   <CityAutocomplete
                     value={form.miasto}
                     onChange={(v) => updateForm("miasto", v)}
