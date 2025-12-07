@@ -52,6 +52,7 @@ export default function WorkerOnboarding() {
   const [uploading, setUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [visibilitySuccess, setVisibilitySuccess] = useState(false);
   
   const [form, setForm] = useState({
     name: "",
@@ -67,7 +68,7 @@ export default function WorkerOnboarding() {
   // Handle visibility payment success
   useEffect(() => {
     if (searchParams.get("visibility_success") === "true") {
-      toast.success("Widoczność została aktywowana!");
+      setVisibilitySuccess(true);
       refreshProfile();
       // Clean URL
       window.history.replaceState({}, "", "/worker-onboarding");
@@ -139,27 +140,48 @@ export default function WorkerOnboarding() {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
-    setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${profile.user_id}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true });
-
-    if (uploadError) {
-      toast.error("Błąd podczas przesyłania zdjęcia");
-      setUploading(false);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Wybierz plik graficzny");
       return;
     }
 
-    const { data: publicData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(path);
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Zdjęcie nie może być większe niż 5MB");
+      return;
+    }
 
-    setAvatarUrl(publicData.publicUrl + `?t=${Date.now()}`);
-    setUploading(false);
-    toast.success("Zdjęcie zostało przesłane");
+    setUploading(true);
+    
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || 'jpg';
+      // Path must include user_id as folder for RLS policy to work
+      const path = `${profile.user_id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) {
+        console.error("Avatar upload error:", uploadError);
+        toast.error("Błąd podczas przesyłania zdjęcia: " + uploadError.message);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+
+      const newAvatarUrl = publicData.publicUrl + `?t=${Date.now()}`;
+      setAvatarUrl(newAvatarUrl);
+      toast.success("Zdjęcie zostało przesłane");
+    } catch (error: any) {
+      console.error("Avatar upload error:", error);
+      toast.error("Wystąpił błąd podczas przesyłania zdjęcia");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -214,7 +236,7 @@ export default function WorkerOnboarding() {
     setLoading(true);
 
     try {
-      // Update profile
+      // Update profile - also set is_available to true so worker appears in listings
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
@@ -226,6 +248,7 @@ export default function WorkerOnboarding() {
           hourly_rate: parseFloat(form.hourly_rate),
           avatar_url: avatarUrl,
           worker_profile_completed: true,
+          is_available: true, // Important: make worker visible
           updated_at: new Date().toISOString(),
         })
         .eq("id", profile.id);
@@ -243,7 +266,10 @@ export default function WorkerOnboarding() {
           worker_id: profile.id,
           category_id: catId,
         }));
-        await supabase.from("worker_categories").insert(categoryInserts);
+        const { error: catError } = await supabase.from("worker_categories").insert(categoryInserts);
+        if (catError) {
+          console.error("Error inserting categories:", catError);
+        }
       }
 
       // Upload gallery images
@@ -270,11 +296,12 @@ export default function WorkerOnboarding() {
         }
       }
 
-      refreshProfile();
-      toast.success("Profil wykonawcy został aktywowany!");
-      navigate("/dashboard");
+      await refreshProfile();
+      toast.success("Profil wykonawcy został aktywowany! Teraz możesz składać oferty na zlecenia.");
+      navigate("/workers");
     } catch (error: any) {
-      toast.error(error.message || "Wystąpił błąd");
+      console.error("Submit error:", error);
+      toast.error(error.message || "Wystąpił błąd podczas aktywacji profilu");
     } finally {
       setLoading(false);
     }
@@ -525,6 +552,32 @@ export default function WorkerOnboarding() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Visibility Success Modal */}
+          {visibilitySuccess && (
+            <Card className="card-modern border-2 border-primary bg-gradient-to-br from-primary/10 to-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="h-10 w-10 text-primary animate-pulse" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2 text-primary">Gratulacje! 🎉</h3>
+                <p className="text-lg text-foreground mb-4">
+                  Twoja widoczność została aktywowana!
+                </p>
+                <p className="text-muted-foreground mb-6">
+                  Teraz zleceniodawcy mogą Cię znaleźć w katalogu wykonawców. 
+                  Uzupełnij pozostałe dane profilu i kliknij "Aktywuj profil wykonawcy", aby zakończyć rejestrację.
+                </p>
+                <Button 
+                  onClick={() => setVisibilitySuccess(false)}
+                  variant="outline"
+                  className="rounded-xl"
+                >
+                  Rozumiem, kontynuuj
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Visibility Payment Option */}
           <Card className={`card-modern border-2 ${workerVisibilityPaid ? 'border-primary/50 bg-primary/5' : 'border-dashed'}`}>
