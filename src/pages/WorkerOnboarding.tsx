@@ -55,9 +55,8 @@ export default function WorkerOnboarding() {
   const [uploading, setUploading] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [visibilitySuccess, setVisibilitySuccess] = useState(false);
-  const [formInitialized, setFormInitialized] = useState(false);
   const [visibilityHandled, setVisibilityHandled] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   
   const [form, setForm] = useState({
     name: "",
@@ -84,30 +83,80 @@ export default function WorkerOnboarding() {
     }
   }, [selectedCategories, formInitialized]);
 
-  // Handle visibility payment success - only once
+  // Handle visibility payment success - auto-activate profile and redirect
   useEffect(() => {
     if (visibilityHandled) return;
     
     const isSuccess = searchParams.get("visibility_success") === "true";
     const isCancelled = searchParams.get("visibility_cancelled") === "true";
     
-    if (isSuccess) {
+    if (isSuccess && profile && formInitialized) {
       setVisibilityHandled(true);
-      setVisibilitySuccess(true);
-      refreshProfile();
-      // Clean URL
+      // Clean URL immediately
       window.history.replaceState({}, "", "/worker-onboarding");
-      // Auto-hide success modal after 3 seconds
-      setTimeout(() => {
-        setVisibilitySuccess(false);
-      }, 3000);
+      
+      // Auto-activate profile after successful payment
+      const autoActivateProfile = async () => {
+        try {
+          // Get form data from state or localStorage
+          const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
+          const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+          
+          const formData = savedForm ? JSON.parse(savedForm) : form;
+          const categories = savedCategories ? JSON.parse(savedCategories) : selectedCategories;
+          
+          // Update profile
+          await supabase
+            .from("profiles")
+            .update({
+              name: formData.name,
+              phone: formData.phone,
+              wojewodztwo: formData.wojewodztwo,
+              miasto: formData.miasto,
+              bio: formData.bio,
+              hourly_rate: parseFloat(formData.hourly_rate),
+              avatar_url: avatarUrl,
+              worker_profile_completed: true,
+              is_available: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", profile.id);
+
+          // Update categories
+          await supabase
+            .from("worker_categories")
+            .delete()
+            .eq("worker_id", profile.id);
+
+          if (categories.length > 0) {
+            const categoryInserts = categories.map((catId: string) => ({
+              worker_id: profile.id,
+              category_id: catId,
+            }));
+            await supabase.from("worker_categories").insert(categoryInserts);
+          }
+
+          // Clear localStorage
+          localStorage.removeItem(FORM_STORAGE_KEY);
+          localStorage.removeItem(CATEGORIES_STORAGE_KEY);
+          
+          toast.success("Profil wykonawcy aktywowany! Jesteś widoczny w katalogu wykonawców.");
+          navigate("/workers");
+        } catch (error) {
+          console.error("Auto-activation error:", error);
+          toast.error("Błąd podczas aktywacji - wypełnij formularz i kliknij aktywuj");
+        }
+      };
+      
+      autoActivateProfile();
     }
+    
     if (isCancelled) {
       setVisibilityHandled(true);
       toast.info("Płatność została anulowana");
       window.history.replaceState({}, "", "/worker-onboarding");
     }
-  }, [searchParams, visibilityHandled]);
+  }, [searchParams, visibilityHandled, profile, formInitialized, form, selectedCategories, avatarUrl, navigate]);
 
   // Initialize form - restore from localStorage or profile
   useEffect(() => {
@@ -367,7 +416,8 @@ export default function WorkerOnboarding() {
 
       await refreshProfile();
       toast.success("Profil wykonawcy został aktywowany! Teraz możesz składać oferty na zlecenia.");
-      navigate("/workers");
+      // Free activation (without visibility) -> redirect to jobs
+      navigate("/jobs");
     } catch (error: any) {
       console.error("Submit error:", error);
       toast.error(error.message || "Wystąpił błąd podczas aktywacji profilu");
@@ -622,26 +672,8 @@ export default function WorkerOnboarding() {
             </CardContent>
           </Card>
 
-          {/* Visibility Success Modal - auto-closes after 3 seconds */}
-          {visibilitySuccess && (
-            <Card className="card-modern border-2 border-primary bg-gradient-to-br from-primary/10 to-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Sparkles className="h-10 w-10 text-primary animate-pulse" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-primary">Gratulacje! 🎉</h3>
-                <p className="text-lg text-foreground mb-4">
-                  Twoja widoczność została aktywowana!
-                </p>
-                <p className="text-muted-foreground">
-                  Teraz zleceniodawcy mogą Cię znaleźć w katalogu wykonawców.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Visibility Payment Option - optional, shown only if not paid */}
-          {!visibilitySuccess && !workerVisibilityPaid && (
+          {!workerVisibilityPaid && (
             <Card className="card-modern border-2 border-dashed border-primary/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -690,7 +722,7 @@ export default function WorkerOnboarding() {
           )}
 
           {/* Visibility confirmed - compact success info */}
-          {!visibilitySuccess && workerVisibilityPaid && (
+          {workerVisibilityPaid && (
             <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
               <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
               <span className="text-sm font-medium">
