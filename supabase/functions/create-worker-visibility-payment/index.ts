@@ -62,7 +62,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/profile?visibility_success=true`,
+      success_url: `${req.headers.get("origin")}/worker-onboarding?visibility_success=true`,
       cancel_url: `${req.headers.get("origin")}/worker-onboarding?visibility_cancelled=true`,
       metadata: {
         type: "worker_visibility",

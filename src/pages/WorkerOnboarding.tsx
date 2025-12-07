@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +61,22 @@ export default function WorkerOnboarding() {
     bio: "",
     hourly_rate: "",
   });
+
+  const [searchParams] = useSearchParams();
+
+  // Handle visibility payment success
+  useEffect(() => {
+    if (searchParams.get("visibility_success") === "true") {
+      toast.success("Widoczność została aktywowana!");
+      refreshProfile();
+      // Clean URL
+      window.history.replaceState({}, "", "/worker-onboarding");
+    }
+    if (searchParams.get("visibility_cancelled") === "true") {
+      toast.info("Płatność została anulowana");
+      window.history.replaceState({}, "", "/worker-onboarding");
+    }
+  }, [searchParams, refreshProfile]);
 
   // Check if profile already completed worker onboarding
   useEffect(() => {
