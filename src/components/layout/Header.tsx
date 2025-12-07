@@ -9,12 +9,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard, Wrench, Crown, BarChart3 } from "lucide-react";
+import { Briefcase, Menu, Plus, User, LogOut, Settings, LayoutDashboard, Wrench, Crown, BarChart3, UserPlus } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { NotificationBell } from "./NotificationBell";
 import { useViewModeStore } from "@/store/viewModeStore";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 export const Header = () => {
   const { isAuthenticated, profile, signOut, isAdmin } = useAuth();
@@ -23,6 +24,16 @@ export const Header = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  // Check if worker profile is completed
+  const workerProfileCompleted = (profile as any)?.worker_profile_completed === true;
+
+  // If worker profile not completed, force client view
+  useEffect(() => {
+    if (isAuthenticated && !workerProfileCompleted && viewMode === 'worker') {
+      setViewMode('client');
+    }
+  }, [isAuthenticated, workerProfileCompleted, viewMode, setViewMode]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,18 +64,40 @@ export const Header = () => {
           </Link>
           
           {isAuthenticated && (
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="hidden md:block ml-4">
-              <TabsList className="h-9 bg-muted/50">
-                <TabsTrigger value="client" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Briefcase className="h-3.5 w-3.5" />
-                  Zleceniodawca
-                </TabsTrigger>
-                <TabsTrigger value="worker" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Wrench className="h-3.5 w-3.5" />
-                  Wykonawca
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="hidden md:flex items-center gap-2 ml-4">
+              {workerProfileCompleted ? (
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')}>
+                  <TabsList className="h-9 bg-muted/50">
+                    <TabsTrigger value="client" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <Briefcase className="h-3.5 w-3.5" />
+                      Zleceniodawca
+                    </TabsTrigger>
+                    <TabsTrigger value="worker" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <Wrench className="h-3.5 w-3.5" />
+                      Wykonawca
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              ) : (
+                <>
+                  <Badge variant="outline" className="h-9 px-3 gap-1.5 bg-primary/5 border-primary/20 text-primary font-medium">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Zleceniodawca
+                  </Badge>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    asChild
+                    className="h-9 gap-1.5 border-dashed border-primary/30 text-primary hover:bg-primary/10"
+                  >
+                    <Link to="/worker-onboarding">
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Dołącz jako wykonawca
+                    </Link>
+                  </Button>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -130,20 +163,37 @@ export const Header = () => {
                     Panel
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setViewMode('client')}
-                  className={`rounded-lg cursor-pointer ${viewMode === 'client' ? 'bg-primary/10 text-primary' : ''}`}
-                >
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  Zleceniodawca
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setViewMode('worker')}
-                  className={`rounded-lg cursor-pointer ${viewMode === 'worker' ? 'bg-primary/10 text-primary' : ''}`}
-                >
-                  <Wrench className="mr-2 h-4 w-4" />
-                  Wykonawca
-                </DropdownMenuItem>
+                {workerProfileCompleted ? (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => setViewMode('client')}
+                      className={`rounded-lg cursor-pointer ${viewMode === 'client' ? 'bg-primary/10 text-primary' : ''}`}
+                    >
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      Zleceniodawca
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setViewMode('worker')}
+                      className={`rounded-lg cursor-pointer ${viewMode === 'worker' ? 'bg-primary/10 text-primary' : ''}`}
+                    >
+                      <Wrench className="mr-2 h-4 w-4" />
+                      Wykonawca
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem className="rounded-lg bg-primary/5 text-primary cursor-default">
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      Zleceniodawca
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer border border-dashed border-primary/30">
+                      <Link to="/worker-onboarding">
+                        <UserPlus className="mr-2 h-4 w-4 text-primary" />
+                        <span className="text-primary">Dołącz jako wykonawca</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                   <Link to="/profile">
@@ -233,18 +283,35 @@ export const Header = () => {
                 {isAuthenticated ? (
                   <>
                     <div className="mb-4">
-                      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="w-full">
-                        <TabsList className="w-full h-12 bg-muted/50">
-                          <TabsTrigger value="client" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      {workerProfileCompleted ? (
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="w-full">
+                          <TabsList className="w-full h-12 bg-muted/50">
+                            <TabsTrigger value="client" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                              <Briefcase className="h-4 w-4" />
+                              Zleceniodawca
+                            </TabsTrigger>
+                            <TabsTrigger value="worker" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                              <Wrench className="h-4 w-4" />
+                              Wykonawca
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium">
                             <Briefcase className="h-4 w-4" />
                             Zleceniodawca
-                          </TabsTrigger>
-                          <TabsTrigger value="worker" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                            <Wrench className="h-4 w-4" />
-                            Wykonawca
-                          </TabsTrigger>
-                        </TabsList>
-                      </Tabs>
+                          </div>
+                          <Link
+                            to="/worker-onboarding"
+                            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-primary/30 text-primary font-medium hover:bg-primary/10 transition-colors"
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <UserPlus className="h-4 w-4" />
+                            Dołącz jako wykonawca
+                          </Link>
+                        </div>
+                      )}
                     </div>
                     {isClientView && (
                       <Link

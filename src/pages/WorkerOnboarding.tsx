@@ -1,0 +1,492 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Layout } from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { 
+  Wrench, 
+  Camera, 
+  MapPin, 
+  Banknote, 
+  CheckCircle2, 
+  Loader2,
+  Eye,
+  Sparkles,
+  ArrowRight
+} from "lucide-react";
+import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
+import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
+import { WOJEWODZTWA } from "@/lib/constants";
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+export default function WorkerOnboarding() {
+  const navigate = useNavigate();
+  const { profile, refreshProfile, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    wojewodztwo: "",
+    miasto: "",
+    bio: "",
+    hourly_rate: "",
+  });
+
+  // Check if profile already completed worker onboarding
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    
+    if (profile) {
+      // If already completed, redirect to profile
+      if ((profile as any).worker_profile_completed) {
+        navigate("/profile");
+        return;
+      }
+      
+      // Pre-fill with existing data
+      setForm({
+        name: profile.name || "",
+        phone: profile.phone || "",
+        wojewodztwo: profile.wojewodztwo || "",
+        miasto: profile.miasto || "",
+        bio: profile.bio || "",
+        hourly_rate: profile.hourly_rate?.toString() || "",
+      });
+      setAvatarUrl(profile.avatar_url);
+    }
+  }, [profile, authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    fetchCategories();
+    if (profile) {
+      fetchWorkerCategories();
+    }
+  }, [profile]);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("name");
+    if (data) setCategories(data);
+  };
+
+  const fetchWorkerCategories = async () => {
+    if (!profile) return;
+    const { data } = await supabase
+      .from("worker_categories")
+      .select("category_id")
+      .eq("worker_id", profile.id);
+    if (data) {
+      setSelectedCategories(data.map(wc => wc.category_id));
+    }
+  };
+
+  const updateForm = (key: string, value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${profile.user_id}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast.error("Błąd podczas przesyłania zdjęcia");
+      setUploading(false);
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(path);
+
+    setAvatarUrl(publicData.publicUrl + `?t=${Date.now()}`);
+    setUploading(false);
+    toast.success("Zdjęcie zostało przesłane");
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const isFormValid = () => {
+    return (
+      form.name.trim() &&
+      form.phone.trim() &&
+      form.wojewodztwo &&
+      form.miasto.trim() &&
+      form.bio.trim() &&
+      form.hourly_rate &&
+      selectedCategories.length > 0
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (!profile || !isFormValid()) {
+      toast.error("Wypełnij wszystkie wymagane pola");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          name: form.name,
+          phone: form.phone,
+          wojewodztwo: form.wojewodztwo,
+          miasto: form.miasto,
+          bio: form.bio,
+          hourly_rate: parseFloat(form.hourly_rate),
+          avatar_url: avatarUrl,
+          worker_profile_completed: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profile.id);
+
+      if (profileError) throw profileError;
+
+      // Update worker categories
+      await supabase
+        .from("worker_categories")
+        .delete()
+        .eq("worker_id", profile.id);
+
+      if (selectedCategories.length > 0) {
+        const categoryInserts = selectedCategories.map(catId => ({
+          worker_id: profile.id,
+          category_id: catId,
+        }));
+        await supabase.from("worker_categories").insert(categoryInserts);
+      }
+
+      refreshProfile();
+      toast.success("Profil wykonawcy został aktywowany!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Wystąpił błąd");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePayForVisibility = async () => {
+    if (!profile) return;
+    
+    setPaymentLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("create-worker-visibility-payment", {
+        body: { profileId: profile.id }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error: any) {
+      toast.error("Błąd podczas tworzenia płatności");
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="container py-20 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  const workerVisibilityPaid = (profile as any)?.worker_visibility_paid;
+
+  return (
+    <Layout>
+      {/* Hero */}
+      <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 left-10 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
+        </div>
+        <div className="container relative py-16 md:py-20">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Wrench className="h-6 w-6 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+            Dołącz jako wykonawca
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl">
+            Uzupełnij swój profil, aby móc składać oferty na zlecenia i zarabiać
+          </p>
+        </div>
+      </div>
+
+      <div className="container py-10">
+        <div className="max-w-2xl mx-auto space-y-8">
+          {/* Profile Form */}
+          <Card className="card-modern">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                Dane profilu
+              </CardTitle>
+              <CardDescription>
+                Wypełnij wszystkie pola, aby aktywować tryb wykonawcy
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Avatar */}
+              <div className="flex items-center gap-6">
+                <Avatar className="h-24 w-24 rounded-2xl border-4 border-primary/20">
+                  <AvatarImage src={avatarUrl || ""} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary-glow text-white text-2xl rounded-2xl">
+                    {form.name?.charAt(0)?.toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <Label htmlFor="avatar-upload" className="cursor-pointer">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors">
+                      <Camera className="h-4 w-4" />
+                      {uploading ? "Przesyłanie..." : "Zmień zdjęcie"}
+                    </div>
+                  </Label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </div>
+              </div>
+
+              {/* Name & Phone */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Imię i nazwisko *</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => updateForm("name", e.target.value)}
+                    placeholder="Jan Kowalski"
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Telefon *</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => updateForm("phone", e.target.value)}
+                    placeholder="+48 123 456 789"
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Województwo *
+                  </Label>
+                  <WojewodztwoSelect
+                    value={form.wojewodztwo}
+                    onChange={(v) => updateForm("wojewodztwo", v)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Miasto *</Label>
+                  <CityAutocomplete
+                    value={form.miasto}
+                    onChange={(v) => updateForm("miasto", v)}
+                    onRegionChange={(region) => {
+                      const normalizedRegion = region.toLowerCase();
+                      const matchedWojewodztwo = WOJEWODZTWA.find(
+                        (w) => w.toLowerCase() === normalizedRegion
+                      );
+                      if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
+                        updateForm("wojewodztwo", matchedWojewodztwo);
+                      }
+                    }}
+                    placeholder="Wpisz miasto..."
+                  />
+                </div>
+              </div>
+
+              {/* Hourly Rate */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Banknote className="h-4 w-4" />
+                  Stawka godzinowa (zł) *
+                </Label>
+                <Input
+                  type="number"
+                  value={form.hourly_rate}
+                  onChange={(e) => updateForm("hourly_rate", e.target.value)}
+                  placeholder="50"
+                  min="1"
+                  className="h-11 rounded-xl"
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label>O sobie *</Label>
+                <Textarea
+                  value={form.bio}
+                  onChange={(e) => updateForm("bio", e.target.value)}
+                  placeholder="Opisz swoje doświadczenie i umiejętności..."
+                  className="min-h-[120px] rounded-xl resize-none"
+                />
+              </div>
+
+              {/* Categories */}
+              <div className="space-y-3">
+                <Label>Kategorie usług * (wybierz co najmniej jedną)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <Badge
+                      key={cat.id}
+                      variant={selectedCategories.includes(cat.id) ? "default" : "outline"}
+                      className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
+                      onClick={() => toggleCategory(cat.id)}
+                    >
+                      {selectedCategories.includes(cat.id) && (
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                      )}
+                      {cat.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Visibility Payment Option */}
+          <Card className={`card-modern border-2 ${workerVisibilityPaid ? 'border-primary/50 bg-primary/5' : 'border-dashed'}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                Widoczność w katalogu wykonawców
+                {workerVisibilityPaid && (
+                  <Badge className="bg-primary text-white ml-2">Aktywna</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                {workerVisibilityPaid 
+                  ? "Twój profil jest widoczny dla zleceniodawców w katalogu wykonawców"
+                  : "Zapłać 5 zł, aby Twój profil był widoczny dla zleceniodawców szukających wykonawców"
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {workerVisibilityPaid ? (
+                <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">
+                    Zleceniodawcy mogą Cię znaleźć w katalogu wykonawców
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl">
+                    <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium mb-1">Co zyskujesz?</p>
+                      <ul className="text-muted-foreground space-y-1">
+                        <li>• Twój profil pojawi się w katalogu wykonawców</li>
+                        <li>• Zleceniodawcy będą mogli Cię wyszukać i skontaktować się bezpośrednio</li>
+                        <li>• Jednorazowa opłata - bez ukrytych kosztów</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handlePayForVisibility}
+                    disabled={paymentLoading}
+                    variant="outline"
+                    className="w-full h-12 rounded-xl gap-2"
+                  >
+                    {paymentLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        Wykup widoczność za 5 zł
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Opcjonalne - możesz to zrobić później
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Submit Button */}
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !isFormValid()}
+            className="w-full h-14 rounded-xl text-lg gap-2"
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                Aktywuj profil wykonawcy
+                <ArrowRight className="h-5 w-5" />
+              </>
+            )}
+          </Button>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Po aktywacji będziesz mógł składać oferty na zlecenia
+          </p>
+        </div>
+      </div>
+    </Layout>
+  );
+}
