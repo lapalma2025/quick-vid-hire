@@ -41,6 +41,9 @@ interface GalleryImage {
   isNew?: boolean;
 }
 
+const FORM_STORAGE_KEY = "worker_onboarding_form";
+const CATEGORIES_STORAGE_KEY = "worker_onboarding_categories";
+
 export default function WorkerOnboarding() {
   const navigate = useNavigate();
   const { profile, refreshProfile, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -53,6 +56,7 @@ export default function WorkerOnboarding() {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [visibilitySuccess, setVisibilitySuccess] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   
   const [form, setForm] = useState({
     name: "",
@@ -64,6 +68,20 @@ export default function WorkerOnboarding() {
   });
 
   const [searchParams] = useSearchParams();
+
+  // Save form to localStorage whenever it changes (after initialization)
+  useEffect(() => {
+    if (formInitialized) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(form));
+    }
+  }, [form, formInitialized]);
+
+  // Save selected categories to localStorage
+  useEffect(() => {
+    if (formInitialized && selectedCategories.length > 0) {
+      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(selectedCategories));
+    }
+  }, [selectedCategories, formInitialized]);
 
   // Handle visibility payment success
   useEffect(() => {
@@ -79,32 +97,66 @@ export default function WorkerOnboarding() {
     }
   }, [searchParams, refreshProfile]);
 
-  // Check if profile already completed worker onboarding
+  // Initialize form - restore from localStorage or profile
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate("/login");
       return;
     }
     
-    if (profile) {
+    if (profile && !formInitialized) {
       // If already completed, redirect to profile
       if ((profile as any).worker_profile_completed) {
+        // Clear storage on completion
+        localStorage.removeItem(FORM_STORAGE_KEY);
+        localStorage.removeItem(CATEGORIES_STORAGE_KEY);
         navigate("/profile");
         return;
       }
       
-      // Pre-fill with existing data
-      setForm({
-        name: profile.name || "",
-        phone: profile.phone || "",
-        wojewodztwo: profile.wojewodztwo || "",
-        miasto: profile.miasto || "",
-        bio: profile.bio || "",
-        hourly_rate: profile.hourly_rate?.toString() || "",
-      });
+      // Try to restore from localStorage first (for returning after payment)
+      const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
+      const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      
+      if (savedForm) {
+        try {
+          const parsed = JSON.parse(savedForm);
+          setForm(parsed);
+        } catch (e) {
+          // Fallback to profile data
+          setForm({
+            name: profile.name || "",
+            phone: profile.phone || "",
+            wojewodztwo: profile.wojewodztwo || "",
+            miasto: profile.miasto || "",
+            bio: profile.bio || "",
+            hourly_rate: profile.hourly_rate?.toString() || "",
+          });
+        }
+      } else {
+        // Pre-fill with existing profile data
+        setForm({
+          name: profile.name || "",
+          phone: profile.phone || "",
+          wojewodztwo: profile.wojewodztwo || "",
+          miasto: profile.miasto || "",
+          bio: profile.bio || "",
+          hourly_rate: profile.hourly_rate?.toString() || "",
+        });
+      }
+      
+      if (savedCategories) {
+        try {
+          setSelectedCategories(JSON.parse(savedCategories));
+        } catch (e) {
+          // Will be loaded from DB in fetchWorkerCategories
+        }
+      }
+      
       setAvatarUrl(profile.avatar_url);
+      setFormInitialized(true);
     }
-  }, [profile, authLoading, isAuthenticated, navigate]);
+  }, [profile, authLoading, isAuthenticated, navigate, formInitialized]);
 
   useEffect(() => {
     fetchCategories();
@@ -295,6 +347,10 @@ export default function WorkerOnboarding() {
           });
         }
       }
+
+      // Clear localStorage after successful submission
+      localStorage.removeItem(FORM_STORAGE_KEY);
+      localStorage.removeItem(CATEGORIES_STORAGE_KEY);
 
       await refreshProfile();
       toast.success("Profil wykonawcy został aktywowany! Teraz możesz składać oferty na zlecenia.");
