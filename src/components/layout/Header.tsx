@@ -44,12 +44,29 @@ export const Header = () => {
       }`}
     >
       <div className="container flex h-20 items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow shadow-lg shadow-primary/20 group-hover:shadow-xl group-hover:shadow-primary/30 group-hover:scale-105 transition-all duration-300">
-            <Briefcase className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-display font-bold tracking-tight">Hop Hop</span>
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow shadow-lg shadow-primary/20 group-hover:shadow-xl group-hover:shadow-primary/30 group-hover:scale-105 transition-all duration-300">
+              <Briefcase className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-2xl font-display font-bold tracking-tight">Hop Hop</span>
+          </Link>
+          
+          {isAuthenticated && (
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="hidden md:block ml-4">
+              <TabsList className="h-9 bg-muted/50">
+                <TabsTrigger value="client" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Briefcase className="h-3.5 w-3.5" />
+                  Zleceniodawca
+                </TabsTrigger>
+                <TabsTrigger value="worker" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Wrench className="h-3.5 w-3.5" />
+                  Wykonawca
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+        </div>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
@@ -65,33 +82,17 @@ export const Header = () => {
           >
             Wykonawcy
           </Link>
-          {isAuthenticated && (
-            <>
-              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="ml-2">
-                <TabsList className="h-9 bg-muted/50">
-                  <TabsTrigger value="client" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    Zleceniodawca
-                  </TabsTrigger>
-                  <TabsTrigger value="worker" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <Wrench className="h-3.5 w-3.5" />
-                    Wykonawca
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              {isClientView && (
-                <Button
-                  asChild
-                  size="default"
-                  className="gap-2 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <Link to="/jobs/new">
-                    <Plus className="h-4 w-4" />
-                    Dodaj zlecenie
-                  </Link>
-                </Button>
-              )}
-            </>
+          {isAuthenticated && isClientView && (
+            <Button
+              asChild
+              size="default"
+              className="gap-2 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <Link to="/jobs/new">
+                <Plus className="h-4 w-4" />
+                Dodaj zlecenie
+              </Link>
+            </Button>
           )}
           {isAuthenticated ? (
             <>
@@ -129,6 +130,21 @@ export const Header = () => {
                     Panel
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setViewMode('client')}
+                  className={`rounded-lg cursor-pointer ${viewMode === 'client' ? 'bg-primary/10 text-primary' : ''}`}
+                >
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Zleceniodawca
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setViewMode('worker')}
+                  className={`rounded-lg cursor-pointer ${viewMode === 'worker' ? 'bg-primary/10 text-primary' : ''}`}
+                >
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Wykonawca
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                   <Link to="/profile">
                     <User className="mr-2 h-4 w-4" />
