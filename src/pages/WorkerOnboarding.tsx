@@ -609,7 +609,7 @@ export default function WorkerOnboarding() {
             </CardContent>
           </Card>
 
-          {/* Visibility Success Modal */}
+          {/* Visibility Success Modal - shown instead of payment card after success */}
           {visibilitySuccess && (
             <Card className="card-modern border-2 border-primary bg-gradient-to-br from-primary/10 to-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <CardContent className="p-8 text-center">
@@ -626,41 +626,27 @@ export default function WorkerOnboarding() {
                 </p>
                 <Button 
                   onClick={() => setVisibilitySuccess(false)}
-                  variant="outline"
                   className="rounded-xl"
                 >
-                  Rozumiem, kontynuuj
+                  Kontynuuj
                 </Button>
               </CardContent>
             </Card>
           )}
 
-          {/* Visibility Payment Option */}
-          <Card className={`card-modern border-2 ${workerVisibilityPaid ? 'border-primary/50 bg-primary/5' : 'border-dashed'}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-primary" />
-                Widoczność w katalogu wykonawców
-                {workerVisibilityPaid && (
-                  <Badge className="bg-primary text-white ml-2">Aktywna</Badge>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {workerVisibilityPaid 
-                  ? "Twój profil jest widoczny dla zleceniodawców w katalogu wykonawców"
-                  : "Zapłać 5 zł, aby Twój profil był widoczny dla zleceniodawców szukających wykonawców"
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {workerVisibilityPaid ? (
-                <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">
-                    Zleceniodawcy mogą Cię znaleźć w katalogu wykonawców
-                  </span>
-                </div>
-              ) : (
+          {/* Visibility Payment Option - hidden when success modal is shown */}
+          {!visibilitySuccess && !workerVisibilityPaid && (
+            <Card className="card-modern border-2 border-dashed">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-primary" />
+                  Widoczność w katalogu wykonawców
+                </CardTitle>
+                <CardDescription>
+                  Zapłać 5 zł, aby Twój profil był widoczny dla zleceniodawców szukających wykonawców
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl">
                     <Sparkles className="h-5 w-5 text-primary mt-0.5" />
@@ -689,17 +675,27 @@ export default function WorkerOnboarding() {
                     )}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    Opcjonalne - możesz to zrobić później
+                    Wymagane aby pojawić się w katalogu wykonawców
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Submit Button */}
+          {/* Visibility confirmed - compact success info */}
+          {!visibilitySuccess && workerVisibilityPaid && (
+            <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
+              <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="text-sm font-medium">
+                Widoczność aktywna - zleceniodawcy mogą Cię znaleźć w katalogu wykonawców
+              </span>
+            </div>
+          )}
+
+          {/* Submit Button - requires visibility to be paid */}
           <Button
             onClick={handleSubmit}
-            disabled={loading || !isFormValid()}
+            disabled={loading || !isFormValid() || !workerVisibilityPaid}
             className="w-full h-14 rounded-xl text-lg gap-2"
           >
             {loading ? (
@@ -712,9 +708,16 @@ export default function WorkerOnboarding() {
             )}
           </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            Po aktywacji będziesz mógł składać oferty na zlecenia
-          </p>
+          {!workerVisibilityPaid && (
+            <p className="text-xs text-muted-foreground text-center">
+              Wykup widoczność, aby móc aktywować profil wykonawcy
+            </p>
+          )}
+          {workerVisibilityPaid && (
+            <p className="text-xs text-muted-foreground text-center">
+              Po aktywacji będziesz mógł składać oferty na zlecenia
+            </p>
+          )}
         </div>
       </div>
     </Layout>
