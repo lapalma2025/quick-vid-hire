@@ -83,6 +83,7 @@ export default function Profile() {
 		available_from: "",
 		available_to: "",
 		extended_description: "",
+		has_custom_hours: false,
 	});
 
 	const hasPremiumProfile = subscribed && plan !== null;
@@ -95,6 +96,7 @@ export default function Profile() {
 
 	useEffect(() => {
 		if (profile) {
+			const hasHours = !!(profile as any).available_from || !!(profile as any).available_to;
 			setForm({
 				name: profile.name || "",
 				phone: profile.phone || "",
@@ -106,6 +108,7 @@ export default function Profile() {
 				available_from: (profile as any).available_from || "",
 				available_to: (profile as any).available_to || "",
 				extended_description: (profile as any).extended_description || "",
+				has_custom_hours: hasHours,
 			});
 			setAvatarUrl(profile.avatar_url);
 			setLogoUrl((profile as any).logo_url || null);
@@ -355,8 +358,8 @@ export default function Profile() {
 			bio: form.bio || null,
 			hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
 			is_available: form.is_available,
-			available_from: form.available_from || null,
-			available_to: form.available_to || null,
+			available_from: form.has_custom_hours ? (form.available_from || null) : null,
+			available_to: form.has_custom_hours ? (form.available_to || null) : null,
 			updated_at: new Date().toISOString(),
 		};
 
@@ -755,25 +758,46 @@ export default function Profile() {
 								</div>
 
 								<div className="space-y-3">
-									<Label className="text-base">Godziny dostępności</Label>
-									<div className="grid grid-cols-2 gap-4">
-										<div className="space-y-2">
-											<Label className="text-sm">Od godziny</Label>
-											<TimePicker
-												value={form.available_from}
-												onChange={(v) => updateForm("available_from", v)}
-												placeholder="08:00"
-											/>
+									<div className="flex items-center justify-between">
+										<div>
+											<Label className="text-base">Godziny dostępności</Label>
+											<p className="text-sm text-muted-foreground">
+												{form.has_custom_hours 
+													? "Określ w jakich godzinach jesteś dostępny" 
+													: "Brak ograniczeń - dostępny o każdej porze"}
+											</p>
 										</div>
-										<div className="space-y-2">
-											<Label className="text-sm">Do godziny</Label>
-											<TimePicker
-												value={form.available_to}
-												onChange={(v) => updateForm("available_to", v)}
-												placeholder="18:00"
-											/>
-										</div>
+										<Switch
+											checked={form.has_custom_hours}
+											onCheckedChange={(v) => {
+												updateForm("has_custom_hours", v);
+												if (!v) {
+													updateForm("available_from", "");
+													updateForm("available_to", "");
+												}
+											}}
+										/>
 									</div>
+									{form.has_custom_hours && (
+										<div className="grid grid-cols-2 gap-4 pt-2">
+											<div className="space-y-2">
+												<Label className="text-sm">Od godziny</Label>
+												<TimePicker
+													value={form.available_from}
+													onChange={(v) => updateForm("available_from", v)}
+													placeholder="08:00"
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label className="text-sm">Do godziny</Label>
+												<TimePicker
+													value={form.available_to}
+													onChange={(v) => updateForm("available_to", v)}
+													placeholder="18:00"
+												/>
+											</div>
+										</div>
+									)}
 								</div>
 
 								<div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
