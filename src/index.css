@@ -262,21 +262,64 @@ input[type="datetime-local"]:focus {
 	}
 }
 
-/* Scrollbar styling */
-.lg\:scrollbar-thin::-webkit-scrollbar {
-	width: 4px;
+/* Global scrollbar styling - green theme */
+html {
+	scrollbar-width: thin;
+	scrollbar-color: hsl(152 76% 42% / 0.4) hsl(150 20% 95%);
 }
 
-.lg\:scrollbar-thin::-webkit-scrollbar-track {
-	@apply bg-transparent;
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
 }
 
-.lg\:scrollbar-thin::-webkit-scrollbar-thumb {
-	@apply bg-primary/20 rounded-full;
+::-webkit-scrollbar-track {
+	background: hsl(150 20% 95%);
+	border-radius: 5px;
 }
 
-.lg\:scrollbar-thin::-webkit-scrollbar-thumb:hover {
-	@apply bg-primary/40;
+::-webkit-scrollbar-thumb {
+	background: hsl(152 76% 42% / 0.4);
+	border-radius: 5px;
+	border: 2px solid hsl(150 20% 95%);
+	transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: hsl(152 76% 42% / 0.6);
+}
+
+::-webkit-scrollbar-thumb:active {
+	background: hsl(152 76% 42% / 0.8);
+}
+
+/* Dark mode scrollbar */
+.dark {
+	scrollbar-color: hsl(152 76% 48% / 0.4) hsl(220 25% 12%);
+}
+
+.dark ::-webkit-scrollbar-track {
+	background: hsl(220 25% 12%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background: hsl(152 76% 48% / 0.4);
+	border-color: hsl(220 25% 12%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: hsl(152 76% 48% / 0.6);
+}
+
+/* Thin scrollbar utility class */
+.scrollbar-thin::-webkit-scrollbar {
+	width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+	background: hsl(152 76% 42% / 0.3);
+	border: none;
 }
 
 @layer utilities {
