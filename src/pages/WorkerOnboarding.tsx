@@ -90,6 +90,10 @@ export default function WorkerOnboarding() {
       refreshProfile();
       // Clean URL
       window.history.replaceState({}, "", "/worker-onboarding");
+      // Auto-hide success modal after 3 seconds
+      setTimeout(() => {
+        setVisibilitySuccess(false);
+      }, 3000);
     }
     if (searchParams.get("visibility_cancelled") === "true") {
       toast.info("Płatność została anulowana");
@@ -268,15 +272,16 @@ export default function WorkerOnboarding() {
   };
 
   const isFormValid = () => {
-    return (
-      form.name.trim() &&
-      form.phone.trim() &&
-      form.wojewodztwo &&
-      form.miasto.trim() &&
-      form.bio.trim() &&
-      form.hourly_rate &&
+    const valid = (
+      form.name.trim() !== "" &&
+      form.phone.trim() !== "" &&
+      form.wojewodztwo !== "" &&
+      form.miasto.trim() !== "" &&
+      form.bio.trim() !== "" &&
+      form.hourly_rate !== "" &&
       selectedCategories.length > 0
     );
+    return valid;
   };
 
   const handleSubmit = async () => {
@@ -609,7 +614,7 @@ export default function WorkerOnboarding() {
             </CardContent>
           </Card>
 
-          {/* Visibility Success Modal */}
+          {/* Visibility Success Modal - auto-closes after 3 seconds */}
           {visibilitySuccess && (
             <Card className="card-modern border-2 border-primary bg-gradient-to-br from-primary/10 to-primary/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <CardContent className="p-8 text-center">
@@ -620,15 +625,9 @@ export default function WorkerOnboarding() {
                 <p className="text-lg text-foreground mb-4">
                   Twoja widoczność została aktywowana!
                 </p>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground">
                   Teraz zleceniodawcy mogą Cię znaleźć w katalogu wykonawców.
                 </p>
-                <Button 
-                  onClick={() => setVisibilitySuccess(false)}
-                  className="rounded-xl"
-                >
-                  Kontynuuj
-                </Button>
               </CardContent>
             </Card>
           )}
