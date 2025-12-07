@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,7 +20,10 @@ import {
   Loader2,
   Eye,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  ImagePlus,
+  X,
+  Images
 } from "lucide-react";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
@@ -30,6 +32,13 @@ import { WOJEWODZTWA } from "@/lib/constants";
 interface Category {
   id: string;
   name: string;
+}
+
+interface GalleryImage {
+  id?: string;
+  url: string;
+  file?: File;
+  isNew?: boolean;
 }
 
 export default function WorkerOnboarding() {
@@ -41,6 +50,8 @@ export default function WorkerOnboarding() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   
   const [form, setForm] = useState({
     name: "",
@@ -143,6 +154,29 @@ export default function WorkerOnboarding() {
     );
   };
 
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !profile) return;
+
+    const newImages: GalleryImage[] = [];
+    
+    for (let i = 0; i < files.length && galleryImages.length + newImages.length < 10; i++) {
+      const file = files[i];
+      const url = URL.createObjectURL(file);
+      newImages.push({ url, file, isNew: true });
+    }
+
+    setGalleryImages(prev => [...prev, ...newImages]);
+    
+    if (files.length > 10 - galleryImages.length) {
+      toast.info("Maksymalnie 10 zdjęć w galerii");
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const isFormValid = () => {
     return (
       form.name.trim() &&
@@ -194,6 +228,30 @@ export default function WorkerOnboarding() {
           category_id: catId,
         }));
         await supabase.from("worker_categories").insert(categoryInserts);
+      }
+
+      // Upload gallery images
+      const newGalleryImages = galleryImages.filter(img => img.isNew && img.file);
+      for (const img of newGalleryImages) {
+        if (!img.file) continue;
+        
+        const ext = img.file.name.split(".").pop();
+        const fileName = `${profile.user_id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("worker-gallery")
+          .upload(fileName, img.file);
+        
+        if (!uploadError) {
+          const { data: publicData } = supabase.storage
+            .from("worker-gallery")
+            .getPublicUrl(fileName);
+          
+          await supabase.from("worker_gallery").insert({
+            worker_id: profile.id,
+            image_url: publicData.publicUrl,
+          });
+        }
       }
 
       refreshProfile();
@@ -400,6 +458,50 @@ export default function WorkerOnboarding() {
                       {cat.name}
                     </Badge>
                   ))}
+                </div>
+              </div>
+
+              {/* Gallery */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Images className="h-4 w-4" />
+                  Galeria prac (opcjonalne)
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Dodaj zdjęcia swoich realizacji, aby pokazać zleceniodawcom swoje umiejętności (max. 10 zdjęć)
+                </p>
+                
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {galleryImages.map((img, index) => (
+                    <div key={index} className="relative aspect-square group">
+                      <img
+                        src={img.url}
+                        alt={`Galeria ${index + 1}`}
+                        className="w-full h-full object-cover rounded-xl border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(index)}
+                        className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {galleryImages.length < 10 && (
+                    <label className="aspect-square border-2 border-dashed border-primary/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 transition-colors">
+                      <ImagePlus className="h-6 w-6 text-primary/50 mb-1" />
+                      <span className="text-xs text-muted-foreground">Dodaj</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleGalleryUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
             </CardContent>

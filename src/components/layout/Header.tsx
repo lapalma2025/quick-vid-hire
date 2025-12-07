@@ -186,7 +186,7 @@ export const Header = () => {
                       <Briefcase className="mr-2 h-4 w-4" />
                       Zleceniodawca
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer border border-dashed border-primary/30">
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer border border-dashed border-primary/30 mt-2">
                       <Link to="/worker-onboarding">
                         <UserPlus className="mr-2 h-4 w-4 text-primary" />
                         <span className="text-primary">Dołącz jako wykonawca</span>
