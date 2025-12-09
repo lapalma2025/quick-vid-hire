@@ -346,16 +346,15 @@ export default function WorkerOnboarding() {
   };
 
   const isFormValid = () => {
-    const valid = (
-      form.name.trim() !== "" &&
-      form.phone.trim() !== "" &&
-      form.wojewodztwo !== "" &&
-      form.miasto.trim() !== "" &&
-      form.bio.trim() !== "" &&
-      form.hourly_rate !== "" &&
-      selectedCategories.length > 0
-    );
-    return valid;
+    const nameValid = form.name.trim() !== "";
+    const phoneValid = form.phone.trim() !== "";
+    const wojewodztwoValid = form.wojewodztwo !== "";
+    const miastoValid = form.miasto.trim() !== "";
+    const bioValid = form.bio.trim() !== "";
+    const hourlyRateValid = form.hourly_rate !== "" && parseFloat(form.hourly_rate) > 0;
+    const categoriesValid = selectedCategories.length > 0;
+    
+    return nameValid && phoneValid && wojewodztwoValid && miastoValid && bioValid && hourlyRateValid && categoriesValid;
   };
 
   const handleSubmit = async () => {
@@ -751,20 +750,38 @@ export default function WorkerOnboarding() {
           )}
 
           {/* Submit Button - FREE activation */}
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !isFormValid()}
-            className="w-full h-14 rounded-xl text-lg gap-2"
-          >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                Aktywuj profil wykonawcy (za darmo)
-                <ArrowRight className="h-5 w-5" />
-              </>
+          <div className="space-y-3">
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || !isFormValid()}
+              className="w-full h-14 rounded-xl text-lg gap-2"
+            >
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  Aktywuj profil wykonawcy (za darmo)
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
+            </Button>
+            
+            {/* Show missing fields hint */}
+            {!isFormValid() && (
+              <div className="text-sm text-muted-foreground text-center space-y-1">
+                <p>Wypełnij brakujące pola:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {!form.name.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">Imię i nazwisko</Badge>}
+                  {!form.phone.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">Telefon</Badge>}
+                  {!form.wojewodztwo && <Badge variant="outline" className="text-destructive border-destructive/50">Województwo</Badge>}
+                  {!form.miasto.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">Miasto</Badge>}
+                  {(!form.hourly_rate || parseFloat(form.hourly_rate) <= 0) && <Badge variant="outline" className="text-destructive border-destructive/50">Stawka godzinowa</Badge>}
+                  {!form.bio.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">O sobie</Badge>}
+                  {selectedCategories.length === 0 && <Badge variant="outline" className="text-destructive border-destructive/50">Kategorie usług</Badge>}
+                </div>
+              </div>
             )}
-          </Button>
+          </div>
 
           <p className="text-xs text-muted-foreground text-center">
             Po aktywacji będziesz mógł składać oferty na zlecenia.
