@@ -84,6 +84,7 @@ export default function NewJob() {
 		miasto: "",
 		country: "",
 		start_time: "",
+		end_time: "",
 		duration_hours: "",
 		budget: "",
 		budget_type: "fixed" as "fixed" | "hourly",
@@ -342,6 +343,7 @@ export default function NewJob() {
 				miasto: form.miasto,
 				country: form.is_foreign ? form.country : null,
 				start_time: form.start_time || null,
+				end_time: form.end_time || null,
 				duration_hours: form.duration_hours
 					? parseInt(form.duration_hours)
 					: null,
@@ -632,13 +634,24 @@ export default function NewJob() {
 								</div>
 							)}
 
-							<div className="space-y-2">
-								<Label>Data i godzina rozpoczęcia</Label>
-								<DateTimePicker
-									value={form.start_time}
-									onChange={(v) => updateForm("start_time", v)}
-									placeholder="Wybierz datę i godzinę"
-								/>
+							<div className="grid sm:grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label>Data i godzina rozpoczęcia</Label>
+									<DateTimePicker
+										value={form.start_time}
+										onChange={(v) => updateForm("start_time", v)}
+										placeholder="Wybierz datę i godzinę"
+									/>
+								</div>
+
+								<div className="space-y-2">
+									<Label>Data i godzina zakończenia</Label>
+									<DateTimePicker
+										value={form.end_time}
+										onChange={(v) => updateForm("end_time", v)}
+										placeholder="Wybierz datę i godzinę"
+									/>
+								</div>
 							</div>
 
 							<div className="space-y-2">

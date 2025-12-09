@@ -212,6 +212,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           duration_hours: number | null
+          end_time: string | null
           id: string
           is_foreign: boolean | null
           is_highlighted: boolean | null
@@ -240,6 +241,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_hours?: number | null
+          end_time?: string | null
           id?: string
           is_foreign?: boolean | null
           is_highlighted?: boolean | null
@@ -268,6 +270,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_hours?: number | null
+          end_time?: string | null
           id?: string
           is_foreign?: boolean | null
           is_highlighted?: boolean | null
