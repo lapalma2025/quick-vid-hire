@@ -914,9 +914,12 @@ export default function JobDetails() {
               <Card>
                 <CardContent className="p-6">
                   {hasResponded ? (
-                    <p className="text-center text-muted-foreground">
-                      Już wysłałeś ofertę na to zlecenie
-                    </p>
+                    <div className="flex items-center justify-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
+                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                      <p className="text-sm font-medium text-primary">
+                        Już złożyłeś ofertę na to zlecenie
+                      </p>
+                    </div>
                   ) : (
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                       <DialogTrigger asChild>
