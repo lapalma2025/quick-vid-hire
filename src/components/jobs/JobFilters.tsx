@@ -287,11 +287,12 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 					<Label className="font-medium">Filtruj po dacie</Label>
 				</div>
 
-				<div className="space-y-2">
-					<Label className="text-sm text-muted-foreground">Data rozpoczęcia</Label>
+			<div className="space-y-2">
+				<Label className="text-sm text-muted-foreground">Data rozpoczęcia</Label>
+				<div className="flex gap-2">
 					<Popover>
 						<PopoverTrigger asChild>
-							<Button variant="outline" className="w-full h-10 rounded-xl justify-start text-left font-normal">
+							<Button variant="outline" className="flex-1 h-10 rounded-xl justify-start text-left font-normal">
 								{filters.startDate ? (
 									format(new Date(filters.startDate), "dd.MM.yyyy")
 								) : (
@@ -308,13 +309,25 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 							/>
 						</PopoverContent>
 					</Popover>
+					{filters.startDate && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-10 w-10 shrink-0 rounded-xl"
+							onClick={() => updateFilter("startDate", "")}
+						>
+							<X className="h-4 w-4" />
+						</Button>
+					)}
 				</div>
+			</div>
 
-				<div className="space-y-2">
-					<Label className="text-sm text-muted-foreground">Data zakończenia</Label>
+			<div className="space-y-2">
+				<Label className="text-sm text-muted-foreground">Data zakończenia</Label>
+				<div className="flex gap-2">
 					<Popover>
 						<PopoverTrigger asChild>
-							<Button variant="outline" className="w-full h-10 rounded-xl justify-start text-left font-normal">
+							<Button variant="outline" className="flex-1 h-10 rounded-xl justify-start text-left font-normal">
 								{filters.endDate ? (
 									format(new Date(filters.endDate), "dd.MM.yyyy")
 								) : (
@@ -331,7 +344,18 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 							/>
 						</PopoverContent>
 					</Popover>
+					{filters.endDate && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-10 w-10 shrink-0 rounded-xl"
+							onClick={() => updateFilter("endDate", "")}
+						>
+							<X className="h-4 w-4" />
+						</Button>
+					)}
 				</div>
+			</div>
 			</div>
 
 			<div className="space-y-2">
