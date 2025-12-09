@@ -63,10 +63,8 @@ export interface JobFilters {
 	urgent: boolean;
 	groupOnly: boolean;
 	availableAt: string;
-	startDateFrom: string;
-	startDateTo: string;
-	endDateFrom: string;
-	endDateTo: string;
+	startDate: string;
+	endDate: string;
 	sortBy: "newest" | "budget_high" | "start_soon";
 }
 
@@ -82,10 +80,8 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 		urgent: false,
 		groupOnly: false,
 		availableAt: "",
-		startDateFrom: "",
-		startDateTo: "",
-		endDateFrom: "",
-		endDateTo: "",
+		startDate: "",
+		endDate: "",
 		sortBy: "newest",
 	});
 	const [mobileOpen, setMobileOpen] = useState(false);
@@ -129,10 +125,8 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 			urgent: false,
 			groupOnly: false,
 			availableAt: "",
-			startDateFrom: "",
-			startDateTo: "",
-			endDateFrom: "",
-			endDateTo: "",
+			startDate: "",
+			endDate: "",
 			sortBy: "newest",
 		};
 		setFilters(cleared);
@@ -148,10 +142,8 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 		filters.urgent ||
 		filters.groupOnly ||
 		filters.availableAt ||
-		filters.startDateFrom ||
-		filters.startDateTo ||
-		filters.endDateFrom ||
-		filters.endDateTo;
+		filters.startDate ||
+		filters.endDate;
 
 	const LocationTypeSelector = () => (
 		<div className="grid grid-cols-3 gap-2">
@@ -295,92 +287,50 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 					<Label className="font-medium">Filtruj po dacie</Label>
 				</div>
 
-				<div className="space-y-3">
+				<div className="space-y-2">
 					<Label className="text-sm text-muted-foreground">Data rozpoczęcia</Label>
-					<div className="grid grid-cols-2 gap-2">
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="outline" className="h-10 rounded-xl justify-start text-left font-normal">
-									{filters.startDateFrom ? (
-										format(new Date(filters.startDateFrom), "dd.MM.yyyy")
-									) : (
-										<span className="text-muted-foreground">Od</span>
-									)}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<CalendarComponent
-									mode="single"
-									selected={filters.startDateFrom ? new Date(filters.startDateFrom) : undefined}
-									onSelect={(date) => updateFilter("startDateFrom", date ? date.toISOString() : "")}
-									className="pointer-events-auto"
-								/>
-							</PopoverContent>
-						</Popover>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="outline" className="h-10 rounded-xl justify-start text-left font-normal">
-									{filters.startDateTo ? (
-										format(new Date(filters.startDateTo), "dd.MM.yyyy")
-									) : (
-										<span className="text-muted-foreground">Do</span>
-									)}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<CalendarComponent
-									mode="single"
-									selected={filters.startDateTo ? new Date(filters.startDateTo) : undefined}
-									onSelect={(date) => updateFilter("startDateTo", date ? date.toISOString() : "")}
-									className="pointer-events-auto"
-								/>
-							</PopoverContent>
-						</Popover>
-					</div>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button variant="outline" className="w-full h-10 rounded-xl justify-start text-left font-normal">
+								{filters.startDate ? (
+									format(new Date(filters.startDate), "dd.MM.yyyy")
+								) : (
+									<span className="text-muted-foreground">Wybierz datę</span>
+								)}
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-0" align="start">
+							<CalendarComponent
+								mode="single"
+								selected={filters.startDate ? new Date(filters.startDate) : undefined}
+								onSelect={(date) => updateFilter("startDate", date ? date.toISOString() : "")}
+								className="pointer-events-auto"
+							/>
+						</PopoverContent>
+					</Popover>
 				</div>
 
-				<div className="space-y-3">
+				<div className="space-y-2">
 					<Label className="text-sm text-muted-foreground">Data zakończenia</Label>
-					<div className="grid grid-cols-2 gap-2">
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="outline" className="h-10 rounded-xl justify-start text-left font-normal">
-									{filters.endDateFrom ? (
-										format(new Date(filters.endDateFrom), "dd.MM.yyyy")
-									) : (
-										<span className="text-muted-foreground">Od</span>
-									)}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<CalendarComponent
-									mode="single"
-									selected={filters.endDateFrom ? new Date(filters.endDateFrom) : undefined}
-									onSelect={(date) => updateFilter("endDateFrom", date ? date.toISOString() : "")}
-									className="pointer-events-auto"
-								/>
-							</PopoverContent>
-						</Popover>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="outline" className="h-10 rounded-xl justify-start text-left font-normal">
-									{filters.endDateTo ? (
-										format(new Date(filters.endDateTo), "dd.MM.yyyy")
-									) : (
-										<span className="text-muted-foreground">Do</span>
-									)}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<CalendarComponent
-									mode="single"
-									selected={filters.endDateTo ? new Date(filters.endDateTo) : undefined}
-									onSelect={(date) => updateFilter("endDateTo", date ? date.toISOString() : "")}
-									className="pointer-events-auto"
-								/>
-							</PopoverContent>
-						</Popover>
-					</div>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button variant="outline" className="w-full h-10 rounded-xl justify-start text-left font-normal">
+								{filters.endDate ? (
+									format(new Date(filters.endDate), "dd.MM.yyyy")
+								) : (
+									<span className="text-muted-foreground">Wybierz datę</span>
+								)}
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-0" align="start">
+							<CalendarComponent
+								mode="single"
+								selected={filters.endDate ? new Date(filters.endDate) : undefined}
+								onSelect={(date) => updateFilter("endDate", date ? date.toISOString() : "")}
+								className="pointer-events-auto"
+							/>
+						</PopoverContent>
+					</Popover>
 				</div>
 			</div>
 

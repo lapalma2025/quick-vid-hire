@@ -55,10 +55,8 @@ export default function Jobs() {
 		urgent: false,
 		groupOnly: false,
 		availableAt: "",
-		startDateFrom: "",
-		startDateTo: "",
-		endDateFrom: "",
-		endDateTo: "",
+		startDate: "",
+		endDate: "",
 		sortBy: "newest",
 	});
 
@@ -138,26 +136,24 @@ export default function Jobs() {
 			query = query.eq("allows_group", true);
 		}
 
-		// Date filters - start_time
-		if (filters.startDateFrom) {
-			query = query.gte("start_time", filters.startDateFrom);
-		}
-		if (filters.startDateTo) {
-			// Add 1 day to include the entire "to" date
-			const toDate = new Date(filters.startDateTo);
-			toDate.setDate(toDate.getDate() + 1);
-			query = query.lt("start_time", toDate.toISOString());
+		// Date filters - start_time (filter jobs starting on this date)
+		if (filters.startDate) {
+			const startOfDay = new Date(filters.startDate);
+			startOfDay.setHours(0, 0, 0, 0);
+			const endOfDay = new Date(filters.startDate);
+			endOfDay.setHours(23, 59, 59, 999);
+			query = query.gte("start_time", startOfDay.toISOString());
+			query = query.lte("start_time", endOfDay.toISOString());
 		}
 
-		// Date filters - end_time
-		if (filters.endDateFrom) {
-			query = query.gte("end_time", filters.endDateFrom);
-		}
-		if (filters.endDateTo) {
-			// Add 1 day to include the entire "to" date
-			const toDate = new Date(filters.endDateTo);
-			toDate.setDate(toDate.getDate() + 1);
-			query = query.lt("end_time", toDate.toISOString());
+		// Date filters - end_time (filter jobs ending on this date)
+		if (filters.endDate) {
+			const startOfDay = new Date(filters.endDate);
+			startOfDay.setHours(0, 0, 0, 0);
+			const endOfDay = new Date(filters.endDate);
+			endOfDay.setHours(23, 59, 59, 999);
+			query = query.gte("end_time", startOfDay.toISOString());
+			query = query.lte("end_time", endOfDay.toISOString());
 		}
 
 		switch (filters.sortBy) {
