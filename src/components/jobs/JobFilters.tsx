@@ -177,25 +177,20 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 						<Label className="font-medium">Miasto</Label>
 						<CityAutocomplete
 							value={filters.miasto}
-							onChange={(v) => updateFilter("miasto", v)}
-							onRegionChange={(region) => {
-								const normalizedRegion = region.toLowerCase();
-								const matchedWojewodztwo = WOJEWODZTWA.find(
-									(w) => w.toLowerCase() === normalizedRegion
-								);
-								if (
-									matchedWojewodztwo &&
-									matchedWojewodztwo !== filters.wojewodztwo
-								) {
-									setFilters((prev) => ({
-										...prev,
-										wojewodztwo: matchedWojewodztwo,
-									}));
-									onFiltersChange({
-										...filters,
-										wojewodztwo: matchedWojewodztwo,
-									});
-								}
+							onChange={(miasto, region) => {
+								// Update both miasto and wojewodztwo in one go
+								const normalizedRegion = region?.toLowerCase();
+								const matchedWojewodztwo = normalizedRegion
+									? WOJEWODZTWA.find((w) => w.toLowerCase() === normalizedRegion)
+									: undefined;
+								
+								const newFilters = {
+									...filters,
+									miasto,
+									...(matchedWojewodztwo && { wojewodztwo: matchedWojewodztwo }),
+								};
+								setFilters(newFilters);
+								onFiltersChange(newFilters);
 							}}
 							placeholder="Wpisz miasto..."
 						/>

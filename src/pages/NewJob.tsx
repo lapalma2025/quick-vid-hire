@@ -592,20 +592,16 @@ export default function NewJob() {
 										<Label>Miasto *</Label>
 										<CityAutocomplete
 											value={form.miasto}
-											onChange={(v) => updateForm("miasto", v)}
-											onRegionChange={(region) => {
-												const normalizedRegion = region.toLowerCase();
-												const matchedWojewodztwo = WOJEWODZTWA.find(
-													(w) => w.toLowerCase() === normalizedRegion
-												);
-												if (
-													matchedWojewodztwo &&
-													matchedWojewodztwo !== form.wojewodztwo
-												) {
-													setForm((prev) => ({
-														...prev,
-														wojewodztwo: matchedWojewodztwo,
-													}));
+											onChange={(miasto, region) => {
+												updateForm("miasto", miasto);
+												if (region) {
+													const normalizedRegion = region.toLowerCase();
+													const matchedWojewodztwo = WOJEWODZTWA.find(
+														(w) => w.toLowerCase() === normalizedRegion
+													);
+													if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
+														setForm((prev) => ({ ...prev, miasto, wojewodztwo: matchedWojewodztwo }));
+													}
 												}
 											}}
 											placeholder="Wpisz miasto..."
