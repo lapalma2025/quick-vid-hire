@@ -133,7 +133,10 @@ export function CityAutocomplete({
 		setIsOpen(true);
 		setHighlightedIndex(-1);
 
-		// Debounce API calls
+		// Always update the filter value immediately
+		onChange(newValue);
+
+		// Debounce API calls for suggestions
 		if (debounceRef.current) {
 			clearTimeout(debounceRef.current);
 		}
@@ -156,9 +159,6 @@ export function CityAutocomplete({
 		// Delay to allow click on suggestion
 		setTimeout(() => {
 			setIsOpen(false);
-			if (inputValue !== value) {
-				onChange(inputValue);
-			}
 		}, 200);
 	};
 
