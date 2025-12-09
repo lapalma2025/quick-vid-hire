@@ -490,9 +490,8 @@ export default function Index() {
 				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-[600px] h-40 rounded-full bg-primary/10 blur-3xl" />
 				
 				<div className="container relative z-10">
-					<div className="max-w-5xl mx-auto">
-						{/* Main content grid */}
-						<div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+					{/* Main content grid */}
+					<div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 							{/* Left side - Text content */}
 							<div className="cta-content space-y-8">
 								<div className="cta-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
@@ -605,7 +604,6 @@ export default function Index() {
 									<span className="font-medium">{item.label}</span>
 								</div>
 							))}
-						</div>
 					</div>
 				</div>
 			</section>
