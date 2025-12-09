@@ -55,6 +55,10 @@ export default function Jobs() {
 		urgent: false,
 		groupOnly: false,
 		availableAt: "",
+		startDateFrom: "",
+		startDateTo: "",
+		endDateFrom: "",
+		endDateTo: "",
 		sortBy: "newest",
 	});
 
@@ -76,6 +80,7 @@ export default function Jobs() {
         is_foreign,
         country,
         start_time,
+        end_time,
         duration_hours,
         budget,
         budget_type,
@@ -131,6 +136,28 @@ export default function Jobs() {
 		}
 		if (filters.groupOnly) {
 			query = query.eq("allows_group", true);
+		}
+
+		// Date filters - start_time
+		if (filters.startDateFrom) {
+			query = query.gte("start_time", filters.startDateFrom);
+		}
+		if (filters.startDateTo) {
+			// Add 1 day to include the entire "to" date
+			const toDate = new Date(filters.startDateTo);
+			toDate.setDate(toDate.getDate() + 1);
+			query = query.lt("start_time", toDate.toISOString());
+		}
+
+		// Date filters - end_time
+		if (filters.endDateFrom) {
+			query = query.gte("end_time", filters.endDateFrom);
+		}
+		if (filters.endDateTo) {
+			// Add 1 day to include the entire "to" date
+			const toDate = new Date(filters.endDateTo);
+			toDate.setDate(toDate.getDate() + 1);
+			query = query.lt("end_time", toDate.toISOString());
 		}
 
 		switch (filters.sortBy) {
