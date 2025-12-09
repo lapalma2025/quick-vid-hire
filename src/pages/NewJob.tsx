@@ -634,24 +634,22 @@ export default function NewJob() {
 								</div>
 							)}
 
-							<div className="grid sm:grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label>Data i godzina rozpoczęcia</Label>
-									<DateTimePicker
-										value={form.start_time}
-										onChange={(v) => updateForm("start_time", v)}
-										placeholder="Wybierz datę i godzinę"
-									/>
-								</div>
+							<div className="space-y-2">
+								<Label>Data i godzina rozpoczęcia</Label>
+								<DateTimePicker
+									value={form.start_time}
+									onChange={(v) => updateForm("start_time", v)}
+									placeholder="Wybierz datę i godzinę"
+								/>
+							</div>
 
-								<div className="space-y-2">
-									<Label>Data i godzina zakończenia</Label>
-									<DateTimePicker
-										value={form.end_time}
-										onChange={(v) => updateForm("end_time", v)}
-										placeholder="Wybierz datę i godzinę"
-									/>
-								</div>
+							<div className="space-y-2">
+								<Label>Data i godzina zakończenia</Label>
+								<DateTimePicker
+									value={form.end_time}
+									onChange={(v) => updateForm("end_time", v)}
+									placeholder="Wybierz datę i godzinę"
+								/>
 							</div>
 
 							<div className="space-y-2">
