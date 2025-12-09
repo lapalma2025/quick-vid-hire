@@ -172,83 +172,70 @@ export default function Index() {
 
 			// CTA - Enhanced animations
 			if (ctaRef.current) {
+				const ctaSection = ctaRef.current;
+				const ctaContent = ctaSection.querySelector(".cta-content");
+				const ctaCards = ctaSection.querySelectorAll(".cta-card");
+				const ctaBadges = ctaSection.querySelectorAll(".cta-badge-item");
+				const ctaBgElements = ctaSection.querySelectorAll(".cta-bg-element");
+
+				// Set initial states to prevent flash
+				gsap.set(ctaBgElements, { opacity: 0, scale: 0.5 });
+				gsap.set(ctaContent, { opacity: 0 });
+				gsap.set(ctaCards, { opacity: 0, y: 60 });
+				gsap.set(ctaBadges, { opacity: 0, y: 20 });
+
 				const ctaTl = gsap.timeline({
-					scrollTrigger: { trigger: ctaRef.current, start: "top 75%" },
+					scrollTrigger: { trigger: ctaSection, start: "top 80%" },
 				});
 
 				// Background elements float in
-				ctaTl.fromTo(
-					ctaRef.current.querySelectorAll(".cta-bg-element"),
-					{ opacity: 0, scale: 0.5 },
-					{ opacity: 1, scale: 1, duration: 1.2, stagger: 0.2, ease: "power2.out" }
-				);
+				ctaTl.to(ctaBgElements, { 
+					opacity: 1, 
+					scale: 1, 
+					duration: 1, 
+					stagger: 0.15, 
+					ease: "power2.out" 
+				});
 
-				// Badge slides in
-				ctaTl.fromTo(
-					".cta-badge",
-					{ opacity: 0, x: -30 },
-					{ opacity: 1, x: 0, duration: 0.6, ease: "power3.out" },
-					"-=0.8"
-				);
-
-				// Title words animate
-				ctaTl.fromTo(
-					".cta-title",
-					{ opacity: 0, y: 40 },
-					{ opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-					"-=0.4"
-				);
-
-				// Description fades in
-				ctaTl.fromTo(
-					".cta-desc",
-					{ opacity: 0, y: 20 },
-					{ opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-					"-=0.4"
-				);
-
-				// Buttons slide up
-				ctaTl.fromTo(
-					".cta-buttons",
-					{ opacity: 0, y: 20 },
-					{ opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-					"-=0.3"
-				);
+				// Content fades in
+				ctaTl.to(ctaContent, { 
+					opacity: 1, 
+					duration: 0.8, 
+					ease: "power2.out" 
+				}, "-=0.6");
 
 				// Cards float in with stagger
-				ctaTl.fromTo(
-					ctaRef.current.querySelectorAll(".cta-card"),
-					{ opacity: 0, y: 60, rotation: -5 },
-					{ 
-						opacity: 1, 
-						y: 0, 
-						rotation: 0, 
-						duration: 0.8, 
-						stagger: 0.15, 
-						ease: "back.out(1.2)" 
-					},
-					"-=0.6"
-				);
+				ctaTl.to(ctaCards, { 
+					opacity: 1, 
+					y: 0, 
+					duration: 0.7, 
+					stagger: 0.12, 
+					ease: "power3.out" 
+				}, "-=0.4");
 
 				// Trust badges fade in
-				ctaTl.fromTo(
-					ctaRef.current.querySelectorAll(".cta-badge-item"),
-					{ opacity: 0, y: 20 },
-					{ opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power2.out" },
-					"-=0.3"
-				);
+				ctaTl.to(ctaBadges, { 
+					opacity: 1, 
+					y: 0, 
+					duration: 0.5, 
+					stagger: 0.08, 
+					ease: "power2.out" 
+				}, "-=0.3");
 
-				// Floating animation for cards
-				gsap.to(ctaRef.current.querySelectorAll(".cta-card"), {
-					y: "random(-8, 8)",
-					duration: "random(2, 3)",
-					ease: "sine.inOut",
-					repeat: -1,
-					yoyo: true,
-					stagger: {
-						each: 0.5,
-						from: "random",
-					},
+				// Floating animation for cards - starts after main animation
+				ctaTl.add(() => {
+					if (ctaCards.length > 0) {
+						ctaCards.forEach((card, i) => {
+							gsap.to(card, {
+								y: `+=${(i % 2 === 0 ? -1 : 1) * 6}`,
+								duration: 2 + i * 0.3,
+								ease: "sine.inOut",
+								repeat: -1,
+								yoyo: true,
+								delay: i * 0.2,
+							});
+						});
+					}
 				});
 			}
 		});
