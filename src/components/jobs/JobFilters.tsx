@@ -130,29 +130,27 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 		filters.availableAt;
 
 	const LocationTypeSelector = () => (
-		<div className="flex flex-col gap-1.5">
-			<div className="grid grid-cols-3 gap-1.5">
-				{[
-					{ value: "all", label: "Wszystko", icon: null },
-					{ value: "poland", label: "Polska", icon: MapPin },
-					{ value: "foreign", label: "Za granicą", icon: Globe },
-				].map((item) => (
-					<button
-						key={item.value}
-						type="button"
-						onClick={() => updateFilter("locationType", item.value)}
-						className={cn(
-							"flex items-center justify-center gap-1 px-1.5 py-2.5 rounded-xl text-xs font-medium transition-all",
-							filters.locationType === item.value
-								? "bg-primary text-primary-foreground shadow-lg"
-								: "bg-muted/50 text-muted-foreground hover:bg-muted"
-						)}
-					>
-						{item.icon && <item.icon className="h-3.5 w-3.5 flex-shrink-0" />}
-						<span>{item.label}</span>
-					</button>
-				))}
-			</div>
+		<div className="grid grid-cols-3 gap-2">
+			{[
+				{ value: "all", label: "Wszystko", icon: null },
+				{ value: "poland", label: "Polska", icon: MapPin },
+				{ value: "foreign", label: "Zagranica", icon: Globe },
+			].map((item) => (
+				<button
+					key={item.value}
+					type="button"
+					onClick={() => updateFilter("locationType", item.value)}
+					className={cn(
+						"flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
+						filters.locationType === item.value
+							? "bg-primary text-primary-foreground shadow-lg"
+							: "bg-muted/50 text-muted-foreground hover:bg-muted"
+					)}
+				>
+					{item.icon && <item.icon className="h-4 w-4 flex-shrink-0" />}
+					<span>{item.label}</span>
+				</button>
+			))}
 		</div>
 	);
 
