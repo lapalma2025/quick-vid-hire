@@ -170,19 +170,86 @@ export default function Index() {
 				);
 			}
 
-			// CTA
+			// CTA - Enhanced animations
 			if (ctaRef.current) {
-				gsap.fromTo(
-					ctaRef.current,
-					{ opacity: 0, scale: 0.95 },
-					{
-						opacity: 1,
-						scale: 1,
-						duration: 1,
-						ease: "power3.out",
-						scrollTrigger: { trigger: ctaRef.current, start: "top 85%" },
-					}
+				const ctaTl = gsap.timeline({
+					scrollTrigger: { trigger: ctaRef.current, start: "top 75%" },
+				});
+
+				// Background elements float in
+				ctaTl.fromTo(
+					ctaRef.current.querySelectorAll(".cta-bg-element"),
+					{ opacity: 0, scale: 0.5 },
+					{ opacity: 1, scale: 1, duration: 1.2, stagger: 0.2, ease: "power2.out" }
 				);
+
+				// Badge slides in
+				ctaTl.fromTo(
+					".cta-badge",
+					{ opacity: 0, x: -30 },
+					{ opacity: 1, x: 0, duration: 0.6, ease: "power3.out" },
+					"-=0.8"
+				);
+
+				// Title words animate
+				ctaTl.fromTo(
+					".cta-title",
+					{ opacity: 0, y: 40 },
+					{ opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+					"-=0.4"
+				);
+
+				// Description fades in
+				ctaTl.fromTo(
+					".cta-desc",
+					{ opacity: 0, y: 20 },
+					{ opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+					"-=0.4"
+				);
+
+				// Buttons slide up
+				ctaTl.fromTo(
+					".cta-buttons",
+					{ opacity: 0, y: 20 },
+					{ opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+					"-=0.3"
+				);
+
+				// Cards float in with stagger
+				ctaTl.fromTo(
+					ctaRef.current.querySelectorAll(".cta-card"),
+					{ opacity: 0, y: 60, rotation: -5 },
+					{ 
+						opacity: 1, 
+						y: 0, 
+						rotation: 0, 
+						duration: 0.8, 
+						stagger: 0.15, 
+						ease: "back.out(1.2)" 
+					},
+					"-=0.6"
+				);
+
+				// Trust badges fade in
+				ctaTl.fromTo(
+					ctaRef.current.querySelectorAll(".cta-badge-item"),
+					{ opacity: 0, y: 20 },
+					{ opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power2.out" },
+					"-=0.3"
+				);
+
+				// Floating animation for cards
+				gsap.to(ctaRef.current.querySelectorAll(".cta-card"), {
+					y: "random(-8, 8)",
+					duration: "random(2, 3)",
+					ease: "sine.inOut",
+					repeat: -1,
+					yoyo: true,
+					stagger: {
+						each: 0.5,
+						from: "random",
+					},
+				});
 			}
 		});
 
@@ -429,66 +496,128 @@ export default function Index() {
 			</section>
 
 			{/* CTA */}
-			<section ref={ctaRef} className="py-20 md:py-28">
-				<div className="container">
-					<div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-primary to-emerald-600">
-						{/* Background pattern */}
-						<div className="absolute inset-0 opacity-30">
-							<div
-								className="absolute top-0 left-0 w-full h-full"
-								style={{
-									backgroundImage:
-										"radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 40%)",
-								}}
-							/>
-						</div>
-
-						<div className="relative z-10 px-8 py-16 md:px-16 md:py-20">
-							<div className="max-w-2xl mx-auto text-center space-y-6">
-								<h2 className="text-3xl md:text-5xl font-display font-bold text-white leading-tight">
-									Gotowy do działania?
+			<section ref={ctaRef} className="py-24 md:py-32 relative overflow-hidden">
+				{/* Animated background elements */}
+				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
+				<div className="cta-bg-element absolute -right-32 top-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl" />
+				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-[600px] h-40 rounded-full bg-primary/10 blur-3xl" />
+				
+				<div className="container relative z-10">
+					<div className="max-w-5xl mx-auto">
+						{/* Main content grid */}
+						<div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+							{/* Left side - Text content */}
+							<div className="cta-content space-y-8">
+								<div className="cta-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+									<Sparkles className="w-4 h-4 text-primary" />
+									<span className="text-sm font-medium text-primary">Dołącz do nas już dziś</span>
+								</div>
+								
+								<h2 className="cta-title text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
+									Gotowy do
+									<span className="block text-primary">działania?</span>
 								</h2>
-
-								<p className="text-lg text-white/80 max-w-lg mx-auto">
-									Dołącz do społeczności i zacznij realizować zlecenia lub
-									znajdź wykonawcę już dziś
+								
+								<p className="cta-desc text-lg text-muted-foreground leading-relaxed max-w-md">
+									Dołącz do tysięcy użytkowników, którzy codziennie realizują zlecenia i znajdują wykonawców w swojej okolicy.
 								</p>
-
-								<div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+								
+								<div className="cta-buttons flex flex-col sm:flex-row gap-4 pt-2">
 									<Button
 										size="lg"
 										asChild
-										className="group h-14 px-8 text-base rounded-xl bg-white text-primary font-semibold hover:bg-white/95 hover:scale-[1.02] transition-all duration-200 shadow-lg"
+										className="group h-14 px-8 text-base rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
 									>
 										<Link to="/register" className="flex items-center gap-2">
 											Zarejestruj się za darmo
-											<ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+											<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
 										</Link>
 									</Button>
 									<Button
 										size="lg"
-										className="h-14 px-8 text-base rounded-xl bg-white/15 border-0 text-white font-medium hover:bg-white/25 transition-all duration-200 backdrop-blur-sm"
+										variant="outline"
+										className="h-14 px-8 text-base rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
 										asChild
 									>
 										<Link to="/jobs">Przeglądaj zlecenia</Link>
 									</Button>
 								</div>
-
-								<div className="flex items-center justify-center gap-6 pt-6 text-white/70 text-sm">
-									<div className="flex items-center gap-2">
-										<CheckCircle2 className="w-4 h-4" />
-										<span>Bez zobowiązań</span>
+							</div>
+							
+							{/* Right side - Animated cards */}
+							<div className="cta-cards relative h-[400px] hidden lg:block">
+								{/* Floating cards */}
+								<div className="cta-card absolute top-0 left-8 w-64 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
+									<div className="flex items-start gap-4">
+										<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+											<Briefcase className="w-6 h-6 text-primary" />
+										</div>
+										<div>
+											<p className="font-semibold">Nowe zlecenie</p>
+											<p className="text-sm text-muted-foreground mt-1">Sprzątanie biura • Warszawa</p>
+											<p className="text-primary font-bold mt-2">150 zł</p>
+										</div>
 									</div>
-									<div className="flex items-center gap-2">
-										<Shield className="w-4 h-4" />
-										<span>Bezpieczne</span>
+								</div>
+								
+								<div className="cta-card absolute top-24 right-0 w-56 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
+											<CheckCircle2 className="w-5 h-5 text-white" />
+										</div>
+										<div>
+											<p className="font-semibold text-sm">Zlecenie zakończone!</p>
+											<p className="text-xs text-muted-foreground">Właśnie teraz</p>
+										</div>
 									</div>
-									<div className="flex items-center gap-2">
-										<Zap className="w-4 h-4" />
-										<span>Szybki start</span>
+								</div>
+								
+								<div className="cta-card absolute bottom-16 left-0 w-72 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
+									<div className="flex items-center gap-4">
+										<div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+											<Users className="w-7 h-7 text-muted-foreground" />
+										</div>
+										<div className="flex-1">
+											<div className="flex items-center gap-2">
+												<p className="font-semibold">Nowy wykonawca</p>
+												<div className="flex gap-0.5">
+													{[1,2,3,4,5].map(i => (
+														<Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+													))}
+												</div>
+											</div>
+											<p className="text-sm text-muted-foreground mt-1">dołączył do platformy</p>
+										</div>
+									</div>
+								</div>
+								
+								<div className="cta-card absolute bottom-0 right-8 w-48 p-4 rounded-2xl bg-primary text-primary-foreground shadow-xl">
+									<div className="flex items-center gap-3">
+										<Zap className="w-6 h-6" />
+										<div>
+											<p className="font-bold text-2xl">5 zł</p>
+											<p className="text-xs opacity-80">za publikację</p>
+										</div>
 									</div>
 								</div>
 							</div>
+						</div>
+						
+						{/* Bottom trust badges */}
+						<div className="cta-badges flex flex-wrap items-center justify-center gap-8 mt-16 pt-12 border-t border-border/50">
+							{[
+								{ icon: Shield, label: "Bezpieczne płatności" },
+								{ icon: CheckCircle2, label: "Weryfikowani wykonawcy" },
+								{ icon: Zap, label: "Szybka realizacja" },
+								{ icon: Star, label: "System ocen" },
+							].map((item) => (
+								<div key={item.label} className="cta-badge-item flex items-center gap-3 text-muted-foreground">
+									<div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+										<item.icon className="w-5 h-5" />
+									</div>
+									<span className="font-medium">{item.label}</span>
+								</div>
+							))}
 						</div>
 					</div>
 				</div>
