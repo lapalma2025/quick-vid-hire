@@ -133,8 +133,10 @@ export function CityAutocomplete({
 		setIsOpen(true);
 		setHighlightedIndex(-1);
 
-		// Always update the filter value immediately
-		onChange(newValue);
+		// Clear filter if input is empty
+		if (newValue === "") {
+			onChange("");
+		}
 
 		// Debounce API calls for suggestions
 		if (debounceRef.current) {
