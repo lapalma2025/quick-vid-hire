@@ -101,19 +101,25 @@ export default function Jobs() {
 
 		if (filters.locationType === "poland") {
 			query = query.or("is_foreign.is.null,is_foreign.eq.false");
-			if (filters.wojewodztwo) {
-				query = query.eq("wojewodztwo", filters.wojewodztwo);
-			}
-			if (filters.miasto) {
-				query = query.eq("miasto", filters.miasto);
-			}
 		} else if (filters.locationType === "foreign") {
 			query = query.eq("is_foreign", true);
 			if (filters.country) {
 				query = query.eq("country", filters.country);
 			}
+		}
+
+		// Apply wojewodztwo/miasto filters for both "all" and "poland" modes
+		if (filters.locationType !== "foreign") {
+			if (filters.wojewodztwo) {
+				query = query.eq("wojewodztwo", filters.wojewodztwo);
+			}
 			if (filters.miasto) {
-				query = query.eq("miasto", filters.miasto);
+				query = query.ilike("miasto", filters.miasto);
+			}
+		} else {
+			// Foreign location - apply miasto filter if set
+			if (filters.miasto) {
+				query = query.ilike("miasto", filters.miasto);
 			}
 		}
 
