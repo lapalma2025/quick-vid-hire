@@ -399,21 +399,18 @@ export default function Workers() {
 									<Label className="font-medium">Miasto</Label>
 									<CityAutocomplete
 										value={filters.miasto}
-										onChange={(v) => updateFilter("miasto", v)}
-										onRegionChange={(region) => {
-											const normalizedRegion = region.toLowerCase();
-											const matchedWojewodztwo = WOJEWODZTWA.find(
-												(w) => w.toLowerCase() === normalizedRegion
-											);
-											if (
-												matchedWojewodztwo &&
-												matchedWojewodztwo !== filters.wojewodztwo
-											) {
-												setFilters((prev) => ({
-													...prev,
-													wojewodztwo: matchedWojewodztwo,
-												}));
+										onChange={(miasto, region) => {
+											const newFilters = { ...filters, miasto };
+											if (region) {
+												const normalizedRegion = region.toLowerCase();
+												const matchedWojewodztwo = WOJEWODZTWA.find(
+													(w) => w.toLowerCase() === normalizedRegion
+												);
+												if (matchedWojewodztwo) {
+													newFilters.wojewodztwo = matchedWojewodztwo;
+												}
 											}
+											setFilters(newFilters);
 										}}
 										placeholder="Wpisz miasto..."
 									/>

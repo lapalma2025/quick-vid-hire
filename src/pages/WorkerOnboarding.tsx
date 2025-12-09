@@ -581,14 +581,16 @@ export default function WorkerOnboarding() {
                   </Label>
                   <CityAutocomplete
                     value={form.miasto}
-                    onChange={(v) => updateForm("miasto", v)}
-                    onRegionChange={(region) => {
-                      const normalizedRegion = region.toLowerCase();
-                      const matchedWojewodztwo = WOJEWODZTWA.find(
-                        (w) => w.toLowerCase() === normalizedRegion
-                      );
-                      if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
-                        updateForm("wojewodztwo", matchedWojewodztwo);
+                    onChange={(miasto, region) => {
+                      updateForm("miasto", miasto);
+                      if (region) {
+                        const normalizedRegion = region.toLowerCase();
+                        const matchedWojewodztwo = WOJEWODZTWA.find(
+                          (w) => w.toLowerCase() === normalizedRegion
+                        );
+                        if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
+                          updateForm("wojewodztwo", matchedWojewodztwo);
+                        }
                       }
                     }}
                     placeholder="Wpisz miasto..."
