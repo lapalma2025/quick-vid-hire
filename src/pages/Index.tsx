@@ -248,7 +248,7 @@ export default function Index() {
 			{/* Hero Section */}
 			<section
 				ref={heroRef}
-				className="relative overflow-hidden py-24 md:py-36"
+				className="relative overflow-hidden py-16 md:py-24"
 			>
 				{/* Background blobs */}
 				<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
@@ -301,7 +301,7 @@ export default function Index() {
 			{/* Stats */}
 			<section
 				ref={statsRef}
-				className="py-16 border-y border-border/50 bg-gradient-hero"
+				className="py-10 border-y border-border/50 bg-gradient-hero"
 			>
 				<div className="container">
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
@@ -326,7 +326,7 @@ export default function Index() {
 			</section>
 
 			{/* Categories */}
-			<section ref={categoriesRef} className="py-20 md:py-28">
+			<section ref={categoriesRef} className="py-12 md:py-16">
 				<div className="container">
 					<div className="text-center mb-14">
 						<h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
@@ -359,7 +359,7 @@ export default function Index() {
 			</section>
 
 			{/* How it works */}
-			<section ref={howItWorksRef} className="py-20 md:py-28 bg-muted/30">
+			<section ref={howItWorksRef} className="py-12 md:py-16 bg-muted/30">
 				<div className="container">
 					<div className="text-center mb-14">
 						<h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
@@ -420,7 +420,7 @@ export default function Index() {
 			</section>
 
 			{/* Features */}
-			<section ref={featuresRef} className="py-20 md:py-28">
+			<section ref={featuresRef} className="py-12 md:py-16">
 				<div className="container">
 					<div className="text-center mb-14">
 						<h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
@@ -483,7 +483,7 @@ export default function Index() {
 			</section>
 
 			{/* CTA */}
-			<section ref={ctaRef} className="py-24 md:py-32 relative overflow-hidden">
+			<section ref={ctaRef} className="py-16 md:py-20 relative overflow-hidden">
 				{/* Animated background elements */}
 				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
 				<div className="cta-bg-element absolute -right-32 top-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl" />
