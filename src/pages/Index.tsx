@@ -245,85 +245,88 @@ export default function Index() {
 
 	return (
 		<Layout>
-			{/* Hero Section */}
-			<section
-				ref={heroRef}
-				className="relative overflow-hidden py-16 md:py-24"
-			>
-				{/* Background blobs */}
-				<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-				<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
-				<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+			{/* Hero + Stats Combined Section - ensures both are visible together or hero takes full screen */}
+			<div className="min-h-[calc(100vh-4rem)] lg:min-h-0 flex flex-col">
+				{/* Hero Section */}
+				<section
+					ref={heroRef}
+					className="relative overflow-hidden flex-1 flex items-center py-12 md:py-20 lg:py-24"
+				>
+					{/* Background blobs */}
+					<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+					<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
+					<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
 
-				<div className="container relative z-10">
-					<div className="max-w-4xl mx-auto text-center space-y-8">
-						<h1 className="hero-title text-5xl md:text-7xl font-display font-bold tracking-tight leading-tight">
-							Znajdź wykonawcę
-							<span className="block text-primary mt-2">w kilka minut</span>
-						</h1>
+					<div className="container relative z-10">
+						<div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
+							<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
+								Znajdź wykonawcę
+								<span className="block text-primary mt-2">w kilka minut</span>
+							</h1>
 
-						<p className="hero-subtitle text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-							Portal pracy krótkoterminowej. Dodaj zlecenie, wybierz wykonawcę,
-							załatw sprawę.
-							<span className="text-foreground font-medium">
-								{" "}
-								Prosto, szybko, lokalnie.
-							</span>
-						</p>
+							<p className="hero-subtitle text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+								Portal pracy krótkoterminowej. Dodaj zlecenie, wybierz wykonawcę,
+								załatw sprawę.
+								<span className="text-foreground font-medium">
+									{" "}
+									Prosto, szybko, lokalnie.
+								</span>
+							</p>
 
-						<div className="hero-buttons flex flex-col sm:flex-row gap-4 justify-center pt-4">
-							<Button
-								size="lg"
-								asChild
-								className="gap-3 text-lg h-14 px-8 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
-							>
-								<Link to="/jobs/new">
-									<Briefcase className="h-5 w-5" />
-									Dodaj zlecenie za 5 zł
-								</Link>
-							</Button>
-							<Button
-								size="lg"
-								variant="outline"
-								asChild
-								className="gap-3 text-lg h-14 px-8 rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
-							>
-								<Link to="/jobs">
-									Przeglądaj zlecenia
-									<ArrowRight className="h-5 w-5" />
-								</Link>
-							</Button>
+							<div className="hero-buttons flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-2 md:pt-4">
+								<Button
+									size="lg"
+									asChild
+									className="gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
+								>
+									<Link to="/jobs/new">
+										<Briefcase className="h-5 w-5" />
+										Dodaj zlecenie za 5 zł
+									</Link>
+								</Button>
+								<Button
+									size="lg"
+									variant="outline"
+									asChild
+									className="gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
+								>
+									<Link to="/jobs">
+										Przeglądaj zlecenia
+										<ArrowRight className="h-5 w-5" />
+									</Link>
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
-			</section>
+				</section>
 
-			{/* Stats */}
-			<section
-				ref={statsRef}
-				className="py-12 border-y border-border/50 bg-gradient-hero"
-			>
-				<div className="container">
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-						{[
-							{ value: stats.jobs, label: "Aktywnych zleceń", suffix: "+" },
-							{ value: stats.workers, label: "Wykonawców", suffix: "+" },
-							{ value: 16, label: "Województw", suffix: "" },
-							{ value: 5, label: "Za publikację", suffix: " zł" },
-						].map((stat, i) => (
-							<div key={i} className="stat-item text-center">
-								<div className="text-4xl md:text-5xl font-display font-bold text-primary">
-									{stat.value}
-									{stat.suffix}
+				{/* Stats - Always visible below hero, scrolls naturally */}
+				<section
+					ref={statsRef}
+					className="py-8 md:py-12 border-y border-border/50 bg-gradient-hero shrink-0"
+				>
+					<div className="container">
+						<div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
+							{[
+								{ value: stats.jobs, label: "Aktywnych zleceń", suffix: "+" },
+								{ value: stats.workers, label: "Wykonawców", suffix: "+" },
+								{ value: 16, label: "Województw", suffix: "" },
+								{ value: 5, label: "Za publikację", suffix: " zł" },
+							].map((stat, i) => (
+								<div key={i} className="stat-item text-center">
+									<div className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-primary">
+										{stat.value}
+										{stat.suffix}
+									</div>
+									<div className="text-xs sm:text-sm text-muted-foreground mt-1 md:mt-2 font-medium">
+										{stat.label}
+									</div>
 								</div>
-								<div className="text-sm text-muted-foreground mt-2 font-medium">
-									{stat.label}
-								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
-				</div>
-			</section>
+				</section>
+			</div>
 
 			{/* Categories */}
 			<section ref={categoriesRef} className="py-14 md:py-18">
