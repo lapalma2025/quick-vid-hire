@@ -14,7 +14,8 @@ import {
   Banknote,
   CheckCircle2,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Images
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -52,12 +53,18 @@ interface Category {
   name: string;
 }
 
+interface GalleryImage {
+  id: string;
+  image_url: string;
+}
+
 export default function WorkerProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [worker, setWorker] = useState<WorkerProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +72,7 @@ export default function WorkerProfile() {
       fetchWorker();
       fetchReviews();
       fetchCategories();
+      fetchGallery();
     }
   }, [id]);
 
@@ -110,6 +118,18 @@ export default function WorkerProfile() {
 
     if (data) {
       setCategories(data.map(d => d.category).filter(Boolean) as Category[]);
+    }
+  };
+
+  const fetchGallery = async () => {
+    const { data } = await supabase
+      .from('worker_gallery')
+      .select('id, image_url')
+      .eq('worker_id', id)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      setGallery(data);
     }
   };
 
@@ -229,6 +249,31 @@ export default function WorkerProfile() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Gallery */}
+          {gallery.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Images className="h-5 w-5" />
+                  Galeria prac ({gallery.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {gallery.map((img) => (
+                    <div key={img.id} className="aspect-square rounded-lg overflow-hidden border">
+                      <img 
+                        src={img.image_url} 
+                        alt="Praca wykonawcy"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Reviews - Full width */}
           <Card>

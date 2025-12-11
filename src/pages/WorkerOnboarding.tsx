@@ -43,6 +43,7 @@ interface GalleryImage {
 
 const FORM_STORAGE_KEY = "worker_onboarding_form";
 const CATEGORIES_STORAGE_KEY = "worker_onboarding_categories";
+const AVATAR_STORAGE_KEY = "worker_onboarding_avatar";
 
 export default function WorkerOnboarding() {
   const navigate = useNavigate();
@@ -116,9 +117,11 @@ export default function WorkerOnboarding() {
           // Get form data from state or localStorage
           const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
           const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+          const savedAvatar = localStorage.getItem(AVATAR_STORAGE_KEY);
           
           const formData = savedForm ? JSON.parse(savedForm) : form;
           const categories = savedCategories ? JSON.parse(savedCategories) : selectedCategories;
+          const finalAvatarUrl = savedAvatar || avatarUrl;
           
           // Update profile with all data + mark as completed
           await supabase
@@ -130,7 +133,7 @@ export default function WorkerOnboarding() {
               miasto: formData.miasto,
               bio: formData.bio,
               hourly_rate: parseFloat(formData.hourly_rate),
-              avatar_url: avatarUrl,
+              avatar_url: finalAvatarUrl,
               worker_profile_completed: true,
               worker_visibility_paid: true, // Ensure this is set
               is_available: true,
@@ -155,6 +158,7 @@ export default function WorkerOnboarding() {
           // Clear localStorage
           localStorage.removeItem(FORM_STORAGE_KEY);
           localStorage.removeItem(CATEGORIES_STORAGE_KEY);
+          localStorage.removeItem(AVATAR_STORAGE_KEY);
           
           await refreshProfile();
           toast.success("Profil wykonawcy aktywowany! Jesteś widoczny w katalogu wykonawców.");
@@ -231,7 +235,13 @@ export default function WorkerOnboarding() {
         }
       }
       
-      setAvatarUrl(profile.avatar_url);
+      // Restore avatar from localStorage first, then fallback to profile
+      const savedAvatar = localStorage.getItem(AVATAR_STORAGE_KEY);
+      if (savedAvatar) {
+        setAvatarUrl(savedAvatar);
+      } else {
+        setAvatarUrl(profile.avatar_url);
+      }
       setFormInitialized(true);
     }
   }, [profile, authLoading, isAuthenticated, navigate, formInitialized]);
@@ -305,6 +315,8 @@ export default function WorkerOnboarding() {
 
       const newAvatarUrl = publicData.publicUrl + `?t=${Date.now()}`;
       setAvatarUrl(newAvatarUrl);
+      // Save to localStorage for persistence across payment redirect
+      localStorage.setItem(AVATAR_STORAGE_KEY, newAvatarUrl);
       toast.success("Zdjęcie zostało przesłane");
     } catch (error: any) {
       console.error("Avatar upload error:", error);
@@ -429,6 +441,7 @@ export default function WorkerOnboarding() {
       // Clear localStorage after successful submission
       localStorage.removeItem(FORM_STORAGE_KEY);
       localStorage.removeItem(CATEGORIES_STORAGE_KEY);
+      localStorage.removeItem(AVATAR_STORAGE_KEY);
 
       await refreshProfile();
       toast.success("Profil wykonawcy został aktywowany! Teraz możesz składać oferty na zlecenia.");
