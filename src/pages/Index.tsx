@@ -275,104 +275,106 @@ export default function Index() {
 
 	return (
 		<Layout>
-			{/* Hero + Stats Combined Section */}
-			<div className={`flex flex-col ${isSmallScreen ? 'min-h-[calc(100vh-4rem)]' : ''}`}>
-				{/* Hero Section */}
-				<section
-					ref={heroRef}
-					className={`relative overflow-hidden flex items-center ${isSmallScreen ? 'flex-1' : 'py-16 md:py-24 lg:py-28'}`}
-				>
-					{/* Background blobs */}
-					<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-					<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
-					<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+			{/* Hero Section - Full screen on small devices */}
+			<section
+				ref={heroRef}
+				className={`relative overflow-hidden flex flex-col justify-center ${isSmallScreen ? 'min-h-[calc(100vh-4rem)]' : 'py-16 md:py-24 lg:py-28'}`}
+			>
+				{/* Background blobs */}
+				<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+				<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
+				<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
 
-					<div className="container relative z-10">
-						<div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
-							<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
-								Znajdź wykonawcę
-								<span className="block text-primary mt-2">w kilka minut</span>
-							</h1>
+				<div className="container relative z-10 flex-1 flex items-center">
+					<div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8 w-full">
+						<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
+							Znajdź wykonawcę
+							<span className="block text-primary mt-2">w kilka minut</span>
+						</h1>
 
-							<p className="hero-subtitle text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-								Portal pracy krótkoterminowej. Dodaj zlecenie, wybierz wykonawcę,
-								załatw sprawę.
-								<span className="text-foreground font-medium">
-									{" "}
-									Prosto, szybko, lokalnie.
-								</span>
-							</p>
-
-							<div className="hero-buttons flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-2 md:pt-4">
-								<Button
-									size="lg"
-									asChild
-									className="gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
-								>
-									<Link to="/jobs/new">
-										<Briefcase className="h-5 w-5" />
-										Dodaj zlecenie za 5 zł
-									</Link>
-								</Button>
-								<Button
-									size="lg"
-									variant="outline"
-									asChild
-									className="gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
-								>
-									<Link to="/jobs">
-										Przeglądaj zlecenia
-										<ArrowRight className="h-5 w-5" />
-									</Link>
-								</Button>
-							</div>
-						</div>
-					</div>
-
-					{/* Scroll Indicator - only on small screens */}
-					{isSmallScreen && (
-						<div
-							ref={scrollIndicatorRef}
-							className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer opacity-0"
-							onClick={() => window.scrollTo({ top: window.innerHeight - 64, behavior: 'smooth' })}
-						>
-							<span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
-								Przewiń
+						<p className="hero-subtitle text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+							Portal pracy krótkoterminowej. Dodaj zlecenie, wybierz wykonawcę,
+							załatw sprawę.
+							<span className="text-foreground font-medium">
+								{" "}
+								Prosto, szybko, lokalnie.
 							</span>
-							<div className="w-10 h-10 rounded-full border-2 border-primary/30 bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
-								<ChevronDown className="h-5 w-5 text-primary" />
-							</div>
-						</div>
-					)}
-				</section>
+						</p>
 
-				{/* Stats Bar */}
-				<section
-					ref={statsRef}
-					className="py-8 md:py-12 border-y border-border/50 bg-gradient-hero shrink-0"
-				>
-					<div className="container">
-						<div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
-							{[
-								{ value: stats.jobs, label: "Aktywnych zleceń", suffix: "+" },
-								{ value: stats.workers, label: "Wykonawców", suffix: "+" },
-								{ value: 16, label: "Województw", suffix: "" },
-								{ value: 5, label: "Za publikację", suffix: " zł" },
-							].map((stat, i) => (
-								<div key={i} className="stat-item text-center">
-									<div className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-primary">
-										{stat.value}
-										{stat.suffix}
-									</div>
-									<div className="text-xs sm:text-sm text-muted-foreground mt-1 md:mt-2 font-medium">
-										{stat.label}
-									</div>
-								</div>
-							))}
+						<div className="hero-buttons flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-2 md:pt-4">
+							<Button
+								size="lg"
+								asChild
+								className="gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
+							>
+								<Link to="/jobs/new">
+									<Briefcase className="h-5 w-5" />
+									Dodaj zlecenie za 5 zł
+								</Link>
+							</Button>
+							<Button
+								size="lg"
+								variant="outline"
+								asChild
+								className="gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-8 rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
+							>
+								<Link to="/jobs">
+									Przeglądaj zlecenia
+									<ArrowRight className="h-5 w-5" />
+								</Link>
+							</Button>
 						</div>
 					</div>
-				</section>
-			</div>
+				</div>
+
+				{/* Scroll Indicator - only on small screens */}
+				{isSmallScreen && (
+					<div
+						ref={scrollIndicatorRef}
+						className="flex flex-col items-center gap-2 cursor-pointer opacity-0 pb-6 pt-8"
+						onClick={() => {
+							const statsSection = statsRef.current;
+							if (statsSection) {
+								statsSection.scrollIntoView({ behavior: 'smooth' });
+							}
+						}}
+					>
+						<span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+							Przewiń
+						</span>
+						<div className="w-10 h-10 rounded-full border-2 border-primary/30 bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
+							<ChevronDown className="h-5 w-5 text-primary" />
+						</div>
+					</div>
+				)}
+			</section>
+
+			{/* Stats Bar */}
+			<section
+				ref={statsRef}
+				className="py-8 md:py-12 border-y border-border/50 bg-gradient-hero"
+			>
+				<div className="container">
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
+						{[
+							{ value: stats.jobs, label: "Aktywnych zleceń", suffix: "+" },
+							{ value: stats.workers, label: "Wykonawców", suffix: "+" },
+							{ value: 16, label: "Województw", suffix: "" },
+							{ value: 5, label: "Za publikację", suffix: " zł" },
+						].map((stat, i) => (
+							<div key={i} className="stat-item text-center">
+								<div className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-primary">
+									{stat.value}
+									{stat.suffix}
+								</div>
+								<div className="text-xs sm:text-sm text-muted-foreground mt-1 md:mt-2 font-medium">
+									{stat.label}
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+			</section>
 
 			{/* Categories */}
 			<section ref={categoriesRef} className="py-14 md:py-18">
