@@ -12,6 +12,7 @@ import {
 	MapPin,
 	CheckCircle2,
 	Sparkles,
+	ChevronDown,
 } from "lucide-react";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 import { useEffect, useState, useRef } from "react";
@@ -36,12 +37,24 @@ const categories = [
 
 export default function Index() {
 	const [stats, setStats] = useState({ jobs: 0, workers: 0 });
+	const [isSmallScreen, setIsSmallScreen] = useState(false);
 	const heroRef = useRef<HTMLDivElement>(null);
 	const statsRef = useRef<HTMLDivElement>(null);
 	const categoriesRef = useRef<HTMLDivElement>(null);
 	const howItWorksRef = useRef<HTMLDivElement>(null);
 	const featuresRef = useRef<HTMLDivElement>(null);
 	const ctaRef = useRef<HTMLDivElement>(null);
+	const scrollIndicatorRef = useRef<HTMLDivElement>(null);
+
+	// Detect screen height
+	useEffect(() => {
+		const checkScreenHeight = () => {
+			setIsSmallScreen(window.innerHeight < 864);
+		};
+		checkScreenHeight();
+		window.addEventListener('resize', checkScreenHeight);
+		return () => window.removeEventListener('resize', checkScreenHeight);
+	}, []);
 
 	useEffect(() => {
 		const fetchStats = async () => {
@@ -103,6 +116,23 @@ export default function Index() {
 						},
 						"-=1"
 					);
+			}
+
+			// Scroll indicator animation (only on small screens)
+			if (scrollIndicatorRef.current && isSmallScreen) {
+				gsap.to(scrollIndicatorRef.current, {
+					y: 8,
+					duration: 1.2,
+					ease: "power1.inOut",
+					repeat: -1,
+					yoyo: true,
+				});
+				
+				gsap.fromTo(
+					scrollIndicatorRef.current,
+					{ opacity: 0 },
+					{ opacity: 1, duration: 1, delay: 1.5, ease: "power2.out" }
+				);
 			}
 
 			// Stats counter animation
@@ -241,16 +271,16 @@ export default function Index() {
 		});
 
 		return () => ctx.revert();
-	}, []);
+	}, [isSmallScreen]);
 
 	return (
 		<Layout>
-			{/* Hero + Stats Combined Section - ensures both are visible together or hero takes full screen */}
-			<div className="min-h-[calc(100vh-4rem)] lg:min-h-0 flex flex-col">
+			{/* Hero + Stats Combined Section */}
+			<div className={`flex flex-col ${isSmallScreen ? 'min-h-[calc(100vh-4rem)]' : ''}`}>
 				{/* Hero Section */}
 				<section
 					ref={heroRef}
-					className="relative overflow-hidden flex-1 flex items-center py-12 md:py-20 lg:py-24"
+					className={`relative overflow-hidden flex items-center ${isSmallScreen ? 'flex-1' : 'py-16 md:py-24 lg:py-28'}`}
 				>
 					{/* Background blobs */}
 					<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
@@ -298,9 +328,25 @@ export default function Index() {
 							</div>
 						</div>
 					</div>
+
+					{/* Scroll Indicator - only on small screens */}
+					{isSmallScreen && (
+						<div
+							ref={scrollIndicatorRef}
+							className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer opacity-0"
+							onClick={() => window.scrollTo({ top: window.innerHeight - 64, behavior: 'smooth' })}
+						>
+							<span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+								Przewiń
+							</span>
+							<div className="w-10 h-10 rounded-full border-2 border-primary/30 bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
+								<ChevronDown className="h-5 w-5 text-primary" />
+							</div>
+						</div>
+					)}
 				</section>
 
-				{/* Stats - Always visible below hero, scrolls naturally */}
+				{/* Stats Bar */}
 				<section
 					ref={statsRef}
 					className="py-8 md:py-12 border-y border-border/50 bg-gradient-hero shrink-0"
