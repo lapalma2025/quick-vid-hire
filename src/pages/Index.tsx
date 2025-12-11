@@ -122,8 +122,8 @@ export default function Index() {
 					);
 			}
 
-			// Floating icons animation (only on small screens)
-			if (floatingIconsRef.current && isSmallScreen) {
+			// Floating icons animation (all screen sizes)
+			if (floatingIconsRef.current) {
 				const icons = floatingIconsRef.current.querySelectorAll('.floating-icon');
 				
 				// Initial fade in with stagger
@@ -292,7 +292,7 @@ export default function Index() {
 		});
 
 		return () => ctx.revert();
-	}, [isSmallScreen]);
+	}, []);
 
 	return (
 		<Layout>
@@ -348,29 +348,27 @@ export default function Index() {
 					</div>
 				</div>
 
-				{/* Floating Icons - only on small screens (height < 864px) */}
-				{isSmallScreen && (
-					<div
-						ref={floatingIconsRef}
-						className="flex justify-center items-center gap-4 sm:gap-6 pb-8 pt-6"
-					>
-						{[
-							{ Icon: Briefcase, color: 'bg-primary/15 text-primary' },
-							{ Icon: Wrench, color: 'bg-amber-500/15 text-amber-600' },
-							{ Icon: Truck, color: 'bg-blue-500/15 text-blue-600' },
-							{ Icon: Home, color: 'bg-emerald-500/15 text-emerald-600' },
-							{ Icon: UtensilsCrossed, color: 'bg-rose-500/15 text-rose-600' },
-							{ Icon: TreePine, color: 'bg-green-500/15 text-green-600' },
-						].map(({ Icon, color }, i) => (
-							<div
-								key={i}
-								className={`floating-icon w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/20`}
-							>
-								<Icon className="h-5 w-5 sm:h-6 sm:w-6" />
-							</div>
-						))}
-					</div>
-				)}
+				{/* Floating Icons - visible on all screens */}
+				<div
+					ref={floatingIconsRef}
+					className="flex justify-center items-center gap-4 sm:gap-6 pb-10 pt-6 mb-4"
+				>
+					{[
+						{ Icon: Briefcase, color: 'bg-primary/15 text-primary' },
+						{ Icon: Wrench, color: 'bg-amber-500/15 text-amber-600' },
+						{ Icon: Truck, color: 'bg-blue-500/15 text-blue-600' },
+						{ Icon: Home, color: 'bg-emerald-500/15 text-emerald-600' },
+						{ Icon: UtensilsCrossed, color: 'bg-rose-500/15 text-rose-600' },
+						{ Icon: TreePine, color: 'bg-green-500/15 text-green-600' },
+					].map(({ Icon, color }, i) => (
+						<div
+							key={i}
+							className={`floating-icon w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/20`}
+						>
+							<Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+						</div>
+					))}
+				</div>
 			</section>
 
 			{/* Stats Bar */}
