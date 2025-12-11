@@ -73,7 +73,7 @@ export default function WorkerProfile() {
       .from('profiles')
       .select('*')
       .eq('id', id)
-      .eq('role', 'worker')
+      .eq('worker_profile_completed', true)
       .maybeSingle();
 
     if (data) {
