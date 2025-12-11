@@ -44,6 +44,7 @@ interface GalleryImage {
 const FORM_STORAGE_KEY = "worker_onboarding_form";
 const CATEGORIES_STORAGE_KEY = "worker_onboarding_categories";
 const AVATAR_STORAGE_KEY = "worker_onboarding_avatar";
+const GALLERY_STORAGE_KEY = "worker_onboarding_gallery";
 
 export default function WorkerOnboarding() {
   const navigate = useNavigate();
@@ -118,10 +119,12 @@ export default function WorkerOnboarding() {
           const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
           const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
           const savedAvatar = localStorage.getItem(AVATAR_STORAGE_KEY);
+          const savedGallery = localStorage.getItem(GALLERY_STORAGE_KEY);
           
           const formData = savedForm ? JSON.parse(savedForm) : form;
-          const categories = savedCategories ? JSON.parse(savedCategories) : selectedCategories;
+          const categoriesData = savedCategories ? JSON.parse(savedCategories) : selectedCategories;
           const finalAvatarUrl = savedAvatar || avatarUrl;
+          const galleryUrls: string[] = savedGallery ? JSON.parse(savedGallery) : [];
           
           // Update profile with all data + mark as completed
           await supabase
@@ -135,7 +138,7 @@ export default function WorkerOnboarding() {
               hourly_rate: parseFloat(formData.hourly_rate),
               avatar_url: finalAvatarUrl,
               worker_profile_completed: true,
-              worker_visibility_paid: true, // Ensure this is set
+              worker_visibility_paid: true,
               is_available: true,
               updated_at: new Date().toISOString(),
             })
@@ -147,18 +150,33 @@ export default function WorkerOnboarding() {
             .delete()
             .eq("worker_id", profile.id);
 
-          if (categories.length > 0) {
-            const categoryInserts = categories.map((catId: string) => ({
+          if (categoriesData.length > 0) {
+            const categoryInserts = categoriesData.map((catId: string) => ({
               worker_id: profile.id,
               category_id: catId,
             }));
             await supabase.from("worker_categories").insert(categoryInserts);
           }
 
+          // Save gallery images to database
+          if (galleryUrls.length > 0) {
+            await supabase
+              .from("worker_gallery")
+              .delete()
+              .eq("worker_id", profile.id);
+            
+            const galleryInserts = galleryUrls.map((url: string) => ({
+              worker_id: profile.id,
+              image_url: url,
+            }));
+            await supabase.from("worker_gallery").insert(galleryInserts);
+          }
+
           // Clear localStorage
           localStorage.removeItem(FORM_STORAGE_KEY);
           localStorage.removeItem(CATEGORIES_STORAGE_KEY);
           localStorage.removeItem(AVATAR_STORAGE_KEY);
+          localStorage.removeItem(GALLERY_STORAGE_KEY);
           
           await refreshProfile();
           toast.success("Profil wykonawcy aktywowany! Jesteś widoczny w katalogu wykonawców.");
@@ -242,6 +260,18 @@ export default function WorkerOnboarding() {
       } else {
         setAvatarUrl(profile.avatar_url);
       }
+      
+      // Restore gallery from localStorage
+      const savedGallery = localStorage.getItem(GALLERY_STORAGE_KEY);
+      if (savedGallery) {
+        try {
+          const galleryUrls = JSON.parse(savedGallery);
+          setGalleryImages(galleryUrls.map((url: string) => ({ url, isNew: false })));
+        } catch (e) {
+          // Ignore
+        }
+      }
+      
       setFormInitialized(true);
     }
   }, [profile, authLoading, isAuthenticated, navigate, formInitialized]);
@@ -338,23 +368,59 @@ export default function WorkerOnboarding() {
     const files = e.target.files;
     if (!files || !profile) return;
 
+    setUploadingGallery(true);
     const newImages: GalleryImage[] = [];
     
-    for (let i = 0; i < files.length && galleryImages.length + newImages.length < 10; i++) {
-      const file = files[i];
-      const url = URL.createObjectURL(file);
-      newImages.push({ url, file, isNew: true });
-    }
+    try {
+      for (let i = 0; i < files.length && galleryImages.length + newImages.length < 10; i++) {
+        const file = files[i];
+        
+        // Upload immediately to storage
+        const ext = file.name.split(".").pop()?.toLowerCase() || 'jpg';
+        const fileName = `${profile.user_id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("worker-gallery")
+          .upload(fileName, file);
+        
+        if (!uploadError) {
+          const { data: publicData } = supabase.storage
+            .from("worker-gallery")
+            .getPublicUrl(fileName);
+          
+          newImages.push({ url: publicData.publicUrl, isNew: true });
+        }
+      }
 
-    setGalleryImages(prev => [...prev, ...newImages]);
-    
-    if (files.length > 10 - galleryImages.length) {
-      toast.info("Maksymalnie 10 zdjęć w galerii");
+      const updatedGallery = [...galleryImages, ...newImages];
+      setGalleryImages(updatedGallery);
+      
+      // Save to localStorage for persistence across payment redirect
+      const urlsToSave = updatedGallery.map(img => img.url);
+      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(urlsToSave));
+      
+      if (files.length > 10 - galleryImages.length) {
+        toast.info("Maksymalnie 10 zdjęć w galerii");
+      }
+      
+      if (newImages.length > 0) {
+        toast.success(`Dodano ${newImages.length} zdjęć do galerii`);
+      }
+    } catch (error) {
+      console.error("Gallery upload error:", error);
+      toast.error("Błąd podczas przesyłania zdjęć");
+    } finally {
+      setUploadingGallery(false);
     }
   };
 
   const removeGalleryImage = (index: number) => {
-    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+    setGalleryImages(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      const urlsToSave = updated.map(img => img.url);
+      localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(urlsToSave));
+      return updated;
+    });
   };
 
   const isFormValid = () => {
@@ -414,27 +480,23 @@ export default function WorkerOnboarding() {
         }
       }
 
-      // Upload gallery images
-      const newGalleryImages = galleryImages.filter(img => img.isNew && img.file);
-      for (const img of newGalleryImages) {
-        if (!img.file) continue;
+      // Save gallery images to database (already uploaded to storage)
+      const galleryUrls = galleryImages.map(img => img.url).filter(Boolean);
+      if (galleryUrls.length > 0) {
+        // Delete existing gallery
+        await supabase
+          .from("worker_gallery")
+          .delete()
+          .eq("worker_id", profile.id);
         
-        const ext = img.file.name.split(".").pop();
-        const fileName = `${profile.user_id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${ext}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from("worker-gallery")
-          .upload(fileName, img.file);
-        
-        if (!uploadError) {
-          const { data: publicData } = supabase.storage
-            .from("worker-gallery")
-            .getPublicUrl(fileName);
-          
-          await supabase.from("worker_gallery").insert({
-            worker_id: profile.id,
-            image_url: publicData.publicUrl,
-          });
+        // Insert all gallery images
+        const galleryInserts = galleryUrls.map(url => ({
+          worker_id: profile.id,
+          image_url: url,
+        }));
+        const { error: galleryError } = await supabase.from("worker_gallery").insert(galleryInserts);
+        if (galleryError) {
+          console.error("Error inserting gallery:", galleryError);
         }
       }
 
@@ -442,6 +504,7 @@ export default function WorkerOnboarding() {
       localStorage.removeItem(FORM_STORAGE_KEY);
       localStorage.removeItem(CATEGORIES_STORAGE_KEY);
       localStorage.removeItem(AVATAR_STORAGE_KEY);
+      localStorage.removeItem(GALLERY_STORAGE_KEY);
 
       await refreshProfile();
       toast.success("Profil wykonawcy został aktywowany! Teraz możesz składać oferty na zlecenia.");
