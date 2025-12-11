@@ -12,7 +12,11 @@ import {
 	MapPin,
 	CheckCircle2,
 	Sparkles,
-	ChevronDown,
+	Wrench,
+	Truck,
+	Home,
+	UtensilsCrossed,
+	TreePine,
 } from "lucide-react";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 import { useEffect, useState, useRef } from "react";
@@ -44,7 +48,7 @@ export default function Index() {
 	const howItWorksRef = useRef<HTMLDivElement>(null);
 	const featuresRef = useRef<HTMLDivElement>(null);
 	const ctaRef = useRef<HTMLDivElement>(null);
-	const scrollIndicatorRef = useRef<HTMLDivElement>(null);
+	const floatingIconsRef = useRef<HTMLDivElement>(null);
 
 	// Detect screen height
 	useEffect(() => {
@@ -118,21 +122,38 @@ export default function Index() {
 					);
 			}
 
-			// Scroll indicator animation (only on small screens)
-			if (scrollIndicatorRef.current && isSmallScreen) {
-				gsap.to(scrollIndicatorRef.current, {
-					y: 8,
-					duration: 1.2,
-					ease: "power1.inOut",
-					repeat: -1,
-					yoyo: true,
-				});
+			// Floating icons animation (only on small screens)
+			if (floatingIconsRef.current && isSmallScreen) {
+				const icons = floatingIconsRef.current.querySelectorAll('.floating-icon');
 				
+				// Initial fade in with stagger
 				gsap.fromTo(
-					scrollIndicatorRef.current,
-					{ opacity: 0 },
-					{ opacity: 1, duration: 1, delay: 1.5, ease: "power2.out" }
+					icons,
+					{ opacity: 0, scale: 0, y: 20 },
+					{ 
+						opacity: 1, 
+						scale: 1, 
+						y: 0,
+						duration: 0.6, 
+						stagger: 0.1, 
+						delay: 1,
+						ease: "back.out(1.7)" 
+					}
 				);
+
+				// Continuous floating animation for each icon
+				icons.forEach((icon, i) => {
+					gsap.to(icon, {
+						y: `+=${(i % 2 === 0 ? -12 : 12)}`,
+						x: `+=${(i % 3 === 0 ? 8 : -8)}`,
+						rotation: (i % 2 === 0 ? 5 : -5),
+						duration: 2.5 + i * 0.3,
+						ease: "sine.inOut",
+						repeat: -1,
+						yoyo: true,
+						delay: i * 0.2,
+					});
+				});
 			}
 
 			// Stats counter animation
@@ -327,24 +348,27 @@ export default function Index() {
 					</div>
 				</div>
 
-				{/* Scroll Indicator - only on small screens (height < 864px) */}
+				{/* Floating Icons - only on small screens (height < 864px) */}
 				{isSmallScreen && (
 					<div
-						ref={scrollIndicatorRef}
-						className="flex flex-col items-center gap-2 cursor-pointer opacity-0 pb-6 pt-8"
-						onClick={() => {
-							const statsSection = statsRef.current;
-							if (statsSection) {
-								statsSection.scrollIntoView({ behavior: 'smooth' });
-							}
-						}}
+						ref={floatingIconsRef}
+						className="flex justify-center items-center gap-4 sm:gap-6 pb-8 pt-6"
 					>
-						<span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
-							Przewiń
-						</span>
-						<div className="w-10 h-10 rounded-full border-2 border-primary/30 bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-lg">
-							<ChevronDown className="h-5 w-5 text-primary" />
-						</div>
+						{[
+							{ Icon: Briefcase, color: 'bg-primary/15 text-primary' },
+							{ Icon: Wrench, color: 'bg-amber-500/15 text-amber-600' },
+							{ Icon: Truck, color: 'bg-blue-500/15 text-blue-600' },
+							{ Icon: Home, color: 'bg-emerald-500/15 text-emerald-600' },
+							{ Icon: UtensilsCrossed, color: 'bg-rose-500/15 text-rose-600' },
+							{ Icon: TreePine, color: 'bg-green-500/15 text-green-600' },
+						].map(({ Icon, color }, i) => (
+							<div
+								key={i}
+								className={`floating-icon w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/20`}
+							>
+								<Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+							</div>
+						))}
 					</div>
 				)}
 			</section>
