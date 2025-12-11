@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { StarRating } from '@/components/ui/star-rating';
+import { GalleryGrid } from '@/components/ui/image-lightbox';
+import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { 
   MapPin, 
   Star, 
@@ -15,7 +17,8 @@ import {
   CheckCircle2,
   ArrowLeft,
   Loader2,
-  Images
+  Images,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -51,6 +54,7 @@ interface Review {
 interface Category {
   id: string;
   name: string;
+  icon: string | null;
 }
 
 interface GalleryImage {
@@ -113,7 +117,7 @@ export default function WorkerProfile() {
   const fetchCategories = async () => {
     const { data } = await supabase
       .from('worker_categories')
-      .select('category:categories(id, name)')
+      .select('category:categories(id, name, icon)')
       .eq('worker_id', id);
 
     if (data) {
@@ -232,15 +236,25 @@ export default function WorkerProfile() {
             </Card>
 
             {/* Specializations */}
-            <Card>
+            <Card className="bg-gradient-to-br from-primary/5 via-background to-primary/10 border-primary/20">
               <CardHeader>
-                <CardTitle>Specjalizacje</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Specjalizacje
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {categories.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {categories.map((cat) => (
-                      <Badge key={cat.id} variant="secondary">{cat.name}</Badge>
+                      <Badge 
+                        key={cat.id} 
+                        variant="secondary"
+                        className="px-4 py-2 text-sm flex items-center gap-2 bg-background/80 border border-primary/20 hover:bg-primary/10 transition-colors"
+                      >
+                        <CategoryIcon name={cat.icon || cat.name} className="h-4 w-4 text-primary" />
+                        {cat.name}
+                      </Badge>
                     ))}
                   </div>
                 ) : (
@@ -252,25 +266,16 @@ export default function WorkerProfile() {
 
           {/* Gallery */}
           {gallery.length > 0 && (
-            <Card>
+            <Card className="bg-gradient-to-br from-background via-muted/20 to-background">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Images className="h-5 w-5" />
-                  Galeria prac ({gallery.length})
+                  <Images className="h-5 w-5 text-primary" />
+                  Galeria prac 
+                  <Badge variant="secondary" className="ml-2">{gallery.length} zdjęć</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {gallery.map((img) => (
-                    <div key={img.id} className="aspect-square rounded-lg overflow-hidden border">
-                      <img 
-                        src={img.image_url} 
-                        alt="Praca wykonawcy"
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ))}
-                </div>
+                <GalleryGrid images={gallery} />
               </CardContent>
             </Card>
           )}
