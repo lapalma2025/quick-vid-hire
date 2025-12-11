@@ -275,17 +275,17 @@ export default function Index() {
 
 	return (
 		<Layout>
-			{/* Hero Section - Full screen on small devices */}
+			{/* Hero Section - Full screen on small devices, normal on large */}
 			<section
 				ref={heroRef}
-				className={`relative overflow-hidden flex flex-col justify-center ${isSmallScreen ? 'min-h-[calc(100vh-4rem)]' : 'py-16 md:py-24 lg:py-28'}`}
+				className={`relative overflow-hidden flex flex-col ${isSmallScreen ? 'min-h-[calc(100vh-4rem)] justify-center' : 'py-20 md:py-28'}`}
 			>
 				{/* Background blobs */}
 				<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
 				<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
 				<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
 
-				<div className="container relative z-10 flex-1 flex items-center">
+				<div className={`container relative z-10 ${isSmallScreen ? 'flex-1 flex items-center' : ''}`}>
 					<div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8 w-full">
 						<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
 							Znajdź wykonawcę
@@ -327,7 +327,7 @@ export default function Index() {
 					</div>
 				</div>
 
-				{/* Scroll Indicator - only on small screens */}
+				{/* Scroll Indicator - only on small screens (height < 864px) */}
 				{isSmallScreen && (
 					<div
 						ref={scrollIndicatorRef}
