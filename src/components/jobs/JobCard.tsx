@@ -68,9 +68,9 @@ export const JobCard = ({ job }: JobCardProps) => {
       return `${base} ring-2 ring-primary/50 bg-gradient-to-br from-primary/5 to-emerald-50/50 dark:from-primary/10 dark:to-emerald-950/30`;
     }
     
-    // Podświetlenie - only background, no ring
+    // Podświetlenie - subtle but visible background styling
     if (hasBackgroundStyling) {
-      return `${base} bg-gradient-to-br from-primary/5 to-emerald-50/30 dark:from-primary/10 dark:to-emerald-950/20`;
+      return `${base} bg-gradient-to-br from-emerald-100/80 via-primary/10 to-teal-50/60 dark:from-emerald-900/40 dark:via-primary/20 dark:to-teal-950/40`;
     }
     
     return base;
