@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Calendar, Banknote, ArrowRight, Globe, Users, Star, Zap } from 'lucide-react';
+import { MapPin, Clock, Calendar, Banknote, Globe, Users, Star, Zap } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from './CategoryIcon';
@@ -53,147 +53,136 @@ export const JobCard = ({ job }: JobCardProps) => {
   const promotionTimeLeft = getPromotionTimeLeft();
 
   // Dynamic card classes based on premium options
-  const cardClasses = [
-    "group card-modern overflow-hidden h-full transition-all duration-300",
-    job.is_highlighted 
-      ? "ring-2 ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-900/10 dark:to-card" 
-      : "bg-card hover:bg-card",
-    isPromotionActive && !job.is_highlighted
-      ? "bg-gradient-to-br from-primary/20 via-primary/10 to-card ring-2 ring-primary/40 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
-      : "",
-  ].filter(Boolean).join(" ");
+  const getCardClasses = () => {
+    const base = "group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5";
+    
+    if (job.is_highlighted) {
+      return `${base} border-amber-300 dark:border-amber-600 bg-gradient-to-br from-amber-50 via-white to-amber-50/50 dark:from-amber-950/30 dark:via-card dark:to-amber-950/20 shadow-[0_4px_20px_rgba(251,191,36,0.15)]`;
+    }
+    
+    if (isPromotionActive) {
+      return `${base} border-primary/30 bg-gradient-to-br from-primary/5 via-card to-primary/5 shadow-[0_4px_20px_rgba(34,197,94,0.1)]`;
+    }
+    
+    return `${base} border-border/60 bg-card hover:border-primary/30`;
+  };
 
   return (
     <Link to={`/jobs/${job.id}`}>
-      <Card className={cardClasses}>
-        <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-          {firstImage ? (
-            <img 
-              src={firstImage} 
-              alt={job.title} 
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
-              <CategoryIcon name={job.category?.name || 'Inne'} className="h-16 w-16 text-primary/30" />
-            </div>
-          )}
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
-          {/* Highlighted badge - top corner */}
-          {job.is_highlighted && (
-            <div className="absolute top-0 right-0">
-              <div className="bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-bl-lg shadow-lg flex items-center gap-1">
-                <Star className="h-3 w-3 fill-current" />
-                WYRÓŻNIONE
+      <Card className={getCardClasses()}>
+        <div className="flex gap-4 p-4">
+          {/* Image / Icon - compact square */}
+          <div className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted">
+            {firstImage ? (
+              <img 
+                src={firstImage} 
+                alt={job.title} 
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                <CategoryIcon name={job.category?.name || 'Inne'} className="h-8 w-8 text-primary/40" />
               </div>
-            </div>
-          )}
-          
-          {/* Promotion timer badge */}
-          {isPromotionActive && promotionTimeLeft && (
-            <div className="absolute top-0 left-0">
-              <div className="bg-gradient-to-r from-primary to-primary/80 text-white text-xs font-medium px-3 py-1.5 rounded-br-lg shadow-lg flex items-center gap-1">
-                <Zap className="h-3 w-3" />
-                Promowane: {promotionTimeLeft}
-              </div>
-            </div>
-          )}
-          
-          {/* Badges container */}
-          <div className={`absolute ${job.is_highlighted ? 'top-10' : 'top-3'} left-3 right-3 flex justify-between items-start gap-2`}>
-            <div className="flex gap-2 flex-wrap">
-              {job.urgent && (
-                <Badge className="bg-destructive text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                  ⚡ PILNE
-                </Badge>
-              )}
-              {job.is_foreign && (
-                <Badge className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                  <Globe className="h-3 w-3" />
-                  ZAGRANICA
-                </Badge>
-              )}
-              {job.allows_group && (
-                <Badge className="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  GRUPA {job.min_workers}-{job.max_workers}
-                </Badge>
-              )}
-            </div>
-            {job.category && !job.is_highlighted && (
-              <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm text-foreground text-xs font-medium shadow-sm">
-                {job.category.name}
-              </Badge>
             )}
-          </div>
-
-          {/* View button on hover */}
-          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-            <div className={`h-10 w-10 rounded-full shadow-lg flex items-center justify-center ${job.is_highlighted ? 'bg-amber-400' : 'bg-white'}`}>
-              <ArrowRight className={`h-5 w-5 ${job.is_highlighted ? 'text-white' : 'text-primary'}`} />
-            </div>
-          </div>
-        </div>
-        
-        <CardContent className="p-5 space-y-4">
-          <div>
-            <h3 className={`font-display font-bold text-lg line-clamp-2 transition-colors duration-300 ${
-              job.is_highlighted 
-                ? 'text-amber-700 dark:text-amber-400 group-hover:text-amber-600' 
-                : 'group-hover:text-primary'
-            }`}>
-              {job.title}
-            </h3>
-            {job.category && job.is_highlighted && (
-              <span className="text-xs text-muted-foreground">{job.category.name}</span>
-            )}
-          </div>
-
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              {job.is_foreign ? (
-                <Globe className="h-4 w-4 flex-shrink-0 text-blue-500" />
-              ) : (
-                <MapPin className="h-4 w-4 flex-shrink-0 text-primary/60" />
-              )}
-              <span className="truncate">
-                {job.miasto}, {job.is_foreign ? job.country || job.wojewodztwo : job.wojewodztwo}
-              </span>
-            </div>
             
-            <div className="flex items-center gap-4">
+            {/* Highlighted star overlay */}
+            {job.is_highlighted && (
+              <div className="absolute -top-1 -right-1 bg-amber-400 p-1 rounded-bl-lg">
+                <Star className="h-3 w-3 text-white fill-white" />
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            {/* Top row: Title + Badges */}
+            <div className="space-y-1.5">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className={`font-semibold text-[15px] leading-tight line-clamp-1 transition-colors ${
+                  job.is_highlighted 
+                    ? 'text-amber-700 dark:text-amber-400' 
+                    : 'group-hover:text-primary'
+                }`}>
+                  {job.title}
+                </h3>
+                
+                {/* Budget - prominent on the right */}
+                {job.budget && (
+                  <div className={`flex-shrink-0 font-bold text-sm ${
+                    job.is_highlighted ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
+                  }`}>
+                    {job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}
+                  </div>
+                )}
+              </div>
+
+              {/* Badges row */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {job.category && (
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 font-medium">
+                    {job.category.name}
+                  </Badge>
+                )}
+                {job.urgent && (
+                  <Badge className="bg-destructive/90 text-white text-[10px] px-2 py-0 h-5 font-semibold">
+                    ⚡ PILNE
+                  </Badge>
+                )}
+                {job.is_foreign && (
+                  <Badge className="bg-blue-500/90 text-white text-[10px] px-2 py-0 h-5 font-semibold flex items-center gap-0.5">
+                    <Globe className="h-2.5 w-2.5" />
+                    ZAGRANICA
+                  </Badge>
+                )}
+                {job.allows_group && (
+                  <Badge className="bg-purple-500/90 text-white text-[10px] px-2 py-0 h-5 font-semibold flex items-center gap-0.5">
+                    <Users className="h-2.5 w-2.5" />
+                    {job.min_workers}-{job.max_workers}
+                  </Badge>
+                )}
+                {isPromotionActive && promotionTimeLeft && (
+                  <Badge className="bg-primary/90 text-white text-[10px] px-2 py-0 h-5 font-medium flex items-center gap-0.5">
+                    <Zap className="h-2.5 w-2.5" />
+                    {promotionTimeLeft}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom row: Meta info */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+              <div className="flex items-center gap-1">
+                {job.is_foreign ? (
+                  <Globe className="h-3 w-3 text-blue-500" />
+                ) : (
+                  <MapPin className="h-3 w-3" />
+                )}
+                <span className="truncate max-w-[120px]">
+                  {job.miasto}
+                </span>
+              </div>
+              
               {job.start_time && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4 flex-shrink-0 text-primary/60" />
-                  <span>{format(new Date(job.start_time), 'dd MMM', { locale: pl })}</span>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>{format(new Date(job.start_time), 'dd.MM', { locale: pl })}</span>
                 </div>
               )}
               
               {job.duration_hours && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 flex-shrink-0 text-primary/60" />
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
                   <span>{job.duration_hours}h</span>
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          {job.budget && (
-            <div className={`pt-3 border-t ${job.is_highlighted ? 'border-amber-200 dark:border-amber-800/30' : 'border-border/50'}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Budżet</span>
-                <div className={`flex items-center gap-1.5 font-display font-bold text-lg ${
-                  job.is_highlighted ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
-                }`}>
-                  <Banknote className="h-5 w-5" />
-                  <span>{job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
+        {/* Subtle hover indicator */}
+        <div className={`absolute bottom-0 left-0 right-0 h-0.5 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left ${
+          job.is_highlighted ? 'bg-amber-400' : 'bg-primary'
+        }`} />
       </Card>
     </Link>
   );
