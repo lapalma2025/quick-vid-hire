@@ -180,7 +180,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 
 			{/* All/Poland location search */}
 			{(filters.locationType === "all" || filters.locationType === "poland") && (
-				<div className="space-y-4 animate-fade-in">
+				<div className="space-y-4">
 					<div className="space-y-2">
 						<Label className="font-medium">Województwo</Label>
 						<WojewodztwoSelect
@@ -218,7 +218,7 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 
 			{/* Foreign filters */}
 			{filters.locationType === "foreign" && (
-				<div className="space-y-4 animate-fade-in">
+				<div className="space-y-4">
 					<div className="space-y-2">
 						<Label className="font-medium">Kraj</Label>
 						<CountrySelect
