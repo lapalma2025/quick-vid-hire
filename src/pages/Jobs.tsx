@@ -195,23 +195,24 @@ export default function Jobs() {
 				});
 			}
 
-			// Sort: highlighted first, then promoted (active), then rest
+			// Sort: highlighted first, then promoted with badge (Promowanie 24h), then rest
+			// Note: Podświetlenie (is_promoted without promotion_expires_at) does NOT boost ranking
 			jobsData.sort((a, b) => {
-				// Highlighted jobs always first
+				// Highlighted jobs always first (includes promotion boost)
 				if (a.is_highlighted && !b.is_highlighted) return -1;
 				if (!a.is_highlighted && b.is_highlighted) return 1;
 
-				// Then promoted jobs (check if promotion is still active)
-				const aPromoted =
+				// Then promoted jobs with badge (Promowanie 24h - has promotion_expires_at)
+				const aPromotedWithBadge =
 					a.is_promoted &&
-					(!a.promotion_expires_at ||
-						new Date(a.promotion_expires_at) > new Date());
-				const bPromoted =
+					a.promotion_expires_at &&
+					new Date(a.promotion_expires_at) > new Date();
+				const bPromotedWithBadge =
 					b.is_promoted &&
-					(!b.promotion_expires_at ||
-						new Date(b.promotion_expires_at) > new Date());
-				if (aPromoted && !bPromoted) return -1;
-				if (!aPromoted && bPromoted) return 1;
+					b.promotion_expires_at &&
+					new Date(b.promotion_expires_at) > new Date();
+				if (aPromotedWithBadge && !bPromotedWithBadge) return -1;
+				if (!aPromotedWithBadge && bPromotedWithBadge) return 1;
 
 				return 0; // Keep original order for non-premium jobs
 			});
