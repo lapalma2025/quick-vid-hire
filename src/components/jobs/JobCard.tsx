@@ -59,7 +59,7 @@ export const JobCard = ({ job }: JobCardProps) => {
       ? "ring-2 ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-50/50 to-card dark:from-amber-900/10 dark:to-card" 
       : "bg-card hover:bg-card",
     isPromotionActive && !job.is_highlighted
-      ? "bg-gradient-to-br from-primary/5 to-card ring-1 ring-primary/20"
+      ? "bg-gradient-to-br from-primary/20 via-primary/10 to-card ring-2 ring-primary/40 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
       : "",
   ].filter(Boolean).join(" ");
 
