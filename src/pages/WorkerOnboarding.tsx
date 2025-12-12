@@ -293,11 +293,26 @@ export default function WorkerOnboarding() {
 
   const fetchWorkerCategories = async () => {
     if (!profile) return;
+    
+    // Don't overwrite if we already have categories from localStorage
+    const savedCategories = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        if (parsed.length > 0) {
+          setSelectedCategories(parsed);
+          return;
+        }
+      } catch (e) {
+        // Continue to fetch from DB
+      }
+    }
+    
     const { data } = await supabase
       .from("worker_categories")
       .select("category_id")
       .eq("worker_id", profile.id);
-    if (data) {
+    if (data && data.length > 0) {
       setSelectedCategories(data.map(wc => wc.category_id));
     }
   };
