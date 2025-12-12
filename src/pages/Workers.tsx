@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { StarRating } from "@/components/ui/star-rating";
-import { TimePicker } from "@/components/ui/time-picker";
 import { Input } from "@/components/ui/input";
 import {
 	MapPin,
@@ -72,7 +71,6 @@ export default function Workers() {
 		minRate: "",
 		maxRate: "",
 		minRating: "",
-		availableAt: "",
 	});
 
 	useEffect(() => {
@@ -158,17 +156,6 @@ export default function Workers() {
 							.filter(Boolean) || [],
 				}));
 
-				// Client-side filtering for availability hours
-				if (filters.availableAt) {
-					const filterTime = filters.availableAt;
-					workersData = workersData.filter((w: Worker) => {
-						if (!w.available_from || !w.available_to) return true; // Show workers without set hours
-						return (
-							filterTime >= w.available_from && filterTime <= w.available_to
-						);
-					});
-				}
-
 				setWorkers(workersData);
 				setTotalCount(count || 0);
 				setHasMore(data.length === PAGE_SIZE);
@@ -247,17 +234,6 @@ export default function Workers() {
 							.filter(Boolean) || [],
 				}));
 
-				// Client-side filtering for availability hours
-				if (filters.availableAt) {
-					const filterTime = filters.availableAt;
-					newWorkersData = newWorkersData.filter((w: Worker) => {
-						if (!w.available_from || !w.available_to) return true;
-						return (
-							filterTime >= w.available_from && filterTime <= w.available_to
-						);
-					});
-				}
-
 				setWorkers((prev) => [...prev, ...newWorkersData]);
 				setHasMore(data.length === PAGE_SIZE);
 			}
@@ -335,7 +311,6 @@ export default function Workers() {
 			minRate: "",
 			maxRate: "",
 			minRating: "",
-			availableAt: "",
 		});
 	};
 
@@ -385,9 +360,9 @@ export default function Workers() {
 				</div>
 
 				{showFilters && (
-					<Card className="mb-8 card-modern">
+				<Card className="mb-8 card-modern">
 						<CardContent className="p-6">
-							<div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+							<div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
 								<div className="space-y-2">
 									<Label className="font-medium">Województwo</Label>
 									<WojewodztwoSelect
@@ -435,14 +410,6 @@ export default function Workers() {
 											))}
 										</SelectContent>
 									</Select>
-								</div>
-								<div className="space-y-2">
-									<Label className="font-medium">Godzina</Label>
-									<TimePicker
-										value={filters.availableAt}
-										onChange={(v) => updateFilter("availableAt", v)}
-										placeholder="Wybierz godzinę"
-									/>
 								</div>
 								<div className="space-y-2">
 									<Label className="font-medium">Min. ocena</Label>
