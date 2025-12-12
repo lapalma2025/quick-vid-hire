@@ -38,9 +38,12 @@ interface JobCardProps {
 export const JobCard = ({ job }: JobCardProps) => {
   const firstImage = job.job_images?.[0]?.image_url;
   
-  // Check if promotion is still active
-  const isPromotionActive = job.is_promoted && 
-    (!job.promotion_expires_at || new Date(job.promotion_expires_at) > new Date());
+  // Check if job has background styling (Podświetlenie - no badge, just background)
+  const hasBackgroundStyling = job.is_promoted && !job.promotion_expires_at;
+  
+  // Check if promotion with badge is active (Promowanie 24h - has badge and boost)
+  const isPromotionWithBadge = job.is_promoted && 
+    job.promotion_expires_at && new Date(job.promotion_expires_at) > new Date();
   
   // Calculate remaining promotion time
   const getPromotionTimeLeft = () => {
@@ -60,8 +63,14 @@ export const JobCard = ({ job }: JobCardProps) => {
       return `${base} ring-2 ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30`;
     }
     
-    if (isPromotionActive) {
+    // Promowanie 24h - with badge
+    if (isPromotionWithBadge) {
       return `${base} ring-2 ring-primary/50 bg-gradient-to-br from-primary/5 to-emerald-50/50 dark:from-primary/10 dark:to-emerald-950/30`;
+    }
+    
+    // Podświetlenie - only background, no ring
+    if (hasBackgroundStyling) {
+      return `${base} bg-gradient-to-br from-primary/5 to-emerald-50/30 dark:from-primary/10 dark:to-emerald-950/20`;
     }
     
     return base;
@@ -94,7 +103,7 @@ export const JobCard = ({ job }: JobCardProps) => {
             </div>
           )}
           
-          {isPromotionActive && !job.is_highlighted && (
+          {isPromotionWithBadge && !job.is_highlighted && (
             <div className="absolute top-2 left-2">
               <Badge className="bg-gradient-to-r from-primary to-emerald-500 text-white font-semibold shadow-lg">
                 <Zap className="h-3 w-3 mr-1" />

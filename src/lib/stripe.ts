@@ -61,12 +61,12 @@ export const PREMIUM_ADDONS = {
 	highlight: {
 		name: "Wyróżnienie",
 		price: 9,
-		description: "Zwiększona widoczność ogłoszenia",
+		description: "Złota ramka, badge i promowanie w wynikach",
 	},
 	promote: {
 		name: "Podświetlenie",
 		price: 5,
-		description: "Wyróżniający kolor tła",
+		description: "Subtelne wyróżniające tło ogłoszenia",
 	},
 	urgent: {
 		name: "PILNE",
@@ -76,7 +76,7 @@ export const PREMIUM_ADDONS = {
 	promote_24h: {
 		name: "Promowanie 24h",
 		price: 3,
-		description: "Promowanie przez 24 godziny",
+		description: "Badge i wyższa pozycja przez 24h",
 	},
 } as const;
 
