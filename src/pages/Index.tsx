@@ -56,8 +56,8 @@ export default function Index() {
 			setIsSmallScreen(window.innerHeight < 864);
 		};
 		checkScreenHeight();
-		window.addEventListener('resize', checkScreenHeight);
-		return () => window.removeEventListener('resize', checkScreenHeight);
+		window.addEventListener("resize", checkScreenHeight);
+		return () => window.removeEventListener("resize", checkScreenHeight);
 	}, []);
 
 	useEffect(() => {
@@ -124,29 +124,30 @@ export default function Index() {
 
 			// Floating icons animation (all screen sizes)
 			if (floatingIconsRef.current) {
-				const icons = floatingIconsRef.current.querySelectorAll('.floating-icon');
-				
+				const icons =
+					floatingIconsRef.current.querySelectorAll(".floating-icon");
+
 				// Initial fade in with stagger
 				gsap.fromTo(
 					icons,
 					{ opacity: 0, scale: 0, y: 20 },
-					{ 
-						opacity: 1, 
-						scale: 1, 
+					{
+						opacity: 1,
+						scale: 1,
 						y: 0,
-						duration: 0.6, 
-						stagger: 0.1, 
+						duration: 0.6,
+						stagger: 0.1,
 						delay: 1,
-						ease: "back.out(1.7)" 
+						ease: "back.out(1.7)",
 					}
 				);
 
 				// Continuous floating animation for each icon
 				icons.forEach((icon, i) => {
 					gsap.to(icon, {
-						y: `+=${(i % 2 === 0 ? -12 : 12)}`,
-						x: `+=${(i % 3 === 0 ? 8 : -8)}`,
-						rotation: (i % 2 === 0 ? 5 : -5),
+						y: `+=${i % 2 === 0 ? -12 : 12}`,
+						x: `+=${i % 3 === 0 ? 8 : -8}`,
+						rotation: i % 2 === 0 ? 5 : -5,
 						duration: 2.5 + i * 0.3,
 						ease: "sine.inOut",
 						repeat: -1,
@@ -240,38 +241,50 @@ export default function Index() {
 				});
 
 				// Background elements float in
-				ctaTl.to(ctaBgElements, { 
-					opacity: 1, 
-					scale: 1, 
-					duration: 1, 
-					stagger: 0.15, 
-					ease: "power2.out" 
+				ctaTl.to(ctaBgElements, {
+					opacity: 1,
+					scale: 1,
+					duration: 1,
+					stagger: 0.15,
+					ease: "power2.out",
 				});
 
 				// Content fades in
-				ctaTl.to(ctaContent, { 
-					opacity: 1, 
-					duration: 0.8, 
-					ease: "power2.out" 
-				}, "-=0.6");
+				ctaTl.to(
+					ctaContent,
+					{
+						opacity: 1,
+						duration: 0.8,
+						ease: "power2.out",
+					},
+					"-=0.6"
+				);
 
 				// Cards float in with stagger
-				ctaTl.to(ctaCards, { 
-					opacity: 1, 
-					y: 0, 
-					duration: 0.7, 
-					stagger: 0.12, 
-					ease: "power3.out" 
-				}, "-=0.4");
+				ctaTl.to(
+					ctaCards,
+					{
+						opacity: 1,
+						y: 0,
+						duration: 0.7,
+						stagger: 0.12,
+						ease: "power3.out",
+					},
+					"-=0.4"
+				);
 
 				// Trust badges fade in
-				ctaTl.to(ctaBadges, { 
-					opacity: 1, 
-					y: 0, 
-					duration: 0.5, 
-					stagger: 0.08, 
-					ease: "power2.out" 
-				}, "-=0.3");
+				ctaTl.to(
+					ctaBadges,
+					{
+						opacity: 1,
+						y: 0,
+						duration: 0.5,
+						stagger: 0.08,
+						ease: "power2.out",
+					},
+					"-=0.3"
+				);
 
 				// Floating animation for cards - starts after main animation
 				ctaTl.add(() => {
@@ -299,14 +312,22 @@ export default function Index() {
 			{/* Hero Section - Full screen on small devices, normal on large */}
 			<section
 				ref={heroRef}
-				className={`relative overflow-hidden flex flex-col ${isSmallScreen ? 'min-h-[calc(100vh-4rem)] justify-center' : 'py-20 md:py-28'}`}
+				className={`relative overflow-hidden flex flex-col ${
+					isSmallScreen
+						? "min-h-[calc(100vh-4rem)] justify-center"
+						: "py-20 md:py-28"
+				}`}
 			>
 				{/* Background blobs */}
 				<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
 				<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
 				<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
 
-				<div className={`container relative z-10 ${isSmallScreen ? 'flex-1 flex items-center' : ''}`}>
+				<div
+					className={`container relative z-10 ${
+						isSmallScreen ? "flex-1 flex items-center" : ""
+					}`}
+				>
 					<div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8 w-full">
 						<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
 							Znajdź wykonawcę
@@ -354,12 +375,12 @@ export default function Index() {
 					className="flex justify-center items-center gap-4 sm:gap-6 pb-10 pt-6 mb-4"
 				>
 					{[
-						{ Icon: Briefcase, color: 'bg-primary/15 text-primary' },
-						{ Icon: Wrench, color: 'bg-amber-500/15 text-amber-600' },
-						{ Icon: Truck, color: 'bg-blue-500/15 text-blue-600' },
-						{ Icon: Home, color: 'bg-emerald-500/15 text-emerald-600' },
-						{ Icon: UtensilsCrossed, color: 'bg-rose-500/15 text-rose-600' },
-						{ Icon: TreePine, color: 'bg-green-500/15 text-green-600' },
+						{ Icon: Briefcase, color: "bg-primary/15 text-primary" },
+						{ Icon: Wrench, color: "bg-amber-500/15 text-amber-600" },
+						{ Icon: Truck, color: "bg-blue-500/15 text-blue-600" },
+						{ Icon: Home, color: "bg-emerald-500/15 text-emerald-600" },
+						{ Icon: UtensilsCrossed, color: "bg-rose-500/15 text-rose-600" },
+						{ Icon: TreePine, color: "bg-green-500/15 text-green-600" },
 					].map(({ Icon, color }, i) => (
 						<div
 							key={i}
@@ -560,123 +581,140 @@ export default function Index() {
 				{/* Animated background elements */}
 				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
 				<div className="cta-bg-element absolute -right-32 top-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl" />
-				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-[600px] h-40 rounded-full bg-primary/10 blur-3xl" />
-				
+				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-[600px] h-40 rounded-full blur-3xl" />
+
 				<div className="container relative z-10">
 					{/* Main content grid */}
 					<div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-							{/* Left side - Text content */}
-							<div className="cta-content space-y-8">
-								<div className="cta-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-									<Sparkles className="w-4 h-4 text-primary" />
-									<span className="text-sm font-medium text-primary">Dołącz do nas już dziś</span>
-								</div>
-								
-								<h2 className="cta-title text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-									Gotowy do
-									<span className="block text-primary">działania?</span>
-								</h2>
-								
-								<p className="cta-desc text-lg text-muted-foreground leading-relaxed max-w-md">
-									Dołącz do tysięcy użytkowników, którzy codziennie realizują zlecenia i znajdują wykonawców w swojej okolicy.
-								</p>
-								
-								<div className="cta-buttons flex flex-col sm:flex-row gap-4 pt-2">
-									<Button
-										size="lg"
-										asChild
-										className="group h-14 px-8 text-base rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
-									>
-										<Link to="/register" className="flex items-center gap-2">
-											Zarejestruj się za darmo
-											<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-										</Link>
-									</Button>
-									<Button
-										size="lg"
-										variant="outline"
-										className="h-14 px-8 text-base rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
-										asChild
-									>
-										<Link to="/jobs">Przeglądaj zlecenia</Link>
-									</Button>
+						{/* Left side - Text content */}
+						<div className="cta-content space-y-8">
+							<div className="cta-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+								<Sparkles className="w-4 h-4 text-primary" />
+								<span className="text-sm font-medium text-primary">
+									Dołącz do nas już dziś
+								</span>
+							</div>
+
+							<h2 className="cta-title text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
+								Gotowy do
+								<span className="block text-primary">działania?</span>
+							</h2>
+
+							<p className="cta-desc text-lg text-muted-foreground leading-relaxed max-w-md">
+								Dołącz do tysięcy użytkowników, którzy codziennie realizują
+								zlecenia i znajdują wykonawców w swojej okolicy.
+							</p>
+
+							<div className="cta-buttons flex flex-col sm:flex-row gap-4 pt-2">
+								<Button
+									size="lg"
+									asChild
+									className="group h-14 px-8 text-base rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
+								>
+									<Link to="/register" className="flex items-center gap-2">
+										Zarejestruj się za darmo
+										<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+									</Link>
+								</Button>
+								<Button
+									size="lg"
+									variant="outline"
+									className="h-14 px-8 text-base rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
+									asChild
+								>
+									<Link to="/jobs">Przeglądaj zlecenia</Link>
+								</Button>
+							</div>
+						</div>
+
+						{/* Right side - Animated cards */}
+						<div className="cta-cards relative h-[400px] hidden lg:block">
+							{/* Floating cards */}
+							<div className="cta-card absolute top-0 left-8 w-64 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
+								<div className="flex items-start gap-4">
+									<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+										<Briefcase className="w-6 h-6 text-primary" />
+									</div>
+									<div>
+										<p className="font-semibold">Nowe zlecenie</p>
+										<p className="text-sm text-muted-foreground mt-1">
+											Sprzątanie biura • Warszawa
+										</p>
+										<p className="text-primary font-bold mt-2">150 zł</p>
+									</div>
 								</div>
 							</div>
-							
-							{/* Right side - Animated cards */}
-							<div className="cta-cards relative h-[400px] hidden lg:block">
-								{/* Floating cards */}
-								<div className="cta-card absolute top-0 left-8 w-64 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
-									<div className="flex items-start gap-4">
-										<div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-											<Briefcase className="w-6 h-6 text-primary" />
-										</div>
-										<div>
-											<p className="font-semibold">Nowe zlecenie</p>
-											<p className="text-sm text-muted-foreground mt-1">Sprzątanie biura • Warszawa</p>
-											<p className="text-primary font-bold mt-2">150 zł</p>
-										</div>
+
+							<div className="cta-card absolute top-24 right-0 w-56 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
+								<div className="flex items-center gap-3">
+									<div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
+										<CheckCircle2 className="w-5 h-5 text-white" />
+									</div>
+									<div>
+										<p className="font-semibold text-sm">
+											Zlecenie zakończone!
+										</p>
+										<p className="text-xs text-muted-foreground">
+											Właśnie teraz
+										</p>
 									</div>
 								</div>
-								
-								<div className="cta-card absolute top-24 right-0 w-56 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
-									<div className="flex items-center gap-3">
-										<div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
-											<CheckCircle2 className="w-5 h-5 text-white" />
-										</div>
-										<div>
-											<p className="font-semibold text-sm">Zlecenie zakończone!</p>
-											<p className="text-xs text-muted-foreground">Właśnie teraz</p>
-										</div>
+							</div>
+
+							<div className="cta-card absolute bottom-16 left-0 w-72 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
+								<div className="flex items-center gap-4">
+									<div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+										<Users className="w-7 h-7 text-muted-foreground" />
 									</div>
-								</div>
-								
-								<div className="cta-card absolute bottom-16 left-0 w-72 p-5 rounded-2xl bg-card border border-border/50 shadow-xl">
-									<div className="flex items-center gap-4">
-										<div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-											<Users className="w-7 h-7 text-muted-foreground" />
-										</div>
-										<div className="flex-1">
-											<div className="flex items-center gap-2">
-												<p className="font-semibold">Nowy wykonawca</p>
-												<div className="flex gap-0.5">
-													{[1,2,3,4,5].map(i => (
-														<Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-													))}
-												</div>
+									<div className="flex-1">
+										<div className="flex items-center gap-2">
+											<p className="font-semibold">Nowy wykonawca</p>
+											<div className="flex gap-0.5">
+												{[1, 2, 3, 4, 5].map((i) => (
+													<Star
+														key={i}
+														className="w-3 h-3 fill-amber-400 text-amber-400"
+													/>
+												))}
 											</div>
-											<p className="text-sm text-muted-foreground mt-1">dołączył do platformy</p>
 										</div>
+										<p className="text-sm text-muted-foreground mt-1">
+											dołączył do platformy
+										</p>
 									</div>
 								</div>
-								
-								<div className="cta-card absolute bottom-0 right-8 w-48 p-4 rounded-2xl bg-primary text-primary-foreground shadow-xl">
-									<div className="flex items-center gap-3">
-										<Zap className="w-6 h-6" />
-										<div>
-											<p className="font-bold text-2xl">5 zł</p>
-											<p className="text-xs opacity-80">za publikację</p>
-										</div>
+							</div>
+
+							<div className="cta-card absolute bottom-0 right-8 w-48 p-4 rounded-2xl bg-primary text-primary-foreground shadow-xl">
+								<div className="flex items-center gap-3">
+									<Zap className="w-6 h-6" />
+									<div>
+										<p className="font-bold text-2xl">5 zł</p>
+										<p className="text-xs opacity-80">za publikację</p>
 									</div>
 								</div>
 							</div>
 						</div>
-						
-						{/* Bottom trust badges */}
-						<div className="cta-badges flex flex-wrap items-center justify-center gap-8 mt-16 pt-12 border-t border-border/50">
-							{[
-								{ icon: Shield, label: "Bezpieczne płatności" },
-								{ icon: CheckCircle2, label: "Weryfikowani wykonawcy" },
-								{ icon: Zap, label: "Szybka realizacja" },
-								{ icon: Star, label: "System ocen" },
-							].map((item) => (
-								<div key={item.label} className="cta-badge-item flex items-center gap-3 text-muted-foreground">
-									<div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
-										<item.icon className="w-5 h-5" />
-									</div>
-									<span className="font-medium">{item.label}</span>
+					</div>
+
+					{/* Bottom trust badges */}
+					<div className="cta-badges flex flex-wrap items-center justify-center gap-8 mt-16 pt-12 border-t border-border/50">
+						{[
+							{ icon: Shield, label: "Bezpieczne płatności" },
+							{ icon: CheckCircle2, label: "Weryfikowani wykonawcy" },
+							{ icon: Zap, label: "Szybka realizacja" },
+							{ icon: Star, label: "System ocen" },
+						].map((item) => (
+							<div
+								key={item.label}
+								className="cta-badge-item flex items-center gap-3 text-muted-foreground"
+							>
+								<div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+									<item.icon className="w-5 h-5" />
 								</div>
-							))}
+								<span className="font-medium">{item.label}</span>
+							</div>
+						))}
 					</div>
 				</div>
 			</section>

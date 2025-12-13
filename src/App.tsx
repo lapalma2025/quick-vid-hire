@@ -34,43 +34,43 @@ import WorkerOnboarding from "./pages/WorkerOnboarding";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/new" element={<NewJob />} />
-          <Route path="/jobs/:id" element={<JobDetails />} />
-          <Route path="/jobs/:id/edit" element={<EditJob />} />
-          <Route path="/jobs/:id/chat" element={<Chat />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/worker/:id" element={<WorkerProfile />} />
-          <Route path="/workers" element={<Workers />} />
-          <Route path="/subscription" element={<Subscription />} />
-          <Route path="/statistics" element={<Statistics />} />
-          <Route path="/worker-onboarding" element={<WorkerOnboarding />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/client-tips" element={<ClientTips />} />
-          <Route path="/safety" element={<Safety />} />
-          <Route path="/worker-guide" element={<WorkerGuide />} />
-          <Route path="/reviews" element={<Reviews />} />
-          <Route path="/help" element={<Help />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+	<QueryClientProvider client={queryClient}>
+		<TooltipProvider>
+			<Toaster />
+			<Sonner />
+			<BrowserRouter>
+				<ScrollToTop />
+				<Routes>
+					<Route path="/" element={<Index />} />
+					<Route path="/login" element={<Login />} />
+					<Route path="/register" element={<Register />} />
+					<Route path="/jobs" element={<Jobs />} />
+					<Route path="/jobs/new" element={<NewJob />} />
+					<Route path="/jobs/:id" element={<JobDetails />} />
+					<Route path="/jobs/:id/edit" element={<EditJob />} />
+					<Route path="/jobs/:id/chat" element={<Chat />} />
+					<Route path="/dashboard" element={<Dashboard />} />
+					<Route path="/profile" element={<Profile />} />
+					<Route path="/worker/:id" element={<WorkerProfile />} />
+					<Route path="/workers" element={<Workers />} />
+					<Route path="/subscription" element={<Subscription />} />
+					<Route path="/statistics" element={<Statistics />} />
+					<Route path="/worker-onboarding" element={<WorkerOnboarding />} />
+					<Route path="/how-it-works" element={<HowItWorks />} />
+					<Route path="/pricing" element={<Pricing />} />
+					<Route path="/faq" element={<FAQ />} />
+					<Route path="/client-tips" element={<ClientTips />} />
+					<Route path="/safety" element={<Safety />} />
+					<Route path="/worker-guide" element={<WorkerGuide />} />
+					<Route path="/reviews" element={<Reviews />} />
+					<Route path="/help" element={<Help />} />
+					<Route path="/terms" element={<Terms />} />
+					<Route path="/privacy" element={<Privacy />} />
+					<Route path="*" element={<NotFound />} />
+				</Routes>
+			</BrowserRouter>
+		</TooltipProvider>
+	</QueryClientProvider>
 );
 
 export default App;

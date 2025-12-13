@@ -494,19 +494,6 @@ export default function NewJob() {
 								/>
 							</div>
 
-							<div className="flex items-center justify-between">
-								<div className="space-y-0.5">
-									<Label>Zlecenie pilne</Label>
-									<p className="text-xs text-muted-foreground">
-										Start dziś lub jutro
-									</p>
-								</div>
-								<Switch
-									checked={form.urgent}
-									onCheckedChange={(v) => updateForm("urgent", v)}
-								/>
-							</div>
-
 							{/* Group application toggle */}
 							<div className="space-y-4 p-4 rounded-lg border bg-muted/30">
 								<div className="flex items-center justify-between">
@@ -601,8 +588,15 @@ export default function NewJob() {
 													const matchedWojewodztwo = WOJEWODZTWA.find(
 														(w) => w.toLowerCase() === normalizedRegion
 													);
-													if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
-														setForm((prev) => ({ ...prev, miasto, wojewodztwo: matchedWojewodztwo }));
+													if (
+														matchedWojewodztwo &&
+														matchedWojewodztwo !== form.wojewodztwo
+													) {
+														setForm((prev) => ({
+															...prev,
+															miasto,
+															wojewodztwo: matchedWojewodztwo,
+														}));
 													}
 												}
 											}}
