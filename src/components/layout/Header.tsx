@@ -65,8 +65,11 @@ export const Header = () => {
           
           {isAuthenticated && (
             <div className="hidden md:flex items-center gap-2 ml-4">
-              {workerProfileCompleted ? (
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')}>
+            {workerProfileCompleted ? (
+                <Tabs value={viewMode} onValueChange={(v) => {
+                  setViewMode(v as 'client' | 'worker');
+                  navigate('/dashboard');
+                }}>
                   <TabsList className="h-9 bg-muted/50">
                     <TabsTrigger value="client" className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       <Briefcase className="h-3.5 w-3.5" />
@@ -166,14 +169,20 @@ export const Header = () => {
                 {workerProfileCompleted ? (
                   <>
                     <DropdownMenuItem
-                      onClick={() => setViewMode('client')}
+                      onClick={() => {
+                        setViewMode('client');
+                        navigate('/dashboard');
+                      }}
                       className={`rounded-lg cursor-pointer ${viewMode === 'client' ? 'bg-primary/10 text-primary' : ''}`}
                     >
                       <Briefcase className="mr-2 h-4 w-4" />
                       Zleceniodawca
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => setViewMode('worker')}
+                      onClick={() => {
+                        setViewMode('worker');
+                        navigate('/dashboard');
+                      }}
                       className={`rounded-lg cursor-pointer ${viewMode === 'worker' ? 'bg-primary/10 text-primary' : ''}`}
                     >
                       <Wrench className="mr-2 h-4 w-4" />
@@ -284,7 +293,11 @@ export const Header = () => {
                   <>
                     <div className="mb-4">
                       {workerProfileCompleted ? (
-                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'client' | 'worker')} className="w-full">
+                        <Tabs value={viewMode} onValueChange={(v) => {
+                          setViewMode(v as 'client' | 'worker');
+                          setMobileOpen(false);
+                          navigate('/dashboard');
+                        }} className="w-full">
                           <TabsList className="w-full h-12 bg-muted/50">
                             <TabsTrigger value="client" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                               <Briefcase className="h-4 w-4" />

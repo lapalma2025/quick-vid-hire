@@ -41,7 +41,6 @@ import {
 	Sparkles,
 } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
-import { useViewModeStore } from "@/store/viewModeStore";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 
 interface Category {
@@ -59,8 +58,10 @@ export default function Profile() {
 		isTrusted,
 		loading: subscriptionLoading,
 	} = useSubscription();
-	const { viewMode } = useViewModeStore();
-	const isWorkerView = viewMode === "worker";
+	
+	// Check if worker profile is completed - show worker fields based on this, not viewMode
+	const workerProfileCompleted = (profile as any)?.worker_profile_completed === true;
+	
 	const { toast } = useToast();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
@@ -383,7 +384,7 @@ export default function Profile() {
 			return;
 		}
 
-		if (isWorkerView) {
+		if (workerProfileCompleted) {
 			await supabase
 				.from("worker_categories")
 				.delete()
@@ -709,7 +710,7 @@ export default function Profile() {
 							)}
 						</div>
 
-						{isWorkerView && (
+						{workerProfileCompleted && (
 							<>
 								<div className="space-y-2">
 									<Label>Stawka godzinowa (zł/h)</Label>
