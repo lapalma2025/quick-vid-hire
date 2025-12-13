@@ -26,7 +26,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import { NotificationBell } from "./NotificationBell";
 import { useViewModeStore } from "@/store/viewModeStore";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
 export const Header = () => {
@@ -83,30 +82,32 @@ export const Header = () => {
 					{isAuthenticated && (
 						<div className="hidden md:flex items-center gap-2 ml-4">
 							{workerProfileCompleted ? (
-								<Tabs
-									value={viewMode}
-									onValueChange={(v) => {
-										setViewMode(v as "client" | "worker");
-										navigate("/dashboard");
-									}}
-								>
-									<TabsList className="h-9 bg-muted/50">
-										<TabsTrigger
-											value="client"
-											className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-										>
-											<Briefcase className="h-3.5 w-3.5" />
-											Zleceniodawca
-										</TabsTrigger>
-										<TabsTrigger
-											value="worker"
-											className="text-xs gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-										>
-											<Wrench className="h-3.5 w-3.5" />
-											Wykonawca
-										</TabsTrigger>
-									</TabsList>
-								</Tabs>
+								<div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											setViewMode("client");
+											navigate("/dashboard");
+										}}
+										className="h-7 text-xs gap-1.5 hover:bg-primary hover:text-primary-foreground"
+									>
+										<Briefcase className="h-3.5 w-3.5" />
+										Zleceniodawca
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											setViewMode("worker");
+											navigate("/dashboard");
+										}}
+										className="h-7 text-xs gap-1.5 hover:bg-primary hover:text-primary-foreground"
+									>
+										<Wrench className="h-3.5 w-3.5" />
+										Wykonawca
+									</Button>
+								</div>
 							) : (
 								<>
 									<Badge
@@ -212,11 +213,7 @@ export const Header = () => {
 													setViewMode("client");
 													navigate("/dashboard");
 												}}
-												className={`rounded-lg cursor-pointer ${
-													viewMode === "client"
-														? "bg-primary/10 text-primary"
-														: ""
-												}`}
+												className="rounded-lg cursor-pointer"
 											>
 												<Briefcase className="mr-2 h-4 w-4" />
 												Zleceniodawca
@@ -226,11 +223,7 @@ export const Header = () => {
 													setViewMode("worker");
 													navigate("/dashboard");
 												}}
-												className={`rounded-lg cursor-pointer ${
-													viewMode === "worker"
-														? "bg-primary/10 text-primary"
-														: ""
-												}`}
+												className="rounded-lg cursor-pointer"
 											>
 												<Wrench className="mr-2 h-4 w-4" />
 												Wykonawca
@@ -367,32 +360,32 @@ export const Header = () => {
 									<>
 										<div className="mb-4">
 											{workerProfileCompleted ? (
-												<Tabs
-													value={viewMode}
-													onValueChange={(v) => {
-														setViewMode(v as "client" | "worker");
-														setMobileOpen(false);
-														navigate("/dashboard");
-													}}
-													className="w-full"
-												>
-													<TabsList className="w-full h-12 bg-muted/50">
-														<TabsTrigger
-															value="client"
-															className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-														>
-															<Briefcase className="h-4 w-4" />
-															Zleceniodawca
-														</TabsTrigger>
-														<TabsTrigger
-															value="worker"
-															className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-														>
-															<Wrench className="h-4 w-4" />
-															Wykonawca
-														</TabsTrigger>
-													</TabsList>
-												</Tabs>
+												<div className="flex gap-2">
+													<Button
+														variant="outline"
+														onClick={() => {
+															setViewMode("client");
+															setMobileOpen(false);
+															navigate("/dashboard");
+														}}
+														className="flex-1 h-12 gap-2 hover:bg-primary hover:text-primary-foreground hover:border-primary"
+													>
+														<Briefcase className="h-4 w-4" />
+														Zleceniodawca
+													</Button>
+													<Button
+														variant="outline"
+														onClick={() => {
+															setViewMode("worker");
+															setMobileOpen(false);
+															navigate("/dashboard");
+														}}
+														className="flex-1 h-12 gap-2 hover:bg-primary hover:text-primary-foreground hover:border-primary"
+													>
+														<Wrench className="h-4 w-4" />
+														Wykonawca
+													</Button>
+												</div>
 											) : (
 												<div className="flex flex-col gap-2">
 													<div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium">
