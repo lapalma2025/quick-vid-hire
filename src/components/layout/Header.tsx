@@ -85,7 +85,10 @@ export const Header = () => {
 							{workerProfileCompleted ? (
 								<Tabs
 									value={viewMode}
-									onValueChange={(v) => setViewMode(v as "client" | "worker")}
+									onValueChange={(v) => {
+										setViewMode(v as "client" | "worker");
+										navigate("/dashboard");
+									}}
 								>
 									<TabsList className="h-9 bg-muted/50">
 										<TabsTrigger
@@ -205,7 +208,10 @@ export const Header = () => {
 									{workerProfileCompleted ? (
 										<>
 											<DropdownMenuItem
-												onClick={() => setViewMode("client")}
+												onClick={() => {
+													setViewMode("client");
+													navigate("/dashboard");
+												}}
 												className={`rounded-lg cursor-pointer ${
 													viewMode === "client"
 														? "bg-primary/10 text-primary"
@@ -216,7 +222,10 @@ export const Header = () => {
 												Zleceniodawca
 											</DropdownMenuItem>
 											<DropdownMenuItem
-												onClick={() => setViewMode("worker")}
+												onClick={() => {
+													setViewMode("worker");
+													navigate("/dashboard");
+												}}
 												className={`rounded-lg cursor-pointer ${
 													viewMode === "worker"
 														? "bg-primary/10 text-primary"
@@ -360,9 +369,11 @@ export const Header = () => {
 											{workerProfileCompleted ? (
 												<Tabs
 													value={viewMode}
-													onValueChange={(v) =>
-														setViewMode(v as "client" | "worker")
-													}
+													onValueChange={(v) => {
+														setViewMode(v as "client" | "worker");
+														setMobileOpen(false);
+														navigate("/dashboard");
+													}}
 													className="w-full"
 												>
 													<TabsList className="w-full h-12 bg-muted/50">

@@ -58,10 +58,11 @@ export default function Profile() {
 		isTrusted,
 		loading: subscriptionLoading,
 	} = useSubscription();
-	
+
 	// Check if worker profile is completed - show worker fields based on this, not viewMode
-	const workerProfileCompleted = (profile as any)?.worker_profile_completed === true;
-	
+	const workerProfileCompleted =
+		(profile as any)?.worker_profile_completed === true;
+
 	const { toast } = useToast();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const logoInputRef = useRef<HTMLInputElement>(null);
@@ -97,7 +98,8 @@ export default function Profile() {
 
 	useEffect(() => {
 		if (profile) {
-			const hasHours = !!(profile as any).available_from || !!(profile as any).available_to;
+			const hasHours =
+				!!(profile as any).available_from || !!(profile as any).available_to;
 			setForm({
 				name: profile.name || "",
 				phone: profile.phone || "",
@@ -359,8 +361,10 @@ export default function Profile() {
 			bio: form.bio || null,
 			hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
 			is_available: form.is_available,
-			available_from: form.has_custom_hours ? (form.available_from || null) : null,
-			available_to: form.has_custom_hours ? (form.available_to || null) : null,
+			available_from: form.has_custom_hours
+				? form.available_from || null
+				: null,
+			available_to: form.has_custom_hours ? form.available_to || null : null,
 			updated_at: new Date().toISOString(),
 		};
 
@@ -656,8 +660,15 @@ export default function Profile() {
 											const matchedWojewodztwo = WOJEWODZTWA.find(
 												(w) => w.toLowerCase() === normalizedRegion
 											);
-											if (matchedWojewodztwo && matchedWojewodztwo !== form.wojewodztwo) {
-												setForm((prev) => ({ ...prev, miasto, wojewodztwo: matchedWojewodztwo }));
+											if (
+												matchedWojewodztwo &&
+												matchedWojewodztwo !== form.wojewodztwo
+											) {
+												setForm((prev) => ({
+													...prev,
+													miasto,
+													wojewodztwo: matchedWojewodztwo,
+												}));
 											}
 										}
 									}}
@@ -759,8 +770,8 @@ export default function Profile() {
 										<div>
 											<Label className="text-base">Godziny dostępności</Label>
 											<p className="text-sm text-muted-foreground">
-												{form.has_custom_hours 
-													? "Określ w jakich godzinach jesteś dostępny" 
+												{form.has_custom_hours
+													? "Określ w jakich godzinach jesteś dostępny"
 													: "Brak ograniczeń - dostępny o każdej porze"}
 											</p>
 										</div>
