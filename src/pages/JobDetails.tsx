@@ -113,7 +113,7 @@ interface Response {
 export default function JobDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, refreshProfile } = useAuth();
   const { viewMode } = useViewModeStore();
   const isWorkerView = viewMode === 'worker';
   const { toast } = useToast();
@@ -295,22 +295,96 @@ export default function JobDetails() {
   };
 
   const handleSubmitResponse = async () => {
-    if (!profile || !id) return;
+    if (!id) return;
 
     setSubmitting(true);
-    const groupMembers = responseForm.is_group && responseForm.group_members 
-      ? responseForm.group_members.split(',').map(m => m.trim()).filter(Boolean)
-      : null;
-    
+
+    // Always verify session + fetch fresh profile before inserting (prevents stale profile issues)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (!session?.user) {
+      toast({
+        title: 'Zaloguj się',
+        description: 'Aby aplikować na zlecenia, musisz być zalogowany.',
+        variant: 'destructive',
+      });
+      setSubmitting(false);
+      return;
+    }
+
+    const { data: freshProfile, error: freshProfileError } = await supabase
+      .from('profiles')
+      .select('id, worker_profile_completed')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (freshProfileError || !freshProfile) {
+      toast({
+        title: 'Nie udało się pobrać profilu',
+        description: 'Spróbuj odświeżyć stronę i ponowić próbę.',
+        variant: 'destructive',
+      });
+      setSubmitting(false);
+      return;
+    }
+
+    if (!freshProfile.worker_profile_completed) {
+      toast({
+        title: 'Aktywuj profil wykonawcy',
+        description: 'Aby aplikować na zlecenia, najpierw uzupełnij i aktywuj profil wykonawcy.',
+        variant: 'destructive',
+      });
+      setSubmitting(false);
+      setDialogOpen(false);
+      navigate('/worker-onboarding');
+      return;
+    }
+
+    // Check limit using backend function (works correctly even with RLS)
+    const { data: canApply, error: limitError } = await supabase.rpc('check_applicant_limit', {
+      job_uuid: id,
+    });
+
+    if (limitError) {
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się sprawdzić limitu aplikacji. Spróbuj ponownie.',
+        variant: 'destructive',
+      });
+      setSubmitting(false);
+      return;
+    }
+
+    if (canApply === false) {
+      toast({
+        title: 'Limit aplikacji osiągnięty',
+        description: 'To zlecenie osiągnęło już maksymalną liczbę aplikacji.',
+        variant: 'destructive',
+      });
+      setSubmitting(false);
+      setDialogOpen(false);
+      return;
+    }
+
+    const groupMembers =
+      responseForm.is_group && responseForm.group_members
+        ? responseForm.group_members
+            .split(',')
+            .map((m) => m.trim())
+            .filter(Boolean)
+        : null;
+
     const { error } = await supabase.from('job_responses').insert({
       job_id: id,
-      worker_id: profile.id,
+      worker_id: freshProfile.id,
       message: responseForm.message || null,
       offer_price: responseForm.offer_price ? parseFloat(responseForm.offer_price) : null,
       is_group_application: responseForm.is_group,
       group_size: responseForm.is_group ? parseInt(responseForm.group_size) : 1,
       group_members: groupMembers,
     });
+
     setSubmitting(false);
 
     if (error) {
@@ -320,42 +394,28 @@ export default function JobDetails() {
         msg.includes('row-level security') ||
         msg.includes('new row violates');
 
-      // Most common case: user hasn't activated worker profile yet
-      if (isRlsError && !profile.worker_profile_completed) {
-        toast({
-          title: 'Aktywuj profil wykonawcy',
-          description: 'Aby aplikować na zlecenia, najpierw uzupełnij i aktywuj profil wykonawcy.',
-          variant: 'destructive',
-        });
-        setDialogOpen(false);
-        return;
-      }
-
-      // If we *know* limit is reached (UI count), show the correct message
-      if (isRlsError && job?.applicant_limit && responseCount >= job.applicant_limit) {
-        toast({
-          title: 'Limit aplikacji osiągnięty',
-          description: 'To zlecenie osiągnęło już maksymalną liczbę aplikacji.',
-          variant: 'destructive',
-        });
-        setDialogOpen(false);
-        return;
-      }
-
       toast({
         title: 'Nie udało się wysłać oferty',
         description: isRlsError
-          ? 'Nie masz uprawnień do aplikowania na to zlecenie. Jeśli nie masz profilu wykonawcy — aktywuj go.'
+          ? 'Brak uprawnień do aplikowania na to zlecenie. Spróbuj odświeżyć stronę lub zalogować się ponownie.'
           : error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({ title: 'Oferta wysłana!' });
-      setDialogOpen(false);
-      setResponseForm({ message: '', offer_price: '', is_group: false, group_size: '2', group_members: '' });
-      fetchResponses();
-      fetchResponseCount();
+      return;
     }
+
+    toast({ title: 'Oferta wysłana!' });
+    setDialogOpen(false);
+    setResponseForm({
+      message: '',
+      offer_price: '',
+      is_group: false,
+      group_size: '2',
+      group_members: '',
+    });
+    fetchResponses();
+    fetchResponseCount();
+    refreshProfile();
   };
 
   const handleSelectWorker = async (workerId: string, responseId: string) => {
