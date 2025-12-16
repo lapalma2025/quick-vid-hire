@@ -93,7 +93,7 @@ export default function NewJob() {
 		allows_group: false,
 		min_workers: "1",
 		max_workers: "1",
-		applicant_limit: "" as string, // "" means unlimited
+		applicant_limit: "unlimited" as string,
 	});
 
 	const [addons, setAddons] = useState({
@@ -361,7 +361,7 @@ export default function NewJob() {
 				promotion_expires_at: addons.promote_24h
 					? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 					: null,
-				applicant_limit: form.applicant_limit ? parseInt(form.applicant_limit) : null,
+				applicant_limit: form.applicant_limit && form.applicant_limit !== "unlimited" ? parseInt(form.applicant_limit) : null,
 			})
 			.select()
 			.single();
@@ -568,7 +568,7 @@ export default function NewJob() {
 										<SelectValue placeholder="Bez ograniczeń" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="">Bez ograniczeń</SelectItem>
+										<SelectItem value="unlimited">Bez ograniczeń</SelectItem>
 										<SelectItem value="5">5 osób</SelectItem>
 										<SelectItem value="10">10 osób</SelectItem>
 										<SelectItem value="25">25 osób</SelectItem>
