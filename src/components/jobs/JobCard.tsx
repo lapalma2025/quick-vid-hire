@@ -29,6 +29,8 @@ interface Job {
   is_highlighted?: boolean | null;
   is_promoted?: boolean | null;
   promotion_expires_at?: string | null;
+  applicant_limit?: number | null;
+  response_count?: number;
 }
 
 interface JobCardProps {
@@ -194,6 +196,17 @@ export const JobCard = ({ job }: JobCardProps) => {
             }`}>
               <Banknote className="h-5 w-5 mr-1.5" />
               <span>{job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}</span>
+            </div>
+          )}
+
+          {/* Applicant count */}
+          {(job.response_count !== undefined || job.applicant_limit) && (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Users className="h-4 w-4 mr-1.5" />
+              <span>
+                {job.response_count ?? 0}
+                {job.applicant_limit ? `/${job.applicant_limit}` : ''} aplikacji
+              </span>
             </div>
           )}
         </CardContent>

@@ -80,6 +80,7 @@ interface JobDetails {
   allows_group: boolean | null;
   min_workers: number | null;
   max_workers: number | null;
+  applicant_limit: number | null;
   profile: {
     id: string;
     name: string | null;
@@ -787,7 +788,12 @@ export default function JobDetails() {
             {isOwner && responses.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Oferty ({responses.length})</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Oferty ({responses.length}{job.applicant_limit ? `/${job.applicant_limit}` : ''})</span>
+                    {job.applicant_limit && responses.length >= job.applicant_limit && (
+                      <Badge variant="secondary">Limit osiągnięty</Badge>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {responses.map((response) => {
@@ -920,12 +926,24 @@ export default function JobDetails() {
                         Już złożyłeś ofertę na to zlecenie
                       </p>
                     </div>
+                  ) : job.applicant_limit && responses.length >= job.applicant_limit ? (
+                    <div className="flex items-center justify-center gap-3 p-4 bg-muted rounded-xl border">
+                      <Users className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Limit aplikacji osiągnięty ({responses.length}/{job.applicant_limit})
+                      </p>
+                    </div>
                   ) : (
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                       <DialogTrigger asChild>
                         <Button className="w-full gap-2">
                           <Send className="h-4 w-4" />
                           Odpowiedz na zlecenie
+                          {job.applicant_limit && (
+                            <span className="text-xs opacity-70">
+                              ({responses.length}/{job.applicant_limit})
+                            </span>
+                          )}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
