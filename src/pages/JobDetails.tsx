@@ -284,13 +284,13 @@ export default function JobDetails() {
     // Avoid stale counts while navigating between jobs
     setResponseCount(0);
 
-    const { count, error } = await supabase
-      .from('job_responses')
-      .select('*', { count: 'exact', head: true })
-      .eq('job_id', id);
+    // Use security definer function to get the true count (bypasses RLS)
+    const { data, error } = await supabase.rpc('get_job_response_count', {
+      job_uuid: id,
+    });
 
-    if (!error && count !== null) {
-      setResponseCount(count);
+    if (!error && data !== null) {
+      setResponseCount(data);
     }
   };
 
