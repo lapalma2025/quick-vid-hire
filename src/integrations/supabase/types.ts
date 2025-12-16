@@ -577,6 +577,7 @@ export type Database = {
     }
     Functions: {
       check_applicant_limit: { Args: { job_uuid: string }; Returns: boolean }
+      get_job_response_count: { Args: { job_uuid: string }; Returns: number }
     }
     Enums: {
       job_status:
