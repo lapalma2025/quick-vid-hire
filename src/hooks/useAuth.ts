@@ -11,15 +11,17 @@ export const useAuth = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
+        // Clear any potentially stale profile immediately on auth changes
+        setProfile(null);
+
         // Defer profile fetch
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
-        } else {
-          setProfile(null);
         }
+
         setIsLoading(false);
       }
     );
@@ -28,7 +30,10 @@ export const useAuth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
+      // Clear any potentially stale profile before fetching
+      setProfile(null);
+
       if (session?.user) {
         fetchProfile(session.user.id);
       }
@@ -44,9 +49,12 @@ export const useAuth = () => {
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
-    
+
     if (data && !error) {
       setProfile(data as any);
+    } else {
+      // Ensure we never keep a stale profile in state
+      setProfile(null);
     }
   };
 
