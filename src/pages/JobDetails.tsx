@@ -120,6 +120,7 @@ export default function JobDetails() {
   
   const [job, setJob] = useState<JobDetails | null>(null);
   const [responses, setResponses] = useState<Response[]>([]);
+  const [responseCount, setResponseCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -160,6 +161,7 @@ export default function JobDetails() {
     if (id) {
       fetchJob();
       fetchResponses();
+      fetchResponseCount();
     }
   }, [id]);
 
@@ -276,6 +278,17 @@ export default function JobDetails() {
     }
   };
 
+  const fetchResponseCount = async () => {
+    const { count, error } = await supabase
+      .from('job_responses')
+      .select('*', { count: 'exact', head: true })
+      .eq('job_id', id);
+
+    if (!error && count !== null) {
+      setResponseCount(count);
+    }
+  };
+
   const handleSubmitResponse = async () => {
     if (!profile || !id) return;
 
@@ -309,6 +322,7 @@ export default function JobDetails() {
       setDialogOpen(false);
       setResponseForm({ message: '', offer_price: '', is_group: false, group_size: '2', group_members: '' });
       fetchResponses();
+      fetchResponseCount();
     }
   };
 
@@ -943,11 +957,11 @@ export default function JobDetails() {
                         Już złożyłeś ofertę na to zlecenie
                       </p>
                     </div>
-                  ) : job.applicant_limit && responses.length >= job.applicant_limit ? (
+                  ) : job.applicant_limit && responseCount >= job.applicant_limit ? (
                     <div className="flex items-center justify-center gap-3 p-4 bg-muted rounded-xl border">
                       <Users className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                       <p className="text-sm font-medium text-muted-foreground">
-                        Limit aplikacji osiągnięty ({responses.length}/{job.applicant_limit})
+                        Limit aplikacji osiągnięty ({responseCount}/{job.applicant_limit})
                       </p>
                     </div>
                   ) : (
@@ -958,7 +972,7 @@ export default function JobDetails() {
                           Odpowiedz na zlecenie
                           {job.applicant_limit && (
                             <span className="text-xs opacity-70">
-                              ({responses.length}/{job.applicant_limit})
+                              ({responseCount}/{job.applicant_limit})
                             </span>
                           )}
                         </Button>
