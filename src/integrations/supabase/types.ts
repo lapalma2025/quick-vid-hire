@@ -576,7 +576,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_applicant_limit: { Args: { job_uuid: string }; Returns: boolean }
     }
     Enums: {
       job_status:
