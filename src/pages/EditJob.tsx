@@ -58,7 +58,7 @@ export default function EditJob() {
     budget_type: 'fixed' as 'fixed' | 'hourly',
     urgent: false,
     images: [] as string[],
-    applicant_limit: '' as string,
+    applicant_limit: 'unlimited' as string,
   });
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function EditJob() {
       budget_type: (job.budget_type as 'fixed' | 'hourly') || 'fixed',
       urgent: job.urgent || false,
       images: imgs,
-      applicant_limit: job.applicant_limit?.toString() || '',
+      applicant_limit: job.applicant_limit?.toString() || 'unlimited',
     });
     setLoading(false);
   };
@@ -156,7 +156,7 @@ export default function EditJob() {
         budget: form.budget ? parseFloat(form.budget) : null,
         budget_type: form.budget_type,
         urgent: form.urgent,
-        applicant_limit: form.applicant_limit ? parseInt(form.applicant_limit) : null,
+        applicant_limit: form.applicant_limit && form.applicant_limit !== "unlimited" ? parseInt(form.applicant_limit) : null,
       })
       .eq('id', id);
 
@@ -413,7 +413,7 @@ export default function EditJob() {
                     <SelectValue placeholder="Bez ograniczeń" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Bez ograniczeń</SelectItem>
+                    <SelectItem value="unlimited">Bez ograniczeń</SelectItem>
                     <SelectItem value="5">5 osób</SelectItem>
                     <SelectItem value="10">10 osób</SelectItem>
                     <SelectItem value="25">25 osób</SelectItem>
