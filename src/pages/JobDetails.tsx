@@ -919,10 +919,24 @@ export default function JobDetails() {
             </Dialog>
 
             {/* Worker response action - inline */}
-            {isAuthenticated && isWorkerView && !isOwner && job.status === 'active' && !job.selected_worker_id && (
+            {isAuthenticated && !isOwner && job.status === 'active' && !job.selected_worker_id && (
               <Card>
                 <CardContent className="p-6">
-                  {hasResponded ? (
+                  {!profile?.worker_profile_completed ? (
+                    <div className="flex flex-col items-center justify-center gap-3 p-4 bg-muted/50 rounded-xl border">
+                      <Users className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-sm font-medium text-muted-foreground text-center">
+                        Aby aplikować na zlecenia, aktywuj profil wykonawcy
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate('/worker-onboarding')}
+                      >
+                        Aktywuj profil wykonawcy
+                      </Button>
+                    </div>
+                  ) : hasResponded ? (
                     <div className="flex items-center justify-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
                       <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
                       <p className="text-sm font-medium text-primary">
