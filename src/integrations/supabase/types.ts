@@ -205,6 +205,7 @@ export type Database = {
       jobs: {
         Row: {
           allows_group: boolean | null
+          applicant_limit: number | null
           budget: number | null
           budget_type: string | null
           category_id: string | null
@@ -234,6 +235,7 @@ export type Database = {
         }
         Insert: {
           allows_group?: boolean | null
+          applicant_limit?: number | null
           budget?: number | null
           budget_type?: string | null
           category_id?: string | null
@@ -263,6 +265,7 @@ export type Database = {
         }
         Update: {
           allows_group?: boolean | null
+          applicant_limit?: number | null
           budget?: number | null
           budget_type?: string | null
           category_id?: string | null

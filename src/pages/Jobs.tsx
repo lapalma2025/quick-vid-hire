@@ -37,6 +37,8 @@ interface Job {
 	is_highlighted: boolean | null;
 	is_promoted: boolean | null;
 	promotion_expires_at: string | null;
+	applicant_limit: number | null;
+	job_responses: { count: number }[];
 }
 
 export default function Jobs() {
@@ -91,8 +93,10 @@ export default function Jobs() {
         is_highlighted,
         is_promoted,
         promotion_expires_at,
+        applicant_limit,
         category:categories(name, icon),
-        job_images(image_url)
+        job_images(image_url),
+        job_responses(count)
       `,
 				{ count: "exact" }
 			)
@@ -378,7 +382,10 @@ export default function Jobs() {
 								>
 									{jobs.map((job) => (
 										<div key={job.id} className="job-card">
-											<JobCard job={job} />
+											<JobCard job={{
+												...job,
+												response_count: job.job_responses?.[0]?.count ?? 0
+											}} />
 										</div>
 									))}
 								</div>

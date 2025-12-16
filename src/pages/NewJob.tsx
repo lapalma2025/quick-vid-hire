@@ -93,6 +93,7 @@ export default function NewJob() {
 		allows_group: false,
 		min_workers: "1",
 		max_workers: "1",
+		applicant_limit: "" as string, // "" means unlimited
 	});
 
 	const [addons, setAddons] = useState({
@@ -360,6 +361,7 @@ export default function NewJob() {
 				promotion_expires_at: addons.promote_24h
 					? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 					: null,
+				applicant_limit: form.applicant_limit ? parseInt(form.applicant_limit) : null,
 			})
 			.select()
 			.single();
@@ -543,6 +545,36 @@ export default function NewJob() {
 										</div>
 									</div>
 								)}
+							</div>
+
+							{/* Applicant limit */}
+							<div className="space-y-4 p-4 rounded-lg border bg-muted/30">
+								<div className="flex items-center gap-3">
+									<div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+										<Users className="h-5 w-5 text-primary" />
+									</div>
+									<div className="space-y-0.5">
+										<Label className="text-base">Limit aplikacji</Label>
+										<p className="text-xs text-muted-foreground">
+											Ile osób może aplikować na to zlecenie
+										</p>
+									</div>
+								</div>
+								<Select
+									value={form.applicant_limit}
+									onValueChange={(v) => updateForm("applicant_limit", v)}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Bez ograniczeń" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="">Bez ograniczeń</SelectItem>
+										<SelectItem value="5">5 osób</SelectItem>
+										<SelectItem value="10">10 osób</SelectItem>
+										<SelectItem value="25">25 osób</SelectItem>
+										<SelectItem value="50">50 osób</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 						</CardContent>
 					</Card>

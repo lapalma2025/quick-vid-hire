@@ -17,7 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Users } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
@@ -58,6 +58,7 @@ export default function EditJob() {
     budget_type: 'fixed' as 'fixed' | 'hourly',
     urgent: false,
     images: [] as string[],
+    applicant_limit: '' as string,
   });
 
   useEffect(() => {
@@ -112,6 +113,7 @@ export default function EditJob() {
       budget_type: (job.budget_type as 'fixed' | 'hourly') || 'fixed',
       urgent: job.urgent || false,
       images: imgs,
+      applicant_limit: job.applicant_limit?.toString() || '',
     });
     setLoading(false);
   };
@@ -154,6 +156,7 @@ export default function EditJob() {
         budget: form.budget ? parseFloat(form.budget) : null,
         budget_type: form.budget_type,
         urgent: form.urgent,
+        applicant_limit: form.applicant_limit ? parseInt(form.applicant_limit) : null,
       })
       .eq('id', id);
 
@@ -388,6 +391,35 @@ export default function EditJob() {
                   value={form.budget}
                   onChange={(e) => updateForm('budget', e.target.value)}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Limit aplikacji
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label>Ile osób może aplikować na to zlecenie</Label>
+                <Select
+                  value={form.applicant_limit}
+                  onValueChange={(v) => updateForm('applicant_limit', v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Bez ograniczeń" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Bez ograniczeń</SelectItem>
+                    <SelectItem value="5">5 osób</SelectItem>
+                    <SelectItem value="10">10 osób</SelectItem>
+                    <SelectItem value="25">25 osób</SelectItem>
+                    <SelectItem value="50">50 osób</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
