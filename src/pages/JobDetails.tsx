@@ -296,9 +296,12 @@ export default function JobDetails() {
     setSubmitting(false);
 
     if (error) {
+      const isLimitError = error.code === '42501' || error.message.includes('row-level security');
       toast({
-        title: 'Błąd',
-        description: error.message,
+        title: isLimitError ? 'Limit aplikacji osiągnięty' : 'Błąd',
+        description: isLimitError 
+          ? 'To zlecenie osiągnęło już maksymalną liczbę aplikacji.' 
+          : error.message,
         variant: 'destructive',
       });
     } else {
