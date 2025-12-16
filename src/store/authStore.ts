@@ -15,6 +15,7 @@ interface Profile {
   rating_count: number;
   hourly_rate: number | null;
   is_available: boolean;
+  worker_profile_completed: boolean;
 }
 
 interface AuthState {
