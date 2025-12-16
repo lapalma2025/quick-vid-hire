@@ -279,6 +279,11 @@ export default function JobDetails() {
   };
 
   const fetchResponseCount = async () => {
+    if (!id) return;
+
+    // Avoid stale counts while navigating between jobs
+    setResponseCount(0);
+
     const { count, error } = await supabase
       .from('job_responses')
       .select('*', { count: 'exact', head: true })
@@ -309,11 +314,38 @@ export default function JobDetails() {
     setSubmitting(false);
 
     if (error) {
-      const isLimitError = error.code === '42501' || error.message.includes('row-level security');
+      const msg = (error.message || '').toLowerCase();
+      const isRlsError =
+        error.code === '42501' ||
+        msg.includes('row-level security') ||
+        msg.includes('new row violates');
+
+      // Most common case: user hasn't activated worker profile yet
+      if (isRlsError && !profile.worker_profile_completed) {
+        toast({
+          title: 'Aktywuj profil wykonawcy',
+          description: 'Aby aplikować na zlecenia, najpierw uzupełnij i aktywuj profil wykonawcy.',
+          variant: 'destructive',
+        });
+        setDialogOpen(false);
+        return;
+      }
+
+      // If we *know* limit is reached (UI count), show the correct message
+      if (isRlsError && job?.applicant_limit && responseCount >= job.applicant_limit) {
+        toast({
+          title: 'Limit aplikacji osiągnięty',
+          description: 'To zlecenie osiągnęło już maksymalną liczbę aplikacji.',
+          variant: 'destructive',
+        });
+        setDialogOpen(false);
+        return;
+      }
+
       toast({
-        title: isLimitError ? 'Limit aplikacji osiągnięty' : 'Błąd',
-        description: isLimitError 
-          ? 'To zlecenie osiągnęło już maksymalną liczbę aplikacji.' 
+        title: 'Nie udało się wysłać oferty',
+        description: isRlsError
+          ? 'Nie masz uprawnień do aplikowania na to zlecenie. Jeśli nie masz profilu wykonawcy — aktywuj go.'
           : error.message,
         variant: 'destructive',
       });
