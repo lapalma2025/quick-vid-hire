@@ -34,6 +34,10 @@ interface JobInfo {
   worker?: { name: string | null; avatar_url: string | null };
 }
 
+interface JobResponse {
+  worker_id: string;
+}
+
 export default function Chat() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -45,6 +49,7 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -54,12 +59,14 @@ export default function Chat() {
       return;
     }
     
-    if (id) {
+    if (id && profile) {
       fetchJob();
       fetchMessages();
-      subscribeToMessages();
+      checkIfApplied();
+      const unsubscribe = subscribeToMessages();
+      return unsubscribe;
     }
-  }, [id, isAuthenticated]);
+  }, [id, isAuthenticated, profile]);
 
   useEffect(() => {
     scrollToBottom();
@@ -87,6 +94,19 @@ export default function Chat() {
     if (data) {
       setJob(data as any);
     }
+  };
+
+  const checkIfApplied = async () => {
+    if (!profile) return;
+    
+    const { data } = await supabase
+      .from('job_responses')
+      .select('worker_id')
+      .eq('job_id', id)
+      .eq('worker_id', profile.id)
+      .maybeSingle();
+
+    setHasApplied(!!data);
   };
 
   const fetchMessages = async () => {
@@ -191,10 +211,22 @@ export default function Chat() {
     }
   };
 
+  // isParticipant: owner, selected worker, OR has applied
   const isParticipant = profile && job && 
-    (profile.id === job.user_id || profile.id === job.selected_worker_id);
+    (profile.id === job.user_id || profile.id === job.selected_worker_id || hasApplied);
 
-  const otherParticipant = profile?.id === job?.user_id ? job?.worker : job?.client;
+  // Determine other participant for display
+  const getOtherParticipant = () => {
+    if (!profile || !job) return null;
+    if (profile.id === job.user_id) {
+      // User is client, show worker (if selected) or generic name
+      return job.worker || { name: 'Wykonawca', avatar_url: null };
+    }
+    // User is worker, show client
+    return job.client;
+  };
+  
+  const otherParticipant = getOtherParticipant();
 
   if (loading) {
     return (
