@@ -48,27 +48,31 @@ export const NotificationBell = () => {
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && unreadCount > 0) {
-      markMessagesAsRead();
+    // Nie oznaczamy nic jako przeczytane przy samym otwarciu —
+    // powiadomienie ma zniknąć dopiero po kliknięciu konkretnej wiadomości.
+    if (open) {
+      fetchNotifications();
     }
   };
 
-  const markMessagesAsRead = async () => {
+  const markMessageAsRead = async (messageId: string) => {
     if (!profile) return;
-    
-    const messageIds = notifications
-      .filter(n => n.type === "message")
-      .map(n => n.id);
-    
-    if (messageIds.length > 0) {
-      await supabase
-        .from("chat_messages")
-        .update({ read: true })
-        .in("id", messageIds);
-      
-      // Refresh notifications after marking as read
-      setTimeout(() => fetchNotifications(), 500);
+
+    const { error } = await supabase
+      .from("chat_messages")
+      .update({ read: true })
+      .eq("id", messageId);
+
+    if (error) {
+      toast({
+        title: "Błąd",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
     }
+
+    fetchNotifications();
   };
 
   const clearNotifications = () => {
@@ -425,7 +429,18 @@ export const NotificationBell = () => {
                       </p>
                     </div>
                   ) : (
-                    <Link to={notif.type === "message" ? `/jobs/${notif.jobId}/chat` : `/jobs/${notif.jobId}`}>
+                    <Link
+                      to={
+                        notif.type === "message"
+                          ? `/jobs/${notif.jobId}/chat`
+                          : `/jobs/${notif.jobId}`
+                      }
+                      onClick={() => {
+                        if (notif.type === "message") {
+                          void markMessageAsRead(notif.id);
+                        }
+                      }}
+                    >
                       <div className="flex flex-col gap-1 w-full">
                         <div className="flex items-center gap-2">
                           <Badge variant={getNotificationBadgeVariant(notif.type)} className="text-xs">
