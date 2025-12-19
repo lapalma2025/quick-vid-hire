@@ -50,8 +50,6 @@ export const NotificationBell = () => {
     setIsOpen(open);
     if (open && unreadCount > 0) {
       markMessagesAsRead();
-      setUnreadCount(0);
-      localStorage.setItem(`notifications_seen_${profile?.id}`, new Date().toISOString());
     }
   };
 
@@ -67,6 +65,9 @@ export const NotificationBell = () => {
         .from("chat_messages")
         .update({ read: true })
         .in("id", messageIds);
+      
+      // Refresh notifications after marking as read
+      setTimeout(() => fetchNotifications(), 500);
     }
   };
 
@@ -158,6 +159,7 @@ export const NotificationBell = () => {
     setLoading(true);
 
     const notifs: Notification[] = [];
+    const seenIds = new Set<string>();
 
     // Fetch unread messages for user's jobs (as client)
     const { data: clientMessages } = await supabase
@@ -175,7 +177,8 @@ export const NotificationBell = () => {
 
     if (clientMessages) {
       for (const msg of clientMessages as any[]) {
-        if (msg.job?.user_id === profile.id) {
+        if (msg.job?.user_id === profile.id && !seenIds.has(msg.id)) {
+          seenIds.add(msg.id);
           notifs.push({
             id: msg.id,
             type: "message",
@@ -233,7 +236,8 @@ export const NotificationBell = () => {
 
     if (workerMessages) {
       for (const msg of workerMessages as any[]) {
-        if (msg.job?.selected_worker_id === profile.id) {
+        if (msg.job?.selected_worker_id === profile.id && !seenIds.has(msg.id)) {
+          seenIds.add(msg.id);
           notifs.push({
             id: msg.id,
             type: "message",
@@ -242,6 +246,47 @@ export const NotificationBell = () => {
             senderName: msg.sender?.name || "Użytkownik",
             createdAt: msg.created_at,
           });
+        }
+      }
+    }
+
+    // Fetch messages for jobs where user has applied (as worker applicant)
+    const { data: myApplications } = await supabase
+      .from("job_responses")
+      .select("job_id")
+      .eq("worker_id", profile.id);
+
+    if (myApplications && myApplications.length > 0) {
+      const jobIds = myApplications.map(a => a.job_id);
+      
+      const { data: applicantMessages } = await supabase
+        .from("chat_messages")
+        .select(`
+          id,
+          created_at,
+          job_id,
+          job:jobs!inner(id, title),
+          sender:profiles!chat_messages_sender_id_fkey(name)
+        `)
+        .in("job_id", jobIds)
+        .neq("sender_id", profile.id)
+        .eq("read", false)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (applicantMessages) {
+        for (const msg of applicantMessages as any[]) {
+          if (!seenIds.has(msg.id)) {
+            seenIds.add(msg.id);
+            notifs.push({
+              id: msg.id,
+              type: "message",
+              jobId: msg.job.id,
+              jobTitle: msg.job.title,
+              senderName: msg.sender?.name || "Użytkownik",
+              createdAt: msg.created_at,
+            });
+          }
         }
       }
     }
@@ -289,10 +334,10 @@ export const NotificationBell = () => {
 
     setNotifications(uniqueNotifs);
     
-    // Count new notifications since last seen
-    const lastSeen = localStorage.getItem(`notifications_seen_${profile.id}`);
-    const newCount = uniqueNotifs.filter(n => !lastSeen || new Date(n.createdAt) > new Date(lastSeen)).length;
-    setUnreadCount(newCount);
+    // Count only truly unread message notifications (based on database read flag)
+    const unreadMessageCount = uniqueNotifs.filter(n => n.type === "message").length;
+    const otherNotifCount = uniqueNotifs.filter(n => n.type !== "message").length;
+    setUnreadCount(unreadMessageCount + otherNotifCount);
     
     setLoading(false);
   };
