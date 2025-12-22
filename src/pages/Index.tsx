@@ -160,9 +160,10 @@ export default function Index() {
 			// Promo section animations
 			if (statsRef.current) {
 				const promoSection = statsRef.current;
-				const promoBgElements = promoSection.querySelectorAll(".promo-bg-element");
+				const promoBgElements =
+					promoSection.querySelectorAll(".promo-bg-element");
 				const promoPills = promoSection.querySelectorAll(".promo-pill");
-				
+
 				// Background elements
 				gsap.fromTo(
 					promoBgElements,
@@ -176,7 +177,7 @@ export default function Index() {
 						scrollTrigger: { trigger: promoSection, start: "top 90%" },
 					}
 				);
-				
+
 				// Main content
 				gsap.fromTo(
 					promoSection.querySelectorAll(".stat-item"),
@@ -190,7 +191,7 @@ export default function Index() {
 						scrollTrigger: { trigger: promoSection, start: "top 85%" },
 					}
 				);
-				
+
 				// Pills with hover effect setup
 				gsap.fromTo(
 					promoPills,
@@ -206,7 +207,7 @@ export default function Index() {
 						delay: 0.3,
 					}
 				);
-				
+
 				// Floating animation for background elements
 				promoBgElements.forEach((el, i) => {
 					gsap.to(el, {
@@ -448,33 +449,48 @@ export default function Index() {
 				<div className="promo-bg-element absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
 				<div className="promo-bg-element absolute bottom-0 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
 				<div className="promo-bg-element absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-				
+
 				<div className="container relative z-10">
 					<div className="max-w-4xl mx-auto text-center space-y-8">
 						{/* Badge */}
 						<div className="stat-item inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
 							<Sparkles className="h-5 w-5 text-primary" />
-							<span className="font-semibold text-primary">Promocja startowa</span>
+							<span className="font-semibold text-primary">
+								Promocja startowa
+							</span>
 						</div>
-						
+
 						{/* Main heading */}
 						<h2 className="stat-item text-3xl sm:text-4xl md:text-5xl font-display font-bold">
 							Dodawaj zlecenia{" "}
 							<span className="text-primary relative">
 								całkowicie za darmo
-								<svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none">
-									<path d="M2 6C50 2 150 2 198 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-primary/40"/>
+								<svg
+									className="absolute -bottom-2 left-0 w-full"
+									viewBox="0 0 200 8"
+									fill="none"
+								>
+									<path
+										d="M2 6C50 2 150 2 198 6"
+										stroke="currentColor"
+										strokeWidth="3"
+										strokeLinecap="round"
+										className="text-primary/40"
+									/>
 								</svg>
 							</span>
 						</h2>
-						
+
 						{/* Description */}
 						<p className="stat-item text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-							Budujemy społeczność zaufanych zleceniodawców i wykonawców. 
-							Dołącz do nas teraz i korzystaj z <strong className="text-foreground">wszystkich funkcji bez opłat</strong>, 
-							dopóki rozwijamy platformę razem z Wami!
+							Budujemy społeczność zaufanych zleceniodawców i wykonawców. Dołącz
+							do nas teraz i korzystaj z{" "}
+							<strong className="text-foreground">
+								wszystkich funkcji bez opłat
+							</strong>
+							, dopóki rozwijamy platformę razem z Wami!
 						</p>
-						
+
 						{/* Feature pills */}
 						<div className="stat-item flex flex-wrap justify-center gap-3 md:gap-4">
 							{[
@@ -483,7 +499,7 @@ export default function Index() {
 								{ icon: Zap, text: "Szybka publikacja" },
 								{ icon: Shield, text: "Bezpieczne transakcje" },
 							].map((item, i) => (
-								<div 
+								<div
 									key={i}
 									className="promo-pill flex items-center gap-2 px-4 py-2.5 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300"
 								>
@@ -492,7 +508,7 @@ export default function Index() {
 								</div>
 							))}
 						</div>
-						
+
 						{/* CTA */}
 						<div className="stat-item pt-4">
 							<Button
@@ -781,7 +797,7 @@ export default function Index() {
 								<div className="flex items-center gap-3">
 									<Zap className="w-6 h-6" />
 									<div>
-										<p className="font-bold text-2xl">5 zł</p>
+										<p className="font-bold text-2xl">0 zł</p>
 										<p className="text-xs opacity-80">za publikację</p>
 									</div>
 								</div>
