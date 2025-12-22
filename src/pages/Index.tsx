@@ -157,20 +157,67 @@ export default function Index() {
 				});
 			}
 
-			// Stats counter animation
+			// Promo section animations
 			if (statsRef.current) {
+				const promoSection = statsRef.current;
+				const promoBgElements = promoSection.querySelectorAll(".promo-bg-element");
+				const promoPills = promoSection.querySelectorAll(".promo-pill");
+				
+				// Background elements
 				gsap.fromTo(
-					statsRef.current.querySelectorAll(".stat-item"),
+					promoBgElements,
+					{ opacity: 0, scale: 0.5 },
+					{
+						opacity: 1,
+						scale: 1,
+						duration: 1.5,
+						stagger: 0.2,
+						ease: "power2.out",
+						scrollTrigger: { trigger: promoSection, start: "top 90%" },
+					}
+				);
+				
+				// Main content
+				gsap.fromTo(
+					promoSection.querySelectorAll(".stat-item"),
 					{ opacity: 0, y: 40 },
 					{
 						opacity: 1,
 						y: 0,
 						duration: 0.8,
-						stagger: 0.15,
+						stagger: 0.12,
 						ease: "power3.out",
-						scrollTrigger: { trigger: statsRef.current, start: "top 85%" },
+						scrollTrigger: { trigger: promoSection, start: "top 85%" },
 					}
 				);
+				
+				// Pills with hover effect setup
+				gsap.fromTo(
+					promoPills,
+					{ opacity: 0, scale: 0.8, y: 20 },
+					{
+						opacity: 1,
+						scale: 1,
+						y: 0,
+						duration: 0.5,
+						stagger: 0.1,
+						ease: "back.out(1.7)",
+						scrollTrigger: { trigger: promoSection, start: "top 80%" },
+						delay: 0.3,
+					}
+				);
+				
+				// Floating animation for background elements
+				promoBgElements.forEach((el, i) => {
+					gsap.to(el, {
+						y: `+=${i % 2 === 0 ? -20 : 20}`,
+						x: `+=${i % 2 === 0 ? 15 : -15}`,
+						duration: 4 + i,
+						ease: "sine.inOut",
+						repeat: -1,
+						yoyo: true,
+					});
+				});
 			}
 
 			// Categories stagger
@@ -351,7 +398,7 @@ export default function Index() {
 							>
 								<Link to="/jobs/new">
 									<Briefcase className="h-5 w-5" />
-									Dodaj zlecenie za 5 zł
+									Dodaj zlecenie za darmo
 								</Link>
 							</Button>
 							<Button
@@ -392,29 +439,98 @@ export default function Index() {
 				</div>
 			</section>
 
-			{/* Stats Bar */}
+			{/* Free Access Promo Section */}
 			<section
 				ref={statsRef}
-				className="py-8 md:py-12 border-y border-border/50 bg-gradient-hero"
+				className="py-12 md:py-20 border-y border-border/50 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden"
 			>
-				<div className="container">
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
-						{[
-							{ value: stats.jobs, label: "Aktywnych zleceń", suffix: "+" },
-							{ value: stats.workers, label: "Wykonawców", suffix: "+" },
-							{ value: 16, label: "Województw", suffix: "" },
-							{ value: 5, label: "Za publikację", suffix: " zł" },
-						].map((stat, i) => (
-							<div key={i} className="stat-item text-center">
-								<div className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-primary">
-									{stat.value}
-									{stat.suffix}
+				{/* Animated background elements */}
+				<div className="promo-bg-element absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+				<div className="promo-bg-element absolute bottom-0 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+				<div className="promo-bg-element absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+				
+				<div className="container relative z-10">
+					<div className="max-w-4xl mx-auto text-center space-y-8">
+						{/* Badge */}
+						<div className="stat-item inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+							<Sparkles className="h-5 w-5 text-primary animate-pulse" />
+							<span className="font-semibold text-primary">Promocja startowa</span>
+						</div>
+						
+						{/* Main heading */}
+						<h2 className="stat-item text-3xl sm:text-4xl md:text-5xl font-display font-bold">
+							Dodawaj zlecenia{" "}
+							<span className="text-primary relative">
+								całkowicie za darmo
+								<svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 8" fill="none">
+									<path d="M2 6C50 2 150 2 198 6" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-primary/40"/>
+								</svg>
+							</span>
+						</h2>
+						
+						{/* Description */}
+						<p className="stat-item text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+							Budujemy społeczność zaufanych zleceniodawców i wykonawców. 
+							Dołącz do nas teraz i korzystaj z <strong className="text-foreground">wszystkich funkcji bez opłat</strong>, 
+							dopóki rozwijamy platformę razem z Wami!
+						</p>
+						
+						{/* Feature pills */}
+						<div className="stat-item flex flex-wrap justify-center gap-3 md:gap-4">
+							{[
+								{ icon: CheckCircle2, text: "Bez ukrytych opłat" },
+								{ icon: Users, text: "Rosnąca społeczność" },
+								{ icon: Zap, text: "Szybka publikacja" },
+								{ icon: Shield, text: "Bezpieczne transakcje" },
+							].map((item, i) => (
+								<div 
+									key={i}
+									className="promo-pill flex items-center gap-2 px-4 py-2.5 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300"
+								>
+									<item.icon className="h-5 w-5 text-primary" />
+									<span className="font-medium text-sm">{item.text}</span>
 								</div>
-								<div className="text-xs sm:text-sm text-muted-foreground mt-1 md:mt-2 font-medium">
-									{stat.label}
+							))}
+						</div>
+						
+						{/* CTA */}
+						<div className="stat-item pt-4">
+							<Button
+								size="lg"
+								asChild
+								className="gap-3 text-lg h-14 px-10 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
+							>
+								<Link to="/register">
+									<Users className="h-5 w-5" />
+									Dołącz do nas teraz
+									<ArrowRight className="h-5 w-5" />
+								</Link>
+							</Button>
+						</div>
+						
+						{/* Counter */}
+						<div className="stat-item flex items-center justify-center gap-6 pt-6">
+							<div className="text-center">
+								<div className="text-2xl md:text-3xl font-display font-bold text-primary">
+									{stats.workers}+
 								</div>
+								<div className="text-xs text-muted-foreground mt-1">wykonawców</div>
 							</div>
-						))}
+							<div className="w-px h-12 bg-border/50" />
+							<div className="text-center">
+								<div className="text-2xl md:text-3xl font-display font-bold text-primary">
+									{stats.jobs}+
+								</div>
+								<div className="text-xs text-muted-foreground mt-1">zleceń</div>
+							</div>
+							<div className="w-px h-12 bg-border/50" />
+							<div className="text-center">
+								<div className="text-2xl md:text-3xl font-display font-bold text-primary">
+									0 zł
+								</div>
+								<div className="text-xs text-muted-foreground mt-1">za publikację</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -468,7 +584,7 @@ export default function Index() {
 							{
 								step: "01",
 								title: "Dodaj zlecenie",
-								desc: "Opisz czego potrzebujesz, wybierz lokalizację i budżet. Publikacja kosztuje tylko 5 zł.",
+								desc: "Opisz czego potrzebujesz, wybierz lokalizację i budżet. Publikacja jest całkowicie darmowa!",
 								icon: Briefcase,
 								color: "bg-primary/10 text-primary",
 							},
