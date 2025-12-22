@@ -96,7 +96,14 @@ export default function NewJob() {
 		applicant_limit: "unlimited" as string,
 	});
 
-	const [addons, setAddons] = useState({
+	// COMMENTED OUT - Premium addons disabled for free access
+	// const [addons, setAddons] = useState({
+	// 	highlight: false,
+	// 	promote: false,
+	// 	urgent: false,
+	// 	promote_24h: false,
+	// });
+	const [addons] = useState({
 		highlight: false,
 		promote: false,
 		urgent: false,
@@ -117,14 +124,15 @@ export default function NewJob() {
 			}
 		}
 
-		if (savedAddons) {
-			try {
-				const parsed = JSON.parse(savedAddons);
-				setAddons(parsed);
-			} catch (e) {
-				console.error("Failed to parse saved addons:", e);
-			}
-		}
+		// COMMENTED OUT - savedAddons restore disabled since addons are disabled
+		// if (savedAddons) {
+		// 	try {
+		// 		const parsed = JSON.parse(savedAddons);
+		// 		setAddons(parsed);
+		// 	} catch (e) {
+		// 		console.error("Failed to parse saved addons:", e);
+		// 	}
+		// }
 	}, []);
 
 	// Check for success callback from Stripe
@@ -191,11 +199,19 @@ export default function NewJob() {
 		return true;
 	};
 
-	// Check if user has Pro or Boost plan (addons included free)
-	const hasPremiumPlan = subscribed && (plan === "pro" || plan === "boost");
+	// COMMENTED OUT - Premium plan check disabled for free access
+	// const hasPremiumPlan = subscribed && (plan === "pro" || plan === "boost");
+	const hasPremiumPlan = false; // All premium features disabled
 
-	// Calculate total price
+	// COMMENTED OUT - Original price calculation
+	// Calculate total price - NOW FREE FOR ALL REGISTERED USERS
 	const calculatePrice = () => {
+		const total = 0; // FREE
+		const details: string[] = [];
+		details.push("Publikacja: GRATIS (promocja)");
+		return { total, details };
+
+		/* ORIGINAL PAID LOGIC - COMMENTED OUT
 		let total = 0;
 		const details: string[] = [];
 
@@ -242,11 +258,18 @@ export default function NewJob() {
 		}
 
 		return { total, details };
+		*/
 	};
 
+	// FREE ACCESS - No payment required for registered users
 	const handlePayment = async () => {
 		if (!profile) return;
 
+		// FREE ACCESS - just mark as complete, no payment needed
+		setPaymentComplete(true);
+		toast({ title: "Gotowe! Możesz opublikować zlecenie." });
+
+		/* ORIGINAL PAID LOGIC - COMMENTED OUT
 		const { total } = calculatePrice();
 
 		// If user has subscription with remaining listings and total is 0
@@ -325,6 +348,7 @@ export default function NewJob() {
 		} finally {
 			setPaymentProcessing(false);
 		}
+		*/
 	};
 
 	const handleSubmit = async () => {
@@ -771,7 +795,8 @@ export default function NewJob() {
 								)}
 							</div>
 
-							{/* Subscription info */}
+							{/* COMMENTED OUT - Subscription info disabled for free access */}
+							{/* 
 							{subscribed && (
 								<div
 									className={`rounded-lg border p-4 ${
@@ -825,8 +850,21 @@ export default function NewJob() {
 									)}
 								</div>
 							)}
+							*/}
+							
+							{/* FREE ACCESS INFO */}
+							<div className="rounded-lg border p-4 border-primary/30 bg-primary/5">
+								<div className="flex items-center gap-2 mb-2">
+									<CheckCircle className="h-5 w-5 text-primary" />
+									<span className="font-medium">Darmowy dostęp</span>
+								</div>
+								<p className="text-sm text-muted-foreground">
+									Publikacja ogłoszeń jest obecnie <strong className="text-primary">całkowicie darmowa</strong> dla wszystkich zarejestrowanych użytkowników!
+								</p>
+							</div>
 
-							{/* Premium addons */}
+							{/* COMMENTED OUT - Premium addons section disabled for free access */}
+							{/* 
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
 									<h4 className="font-medium flex items-center gap-2">
@@ -890,7 +928,6 @@ export default function NewJob() {
 									})}
 								</div>
 
-								{/* Explanation of how premium options work */}
 								<div className="mt-4 p-4 rounded-lg bg-muted/50 text-sm space-y-3">
 									<h5 className="font-medium text-foreground">
 										Jak działają opcje premium?
@@ -901,33 +938,28 @@ export default function NewJob() {
 												⭐ Wyróżnienie
 											</strong>{" "}
 											– Twoje ogłoszenie otrzymuje złotą ramkę i pojawia się
-											wyżej na liście ogłoszeń. Efekt trwa do końca aktywności
-											ogłoszenia.
+											wyżej na liście ogłoszeń.
 										</p>
 										<p>
 											<strong className="text-foreground">
 												💡 Podświetlenie
 											</strong>{" "}
-											– Ogłoszenie ma wyróżniające się tło, co przyciąga wzrok
-											przeglądających. Efekt stały.
+											– Ogłoszenie ma wyróżniające się tło.
 										</p>
 										<p>
 											<strong className="text-foreground">⚡ PILNE</strong> –
-											Czerwona odznaka "PILNE" widoczna przy ogłoszeniu. Idealne
-											gdy potrzebujesz kogoś szybko.
+											Czerwona odznaka "PILNE".
 										</p>
 										<p>
 											<strong className="text-foreground">
 												🚀 Promowanie 24h
 											</strong>{" "}
-											– Ogłoszenie jest promowane przez dokładnie 24 godziny od
-											publikacji. Po tym czasie wraca do normalnego
-											wyświetlania. Możesz sprawdzić czas pozostały w
-											szczegółach ogłoszenia.
+											– Ogłoszenie jest promowane przez 24h.
 										</p>
 									</div>
 								</div>
 							</div>
+							*/}
 
 							{/* Payment summary */}
 							<div className="space-y-4">

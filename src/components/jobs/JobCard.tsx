@@ -57,10 +57,15 @@ export const JobCard = ({ job }: JobCardProps) => {
   
   const promotionTimeLeft = getPromotionTimeLeft();
 
+  // COMMENTED OUT - All premium styling disabled - one uniform color for all jobs
   // Dynamic card classes based on premium options
   const getCardClasses = () => {
     const base = "group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer h-full";
     
+    // ALL JOBS NOW HAVE THE SAME STYLING - no premium differentiation
+    return base;
+    
+    /* ORIGINAL PREMIUM STYLING - COMMENTED OUT
     if (job.is_highlighted) {
       return `${base} ring-2 ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.3)] bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30`;
     }
@@ -76,6 +81,7 @@ export const JobCard = ({ job }: JobCardProps) => {
     }
     
     return base;
+    */
   };
 
   return (
@@ -95,7 +101,8 @@ export const JobCard = ({ job }: JobCardProps) => {
             </div>
           )}
           
-          {/* Premium badges on image */}
+          {/* COMMENTED OUT - Premium badges disabled */}
+          {/* 
           {job.is_highlighted && (
             <div className="absolute top-2 left-2">
               <Badge className="bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold shadow-lg">
@@ -114,7 +121,6 @@ export const JobCard = ({ job }: JobCardProps) => {
             </div>
           )}
           
-          {/* Urgent badge */}
           {job.urgent && (
             <div className="absolute top-2 right-2">
               <Badge className="bg-red-500 hover:bg-red-500 text-white font-bold">
@@ -122,6 +128,7 @@ export const JobCard = ({ job }: JobCardProps) => {
               </Badge>
             </div>
           )}
+          */}
           
           {/* Foreign job badge */}
           {job.is_foreign && (
@@ -146,9 +153,8 @@ export const JobCard = ({ job }: JobCardProps) => {
 
         <CardHeader className="pb-2 pt-3 px-3">
           <div className="flex items-start justify-between gap-2">
-            <h3 className={`font-semibold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors ${
-              job.is_highlighted ? 'text-amber-700 dark:text-amber-400' : ''
-            }`}>
+            {/* COMMENTED OUT - Premium title styling disabled */}
+            <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors">
               {job.title}
             </h3>
           </div>
@@ -189,11 +195,9 @@ export const JobCard = ({ job }: JobCardProps) => {
             )}
           </div>
 
-          {/* Budget */}
+          {/* Budget - COMMENTED OUT premium styling */}
           {job.budget && (
-            <div className={`flex items-center font-bold text-lg ${
-              job.is_highlighted ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
-            }`}>
+            <div className="flex items-center font-bold text-lg text-primary">
               <Banknote className="h-5 w-5 mr-1.5" />
               <span>{job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}</span>
             </div>

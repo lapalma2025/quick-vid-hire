@@ -1,34 +1,73 @@
-import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import {
 	Card,
 	CardContent,
-	CardHeader,
-	CardTitle,
-	CardDescription,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useSubscription } from "@/hooks/useSubscription";
-import { SUBSCRIPTION_PLANS } from "@/lib/stripe";
-import {
-	Check,
-	Loader2,
-	Crown,
-	Sparkles,
-	Zap,
-	CreditCard,
-	Calendar,
-	FileText,
-	Star,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+
+// COMMENTED OUT - FULL SUBSCRIPTION PAGE DISABLED FOR FREE ACCESS
+// Original imports:
+// import { useState } from "react";
+// import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+// import { useSubscription } from "@/hooks/useSubscription";
+// import { SUBSCRIPTION_PLANS } from "@/lib/stripe";
+// import { Check, Loader2, Crown, Sparkles, Zap, CreditCard, Calendar, FileText, Star } from "lucide-react";
+// import { useToast } from "@/hooks/use-toast";
 
 export default function Subscription() {
 	const { isAuthenticated } = useAuth();
 	const navigate = useNavigate();
+
+	if (!isAuthenticated) {
+		navigate("/login");
+		return null;
+	}
+
+	// SIMPLIFIED VERSION - ALL FEATURES FREE
+	return (
+		<Layout>
+			<div className="container py-12 max-w-4xl">
+				<div className="text-center mb-12">
+					<h1 className="text-4xl font-bold mb-4">Darmowy dostęp</h1>
+					<p className="text-muted-foreground text-lg">
+						Wszystkie funkcje są obecnie dostępne za darmo!
+					</p>
+				</div>
+
+				<Card className="border-primary/50 bg-primary/5">
+					<CardContent className="p-8 text-center">
+						<CheckCircle className="h-16 w-16 text-primary mx-auto mb-6" />
+						<h2 className="text-2xl font-bold mb-4">Promocja trwa!</h2>
+						<p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+							W ramach promocji wszystkie funkcje platformy są dostępne za darmo 
+							dla wszystkich zarejestrowanych użytkowników. Dodawaj ogłoszenia 
+							bez żadnych opłat!
+						</p>
+						<ul className="text-left max-w-md mx-auto space-y-3 mb-6">
+							<li className="flex items-center gap-2">
+								<CheckCircle className="h-5 w-5 text-primary" />
+								<span>Nieograniczone ogłoszenia</span>
+							</li>
+							<li className="flex items-center gap-2">
+								<CheckCircle className="h-5 w-5 text-primary" />
+								<span>Brak opłat za publikację</span>
+							</li>
+							<li className="flex items-center gap-2">
+								<CheckCircle className="h-5 w-5 text-primary" />
+								<span>Pełen dostęp do wszystkich funkcji</span>
+							</li>
+						</ul>
+					</CardContent>
+				</Card>
+			</div>
+		</Layout>
+	);
+
+	/* ORIGINAL PAID SUBSCRIPTION PAGE - COMMENTED OUT
 	const { toast } = useToast();
 	const {
 		subscribed,
@@ -45,11 +84,6 @@ export default function Subscription() {
 
 	const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 	const [portalLoading, setPortalLoading] = useState(false);
-
-	if (!isAuthenticated) {
-		navigate("/login");
-		return null;
-	}
 
 	const handleSubscribe = async (planKey: "basic" | "pro" | "boost") => {
 		setCheckoutLoading(planKey);
@@ -117,7 +151,6 @@ export default function Subscription() {
 					</p>
 				</div>
 
-				{/* Current subscription status */}
 				{subscribed && plan && (
 					<Card className="mb-8 border-primary/50 bg-primary/5">
 						<CardContent className="p-6">
@@ -171,7 +204,6 @@ export default function Subscription() {
 					</Card>
 				)}
 
-				{/* Plans grid */}
 				<div className="grid md:grid-cols-3 gap-6">
 					{(
 						Object.entries(SUBSCRIPTION_PLANS) as [
@@ -258,7 +290,6 @@ export default function Subscription() {
 					})}
 				</div>
 
-				{/* No subscription CTA */}
 				{!subscribed && (
 					<Card className="mt-8">
 						<CardContent className="p-6 text-center">
@@ -277,4 +308,5 @@ export default function Subscription() {
 			</div>
 		</Layout>
 	);
+	*/
 }
