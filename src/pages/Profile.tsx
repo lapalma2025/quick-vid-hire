@@ -886,14 +886,14 @@ export default function Profile() {
 				</Card>
 
 				{/* Delete Account Section */}
-				<Card className="border-destructive/30">
+				<Card className="mt-8 border-destructive/30">
 					<CardHeader>
 						<CardTitle className="text-destructive flex items-center gap-2">
-							<AlertTriangle className="h-5 w-5" />
-							Strefa niebezpieczna
+							<Trash2 className="h-5 w-5" />
+							Usuń konto
 						</CardTitle>
 						<CardDescription>
-							Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane zostaną trwale usunięte.
+							Ta operacja jest nieodwracalna. Wszystkie Twoje dane zostaną trwale usunięte.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
