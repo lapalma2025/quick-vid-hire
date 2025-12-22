@@ -116,10 +116,11 @@ export default function Workers() {
 				.select(
 					`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
 					{ count: "exact" }
-				)
-				.eq("is_available", true)
-				.eq("worker_profile_completed", true)
-				.eq("worker_visibility_paid", true);
+			)
+			.eq("is_available", true)
+			.eq("worker_profile_completed", true);
+			// COMMENTED OUT - visibility payment requirement
+			// .eq("worker_visibility_paid", true);
 
 			// Apply category filter via worker IDs
 			if (workerIdsWithCategory !== null) {
@@ -196,11 +197,12 @@ export default function Workers() {
 			let query = supabase
 				.from("profiles")
 				.select(
-					`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
-				)
-				.eq("is_available", true)
-				.eq("worker_profile_completed", true)
-				.eq("worker_visibility_paid", true);
+				`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
+			)
+			.eq("is_available", true)
+			.eq("worker_profile_completed", true);
+			// COMMENTED OUT - visibility payment requirement
+			// .eq("worker_visibility_paid", true);
 
 			if (workerIdsWithCategory !== null) {
 				if (workerIdsWithCategory.length === 0) {

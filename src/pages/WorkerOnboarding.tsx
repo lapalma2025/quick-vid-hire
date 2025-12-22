@@ -781,7 +781,15 @@ export default function WorkerOnboarding() {
             </CardContent>
           </Card>
 
-          {/* Visibility Payment Option - optional, shown only if not paid */}
+          {/* Free visibility info */}
+          <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
+            <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="text-sm font-medium">
+              Darmowa widoczność - po aktywacji profilu zleceniodawcy będą mogli Cię znaleźć w katalogu wykonawców
+            </span>
+          </div>
+
+          {/* COMMENTED OUT - Visibility Payment Option - kept for future use
           {!workerVisibilityPaid && (
             <Card className="card-modern border-2 border-dashed border-primary/30">
               <CardHeader>
@@ -830,7 +838,6 @@ export default function WorkerOnboarding() {
             </Card>
           )}
 
-          {/* Visibility confirmed - compact success info */}
           {workerVisibilityPaid && (
             <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
               <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
@@ -839,6 +846,7 @@ export default function WorkerOnboarding() {
               </span>
             </div>
           )}
+          END COMMENTED OUT */}
 
           {/* Submit Button - FREE activation */}
           <div className="space-y-3">
