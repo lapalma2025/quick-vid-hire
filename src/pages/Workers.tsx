@@ -323,35 +323,35 @@ export default function Workers() {
 			{/* Hero Header */}
 			<div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
 				<div className="absolute inset-0">
-					<div className="absolute top-10 right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-					<div className="absolute bottom-10 left-10 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
+					<div className="absolute top-10 right-10 w-48 sm:w-64 h-48 sm:h-64 bg-primary/10 rounded-full blur-3xl" />
+					<div className="absolute bottom-10 left-10 w-36 sm:w-48 h-36 sm:h-48 bg-accent/10 rounded-full blur-3xl" />
 				</div>
-				<div className="container relative py-16 md:py-20">
-					<div className="flex items-center gap-3 mb-4">
-						<div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-							<Users className="h-6 w-6 text-primary" />
+				<div className="container relative py-10 sm:py-16 md:py-20 px-4 sm:px-6">
+					<div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+						<div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+							<Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
 						</div>
-						<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+						<div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
 							{totalCount} wykonawców
 						</div>
 					</div>
-					<h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+					<h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold mb-2 sm:mb-4">
 						Znajdź idealnego wykonawcę
 					</h1>
-					<p className="text-lg text-muted-foreground max-w-2xl">
+					<p className="text-sm sm:text-lg text-muted-foreground max-w-2xl">
 						Przeglądaj profile zweryfikowanych wykonawców i wybierz najlepszego
 						do swojego zlecenia
 					</p>
 				</div>
 			</div>
 
-			<div className="container py-10">
+			<div className="container py-6 sm:py-10 px-4 sm:px-6">
 				{/* Filters Toggle */}
-				<div className="flex justify-end mb-6">
+				<div className="flex justify-end mb-4 sm:mb-6">
 					<Button
 						variant="outline"
 						onClick={() => setShowFilters(!showFilters)}
-						className="gap-2 h-12"
+						className="gap-2 h-10 sm:h-12 text-sm sm:text-base"
 					>
 						<Filter className="h-4 w-4" />
 						Filtry
@@ -362,18 +362,18 @@ export default function Workers() {
 				</div>
 
 				{showFilters && (
-				<Card className="mb-8 card-modern">
-						<CardContent className="p-6">
-							<div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-								<div className="space-y-2">
-									<Label className="font-medium">Województwo</Label>
+				<Card className="mb-6 sm:mb-8 card-modern">
+						<CardContent className="p-4 sm:p-6">
+							<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+								<div className="space-y-1.5 sm:space-y-2">
+									<Label className="font-medium text-xs sm:text-sm">Województwo</Label>
 									<WojewodztwoSelect
 										value={filters.wojewodztwo}
 										onChange={(v) => updateFilter("wojewodztwo", v)}
 									/>
 								</div>
-								<div className="space-y-2">
-									<Label className="font-medium">Miasto</Label>
+								<div className="space-y-1.5 sm:space-y-2">
+									<Label className="font-medium text-xs sm:text-sm">Miasto</Label>
 									<CityAutocomplete
 										value={filters.miasto}
 										onChange={(miasto, region) => {
@@ -392,15 +392,15 @@ export default function Workers() {
 										placeholder="Wpisz miasto..."
 									/>
 								</div>
-								<div className="space-y-2">
-									<Label className="font-medium">Kategoria</Label>
+								<div className="space-y-1.5 sm:space-y-2">
+									<Label className="font-medium text-xs sm:text-sm">Kategoria</Label>
 									<Select
 										value={filters.category || "__all__"}
 										onValueChange={(v) =>
 											updateFilter("category", v === "__all__" ? "" : v)
 										}
 									>
-										<SelectTrigger className="h-11 rounded-xl">
+										<SelectTrigger className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm">
 											<SelectValue placeholder="Wszystkie" />
 										</SelectTrigger>
 										<SelectContent>
@@ -413,15 +413,15 @@ export default function Workers() {
 										</SelectContent>
 									</Select>
 								</div>
-								<div className="space-y-2">
-									<Label className="font-medium">Min. ocena</Label>
+								<div className="space-y-1.5 sm:space-y-2">
+									<Label className="font-medium text-xs sm:text-sm">Min. ocena</Label>
 									<Select
 										value={filters.minRating || "__all__"}
 										onValueChange={(v) =>
 											updateFilter("minRating", v === "__all__" ? "" : v)
 										}
 									>
-										<SelectTrigger className="h-11 rounded-xl">
+										<SelectTrigger className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm">
 											<SelectValue placeholder="Dowolna" />
 										</SelectTrigger>
 										<SelectContent>
@@ -438,9 +438,9 @@ export default function Workers() {
 									variant="ghost"
 									size="sm"
 									onClick={clearFilters}
-									className="mt-4 gap-2"
+									className="mt-3 sm:mt-4 gap-2 text-xs sm:text-sm"
 								>
-									<X className="h-4 w-4" />
+									<X className="h-3 w-3 sm:h-4 sm:w-4" />
 									Wyczyść filtry
 								</Button>
 							)}
@@ -450,21 +450,21 @@ export default function Workers() {
 
 				{/* Workers Grid */}
 				{loading ? (
-					<div className="flex flex-col items-center justify-center py-24 gap-4">
-						<div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-							<Loader2 className="h-8 w-8 animate-spin text-primary" />
+					<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+						<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+							<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
 						</div>
-						<p className="text-muted-foreground font-medium">
+						<p className="text-muted-foreground font-medium text-sm sm:text-base">
 							Ładowanie wykonawców...
 						</p>
 					</div>
 				) : workers.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-24 gap-4">
-						<div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
-							<Users className="h-10 w-10 text-muted-foreground" />
+					<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+						<div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center">
+							<Users className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
 						</div>
-						<p className="text-lg font-semibold">Brak wyników</p>
-						<p className="text-muted-foreground">
+						<p className="text-base sm:text-lg font-semibold">Brak wyników</p>
+						<p className="text-sm sm:text-base text-muted-foreground text-center">
 							Nie znaleziono wykonawców. Spróbuj zmienić filtry.
 						</p>
 					</div>
@@ -472,7 +472,7 @@ export default function Workers() {
 					<>
 						<div
 							ref={gridRef}
-							className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+							className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
 						>
 							{workers.map((worker) => (
 								<Link key={worker.id} to={`/worker/${worker.id}`}>

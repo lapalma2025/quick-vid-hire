@@ -417,10 +417,10 @@ export default function Index() {
 					</div>
 				</div>
 
-				{/* Floating Icons - visible on all screens */}
+			{/* Floating Icons - visible on all screens */}
 				<div
 					ref={floatingIconsRef}
-					className="flex justify-center items-center gap-4 sm:gap-6 pb-10 pt-6 mb-4"
+					className="flex justify-center items-center gap-2 xs:gap-3 sm:gap-4 md:gap-6 pb-8 sm:pb-10 pt-4 sm:pt-6 mb-2 sm:mb-4 flex-wrap px-4"
 				>
 					{[
 						{ Icon: Briefcase, color: "bg-primary/15 text-primary" },
@@ -432,9 +432,9 @@ export default function Index() {
 					].map(({ Icon, color }, i) => (
 						<div
 							key={i}
-							className={`floating-icon w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${color} flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/20`}
+							className={`floating-icon w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl ${color} flex items-center justify-center shadow-lg backdrop-blur-sm border border-white/20`}
 						>
-							<Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+							<Icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
 						</div>
 					))}
 				</div>
@@ -492,7 +492,7 @@ export default function Index() {
 						</p>
 
 						{/* Feature pills */}
-						<div className="stat-item flex flex-wrap justify-center gap-3 md:gap-4">
+						<div className="stat-item flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 px-2">
 							{[
 								{ icon: CheckCircle2, text: "Bez ukrytych opłat" },
 								{ icon: Users, text: "Rosnąca społeczność" },
@@ -501,25 +501,25 @@ export default function Index() {
 							].map((item, i) => (
 								<div
 									key={i}
-									className="promo-pill flex items-center gap-2 px-4 py-2.5 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300"
+									className="promo-pill flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300"
 								>
-									<item.icon className="h-5 w-5 text-primary" />
-									<span className="font-medium text-sm">{item.text}</span>
+									<item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+									<span className="font-medium text-xs sm:text-sm whitespace-nowrap">{item.text}</span>
 								</div>
 							))}
 						</div>
 
 						{/* CTA */}
-						<div className="stat-item pt-4">
+						<div className="stat-item pt-4 px-4">
 							<Button
 								size="lg"
 								asChild
-								className="gap-3 text-lg h-14 px-10 rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
+								className="gap-2 sm:gap-3 text-base sm:text-lg h-12 sm:h-14 px-6 sm:px-10 rounded-xl sm:rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto"
 							>
 								<Link to="/register">
-									<Users className="h-5 w-5" />
-									Dołącz do nas teraz
-									<ArrowRight className="h-5 w-5" />
+									<Users className="h-4 w-4 sm:h-5 sm:w-5" />
+									<span className="whitespace-nowrap">Dołącz do nas teraz</span>
+									<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
 								</Link>
 							</Button>
 						</div>
@@ -528,28 +528,28 @@ export default function Index() {
 			</section>
 
 			{/* Categories */}
-			<section ref={categoriesRef} className="py-14 md:py-18">
-				<div className="container">
-					<div className="text-center mb-14">
-						<h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+			<section ref={categoriesRef} className="py-10 sm:py-14 md:py-18">
+				<div className="container px-4 sm:px-6">
+					<div className="text-center mb-8 sm:mb-14">
+						<h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">
 							Popularne kategorie
 						</h2>
-						<p className="text-lg text-muted-foreground">
+						<p className="text-base sm:text-lg text-muted-foreground">
 							Znajdź zlecenie w swojej specjalizacji
 						</p>
 					</div>
-					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 md:gap-6">
+					<div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
 						{categories.map((cat) => (
 							<Link to={`/jobs?category=${encodeURIComponent(cat)}`} key={cat}>
-								<Card className="category-card card-modern text-center p-6 group cursor-pointer">
-									<CardContent className="p-0 space-y-4">
-										<div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+								<Card className="category-card card-modern text-center p-3 sm:p-4 md:p-6 group cursor-pointer h-full">
+									<CardContent className="p-0 space-y-2 sm:space-y-4">
+										<div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
 											<CategoryIcon
 												name={cat}
-												className="h-7 w-7 text-primary"
+												className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-primary"
 											/>
 										</div>
-										<p className="font-semibold text-sm group-hover:text-primary transition-colors">
+										<p className="font-semibold text-xs sm:text-sm group-hover:text-primary transition-colors line-clamp-2">
 											{cat}
 										</p>
 									</CardContent>
@@ -561,17 +561,17 @@ export default function Index() {
 			</section>
 
 			{/* How it works */}
-			<section ref={howItWorksRef} className="py-14 md:py-18 bg-muted/30">
-				<div className="container">
-					<div className="text-center mb-14">
-						<h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+			<section ref={howItWorksRef} className="py-10 sm:py-14 md:py-18 bg-muted/30">
+				<div className="container px-4 sm:px-6">
+					<div className="text-center mb-8 sm:mb-14">
+						<h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">
 							Jak to działa?
 						</h2>
-						<p className="text-lg text-muted-foreground">
+						<p className="text-base sm:text-lg text-muted-foreground">
 							Trzy proste kroki do sukcesu
 						</p>
 					</div>
-					<div className="grid md:grid-cols-3 gap-8">
+					<div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
 						{[
 							{
 								step: "01",
@@ -599,19 +599,19 @@ export default function Index() {
 								key={item.step}
 								className="step-card card-modern relative overflow-hidden group"
 							>
-								<div className="absolute top-6 right-6 text-7xl font-display font-bold text-muted/20 group-hover:text-primary/10 transition-colors">
+								<div className="absolute top-4 sm:top-6 right-4 sm:right-6 text-5xl sm:text-7xl font-display font-bold text-muted/20 group-hover:text-primary/10 transition-colors">
 									{item.step}
 								</div>
-								<CardContent className="p-8 space-y-5 relative">
+								<CardContent className="p-5 sm:p-8 space-y-3 sm:space-y-5 relative">
 									<div
-										className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+										className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
 									>
-										<item.icon className="h-7 w-7" />
+										<item.icon className="h-5 w-5 sm:h-7 sm:w-7" />
 									</div>
-									<h3 className="text-xl font-display font-bold">
+									<h3 className="text-lg sm:text-xl font-display font-bold">
 										{item.title}
 									</h3>
-									<p className="text-muted-foreground leading-relaxed">
+									<p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
 										{item.desc}
 									</p>
 								</CardContent>
@@ -622,17 +622,17 @@ export default function Index() {
 			</section>
 
 			{/* Features */}
-			<section ref={featuresRef} className="py-14 md:py-18">
-				<div className="container">
-					<div className="text-center mb-14">
-						<h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+			<section ref={featuresRef} className="py-10 sm:py-14 md:py-18">
+				<div className="container px-4 sm:px-6">
+					<div className="text-center mb-8 sm:mb-14">
+						<h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">
 							Dlaczego my?
 						</h2>
-						<p className="text-lg text-muted-foreground">
+						<p className="text-base sm:text-lg text-muted-foreground">
 							Wszystko czego potrzebujesz w jednym miejscu
 						</p>
 					</div>
-					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+					<div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-8">
 						{[
 							{
 								icon: MapPin,
@@ -667,16 +667,16 @@ export default function Index() {
 						].map((feature) => (
 							<div
 								key={feature.title}
-								className="feature-item flex gap-5 p-6 rounded-2xl hover:bg-muted/50 transition-colors duration-300"
+								className="feature-item flex flex-col sm:flex-row gap-3 sm:gap-5 p-4 sm:p-6 rounded-xl sm:rounded-2xl hover:bg-muted/50 transition-colors duration-300"
 							>
-								<div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-									<feature.icon className="h-6 w-6 text-primary" />
+								<div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center">
+									<feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
 								</div>
 								<div>
-									<h3 className="font-display font-bold text-lg mb-2">
+									<h3 className="font-display font-bold text-base sm:text-lg mb-1 sm:mb-2">
 										{feature.title}
 									</h3>
-									<p className="text-muted-foreground">{feature.desc}</p>
+									<p className="text-muted-foreground text-xs sm:text-base leading-relaxed">{feature.desc}</p>
 								</div>
 							</div>
 						))}
@@ -685,49 +685,49 @@ export default function Index() {
 			</section>
 
 			{/* CTA */}
-			<section ref={ctaRef} className="py-16 md:py-20 relative overflow-hidden">
+			<section ref={ctaRef} className="py-12 sm:py-16 md:py-20 relative overflow-hidden">
 				{/* Animated background elements */}
-				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
-				<div className="cta-bg-element absolute -right-32 top-1/4 w-80 h-80 rounded-full bg-accent/10 blur-3xl" />
-				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-[600px] h-40 rounded-full blur-3xl" />
+				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-primary/5 blur-3xl" />
+				<div className="cta-bg-element absolute -right-32 top-1/4 w-48 sm:w-80 h-48 sm:h-80 rounded-full bg-accent/10 blur-3xl" />
+				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-full max-w-[600px] h-40 rounded-full blur-3xl" />
 
-				<div className="container relative z-10">
+				<div className="container relative z-10 px-4 sm:px-6">
 					{/* Main content grid */}
-					<div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+					<div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
 						{/* Left side - Text content */}
-						<div className="cta-content space-y-8">
-							<div className="cta-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-								<Sparkles className="w-4 h-4 text-primary" />
-								<span className="text-sm font-medium text-primary">
+						<div className="cta-content space-y-5 sm:space-y-8 text-center lg:text-left">
+							<div className="cta-badge inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20">
+								<Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+								<span className="text-xs sm:text-sm font-medium text-primary">
 									Dołącz do nas już dziś
 								</span>
 							</div>
 
-							<h2 className="cta-title text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
+							<h2 className="cta-title text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
 								Gotowy do
 								<span className="block text-primary">działania?</span>
 							</h2>
 
-							<p className="cta-desc text-lg text-muted-foreground leading-relaxed max-w-md">
+							<p className="cta-desc text-base sm:text-lg text-muted-foreground leading-relaxed max-w-md mx-auto lg:mx-0">
 								Dołącz do tysięcy użytkowników, którzy codziennie realizują
 								zlecenia i znajdują wykonawców w swojej okolicy.
 							</p>
 
-							<div className="cta-buttons flex flex-col sm:flex-row gap-4 pt-2">
+							<div className="cta-buttons flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 justify-center lg:justify-start">
 								<Button
 									size="lg"
 									asChild
-									className="group h-14 px-8 text-base rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
+									className="group h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
 								>
 									<Link to="/register" className="flex items-center gap-2">
-										Zarejestruj się za darmo
-										<ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+										<span className="whitespace-nowrap">Zarejestruj się za darmo</span>
+										<ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
 									</Link>
 								</Button>
 								<Button
 									size="lg"
 									variant="outline"
-									className="h-14 px-8 text-base rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
+									className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-xl sm:rounded-2xl border-2 hover:bg-primary/5 hover:-translate-y-1 transition-all duration-300"
 									asChild
 								>
 									<Link to="/jobs">Przeglądaj zlecenia</Link>
@@ -806,7 +806,7 @@ export default function Index() {
 					</div>
 
 					{/* Bottom trust badges */}
-					<div className="cta-badges flex flex-wrap items-center justify-center gap-8 mt-16 pt-12 border-t border-border/50">
+					<div className="cta-badges flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 mt-10 sm:mt-16 pt-8 sm:pt-12 border-t border-border/50">
 						{[
 							{ icon: Shield, label: "Bezpieczne płatności" },
 							{ icon: CheckCircle2, label: "Weryfikowani wykonawcy" },
@@ -815,12 +815,12 @@ export default function Index() {
 						].map((item) => (
 							<div
 								key={item.label}
-								className="cta-badge-item flex items-center gap-3 text-muted-foreground"
+								className="cta-badge-item flex items-center gap-2 sm:gap-3 text-muted-foreground"
 							>
-								<div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
-									<item.icon className="w-5 h-5" />
+								<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-muted/50 flex items-center justify-center">
+									<item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
 								</div>
-								<span className="font-medium">{item.label}</span>
+								<span className="font-medium text-xs sm:text-sm">{item.label}</span>
 							</div>
 						))}
 					</div>
