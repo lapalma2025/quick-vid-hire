@@ -437,14 +437,18 @@ export default function Profile() {
 	const handleDeleteAccount = async () => {
 		setDeletingAccount(true);
 		try {
-			const { error } = await supabase.auth.signOut();
-			if (error) throw error;
+			// Call edge function to delete account
+			const { data, error } = await supabase.functions.invoke("delete-account");
 
-			// Note: Full account deletion requires backend/admin action
-			// For now, we sign out the user and show confirmation
+			if (error) throw error;
+			if (data?.error) throw new Error(data.error);
+
+			// Sign out after successful deletion
+			await supabase.auth.signOut();
+
 			toast({
-				title: "Konto zostanie usunięte",
-				description: "Twoje konto zostanie usunięte w ciągu 24 godzin. Zostałeś wylogowany.",
+				title: "Konto usunięte",
+				description: "Twoje konto zostało trwale usunięte.",
 			});
 			navigate("/");
 		} catch (error: any) {
@@ -453,7 +457,6 @@ export default function Profile() {
 				description: error.message,
 				variant: "destructive",
 			});
-		} finally {
 			setDeletingAccount(false);
 		}
 	};
