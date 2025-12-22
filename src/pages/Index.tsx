@@ -497,7 +497,7 @@ export default function Index() {
 								{ icon: CheckCircle2, text: "Bez ukrytych opłat" },
 								{ icon: Users, text: "Rosnąca społeczność" },
 								{ icon: Zap, text: "Szybka publikacja" },
-								{ icon: Shield, text: "Bezpieczne transakcje" },
+								{ icon: Users, text: "Wsparcie społeczności" },
 							].map((item, i) => (
 								<div
 									key={i}
@@ -805,10 +805,10 @@ export default function Index() {
 						</div>
 					</div>
 
-					{/* Bottom trust badges */}
-					<div className="cta-badges flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 mt-10 sm:mt-16 pt-8 sm:pt-12 border-t border-border/50">
+					{/* Bottom trust badges - hidden on mobile */}
+					<div className="cta-badges hidden md:flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 mt-10 sm:mt-16 pt-8 sm:pt-12 border-t border-border/50">
 						{[
-							{ icon: Shield, label: "Bezpieczne płatności" },
+							{ icon: Users, label: "Rosnąca społeczność" },
 							{ icon: CheckCircle2, label: "Weryfikowani wykonawcy" },
 							{ icon: Zap, label: "Szybka realizacja" },
 							{ icon: Star, label: "System ocen" },
