@@ -779,10 +779,10 @@ export default function Index() {
 
 							<div className="cta-card absolute bottom-0 right-8 w-48 p-4 rounded-2xl bg-primary text-primary-foreground shadow-xl">
 								<div className="flex items-center gap-3">
-									<Zap className="w-6 h-6" />
+									<Sparkles className="w-6 h-6" />
 									<div>
-										<p className="font-bold text-2xl">5 zł</p>
-										<p className="text-xs opacity-80">za publikację</p>
+										<p className="font-bold text-2xl">0 zł</p>
+										<p className="text-xs opacity-80">całkowicie za darmo</p>
 									</div>
 								</div>
 							</div>
