@@ -368,10 +368,11 @@ export default function Profile() {
 			updated_at: new Date().toISOString(),
 		};
 
-		// Only save extended description if user has premium
-		if (hasPremiumProfile) {
-			updateData.extended_description = form.extended_description || null;
-		}
+		// Extended description now free for everyone
+		// COMMENTED OUT - premium check
+		// if (hasPremiumProfile) {
+		updateData.extended_description = form.extended_description || null;
+		// }
 
 		const { error } = await supabase
 			.from("profiles")
@@ -521,7 +522,7 @@ export default function Profile() {
 					</CardContent>
 				</Card>
 
-				{/* Premium: Logo upload */}
+			{/* Logo upload - now free for everyone */}
 				<Card className="mb-6">
 					<CardHeader>
 						<div className="flex items-center justify-between">
@@ -534,62 +535,65 @@ export default function Profile() {
 									Wyświetlane przy Twoich ogłoszeniach
 								</CardDescription>
 							</div>
+							{/* COMMENTED OUT - Premium badge - now free
 							{!hasPremiumProfile && (
 								<Badge variant="outline" className="gap-1">
 									<Lock className="h-3 w-3" />
 									Premium
 								</Badge>
 							)}
+							*/}
 						</div>
 					</CardHeader>
 					<CardContent>
-						{hasPremiumProfile ? (
-							<div className="flex items-center gap-4">
-								<div className="relative group">
-									<div className="h-24 w-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden">
-										{logoUrl ? (
-											<img
-												src={logoUrl}
-												alt="Logo"
-												className="w-full h-full object-cover"
-											/>
-										) : (
-											<Image className="h-8 w-8 text-muted-foreground" />
-										)}
-									</div>
-									<input
-										ref={logoInputRef}
-										type="file"
-										accept="image/*"
-										onChange={handleLogoUpload}
-										className="hidden"
-									/>
-									<button
-										onClick={() => logoInputRef.current?.click()}
-										disabled={uploadingLogo}
-										className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-									>
-										{uploadingLogo ? (
-											<Loader2 className="h-6 w-6 text-white animate-spin" />
-										) : (
-											<Camera className="h-6 w-6 text-white" />
-										)}
-									</button>
-									{logoUrl && (
-										<button
-											onClick={handleRemoveLogo}
-											disabled={uploadingLogo}
-											className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-white rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
-										>
-											<X className="h-3 w-3" />
-										</button>
+						{/* Logo upload now available for everyone */}
+						<div className="flex items-center gap-4">
+							<div className="relative group">
+								<div className="h-24 w-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden">
+									{logoUrl ? (
+										<img
+											src={logoUrl}
+											alt="Logo"
+											className="w-full h-full object-cover"
+										/>
+									) : (
+										<Image className="h-8 w-8 text-muted-foreground" />
 									)}
 								</div>
-								<div className="text-sm text-muted-foreground">
-									<p>Zalecany rozmiar: 200x200 px</p>
-									<p>Format: PNG, JPG (max 5MB)</p>
-								</div>
+								<input
+									ref={logoInputRef}
+									type="file"
+									accept="image/*"
+									onChange={handleLogoUpload}
+									className="hidden"
+								/>
+								<button
+									onClick={() => logoInputRef.current?.click()}
+									disabled={uploadingLogo}
+									className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+								>
+									{uploadingLogo ? (
+										<Loader2 className="h-6 w-6 text-white animate-spin" />
+									) : (
+										<Camera className="h-6 w-6 text-white" />
+									)}
+								</button>
+								{logoUrl && (
+									<button
+										onClick={handleRemoveLogo}
+										disabled={uploadingLogo}
+										className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-white rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+									>
+										<X className="h-3 w-3" />
+									</button>
+								)}
 							</div>
+							<div className="text-sm text-muted-foreground">
+								<p>Zalecany rozmiar: 200x200 px</p>
+								<p>Format: PNG, JPG (max 5MB)</p>
+							</div>
+						</div>
+						{/* COMMENTED OUT - Premium lock screen - now free
 						) : (
 							<div className="text-center py-6">
 								<Lock className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -601,6 +605,7 @@ export default function Profile() {
 								</Button>
 							</div>
 						)}
+						*/}
 					</CardContent>
 				</Card>
 
@@ -687,28 +692,31 @@ export default function Profile() {
 							/>
 						</div>
 
-						{/* Premium: Extended description */}
+						{/* Extended description - now free for everyone */}
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
 								<Label className="flex items-center gap-2">
 									Rozszerzony opis
 								</Label>
+								{/* COMMENTED OUT - Premium badge - now free
 								{!hasPremiumProfile && (
 									<Badge variant="outline" className="gap-1 text-xs">
 										<Lock className="h-3 w-3" />
 										Premium
 									</Badge>
 								)}
+								*/}
 							</div>
-							{hasPremiumProfile ? (
-								<Textarea
-									value={form.extended_description}
-									onChange={(e) =>
-										updateForm("extended_description", e.target.value)
-									}
-									placeholder="Szczegółowy opis Twoich usług, doświadczenia, certyfikatów..."
-									rows={6}
-								/>
+							{/* Extended description now available for everyone */}
+							<Textarea
+								value={form.extended_description}
+								onChange={(e) =>
+									updateForm("extended_description", e.target.value)
+								}
+								placeholder="Szczegółowy opis Twoich usług, doświadczenia, certyfikatów..."
+								rows={6}
+							/>
+							{/* COMMENTED OUT - Premium lock screen - now free
 							) : (
 								<div className="p-4 rounded-lg border border-dashed text-center">
 									<p className="text-sm text-muted-foreground mb-2">
@@ -719,6 +727,7 @@ export default function Profile() {
 									</Button>
 								</div>
 							)}
+							*/}
 						</div>
 
 						{workerProfileCompleted && (
