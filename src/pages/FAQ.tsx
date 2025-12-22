@@ -45,7 +45,7 @@ const FAQ = () => {
 		{
 			question: "Jak mogę usunąć swoje konto?",
 			answer:
-				"Aby usunąć konto, skontaktuj się z nami przez formularz pomocy. Usuniemy Twoje dane zgodnie z obowiązującymi przepisami.",
+				"Aby usunąć konto, wejdź w profił użytkownika i wybierz opcję 'Usuń konto'. Pamiętaj, że ta operacja jest nieodwracalna.",
 		},
 	];
 
