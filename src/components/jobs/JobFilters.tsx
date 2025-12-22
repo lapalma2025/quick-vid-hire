@@ -427,12 +427,22 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 							)}
 						</Button>
 					</SheetTrigger>
-					<SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-						<SheetHeader>
+					<SheetContent side="bottom" className="h-[85vh] rounded-t-3xl flex flex-col">
+						<SheetHeader className="flex-shrink-0">
 							<SheetTitle className="font-display">Filtry</SheetTitle>
 						</SheetHeader>
-						<div className="mt-6 overflow-y-auto">
+						<div className="flex-1 mt-6 overflow-y-auto pb-4 -mx-6 px-6">
 							<FilterContent />
+						</div>
+						{/* Search button for mobile */}
+						<div className="flex-shrink-0 pt-4 border-t border-border/50 -mx-6 px-6 pb-2">
+							<Button 
+								className="w-full h-12 rounded-xl gap-2"
+								onClick={() => setMobileOpen(false)}
+							>
+								<Search className="h-4 w-4" />
+								Wyszukaj
+							</Button>
 						</div>
 					</SheetContent>
 				</Sheet>
