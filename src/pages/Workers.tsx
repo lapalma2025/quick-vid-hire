@@ -119,6 +119,8 @@ export default function Workers() {
 			)
 			.eq("is_available", true)
 			.eq("worker_profile_completed", true);
+			// COMMENTED OUT - visibility payment requirement
+			// .eq("worker_visibility_paid", true);
 
 			// Apply category filter via worker IDs
 			if (workerIdsWithCategory !== null) {
@@ -199,6 +201,8 @@ export default function Workers() {
 			)
 			.eq("is_available", true)
 			.eq("worker_profile_completed", true);
+			// COMMENTED OUT - visibility payment requirement
+			// .eq("worker_visibility_paid", true);
 
 			if (workerIdsWithCategory !== null) {
 				if (workerIdsWithCategory.length === 0) {
