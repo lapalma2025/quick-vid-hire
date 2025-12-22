@@ -1,9 +1,9 @@
 import { 
   Hammer, 
-  Sparkles, 
+  Brush, 
   Truck, 
   PartyPopper, 
-  UtensilsCrossed, 
+  UtensilsCrossed,
   Flower2, 
   Car, 
   Wrench, 
@@ -16,7 +16,7 @@ import {
 
 const iconMap: Record<string, LucideIcon> = {
   'Prace fizyczne': Hammer,
-  'Sprzątanie': Sparkles,
+  'Sprzątanie': Brush,
   'Przeprowadzki': Truck,
   'Eventy': PartyPopper,
   'Gastronomia': UtensilsCrossed,
