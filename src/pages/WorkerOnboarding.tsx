@@ -781,64 +781,13 @@ export default function WorkerOnboarding() {
             </CardContent>
           </Card>
 
-          {/* Visibility Payment Option - optional, shown only if not paid */}
-          {!workerVisibilityPaid && (
-            <Card className="card-modern border-2 border-dashed border-primary/30">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-primary" />
-                  Widoczność w katalogu wykonawców
-                  <Badge variant="outline" className="ml-2">Opcjonalne</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Zapłać 5 zł, aby Twój profil był widoczny dla zleceniodawców szukających wykonawców
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl">
-                    <Sparkles className="h-5 w-5 text-primary mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium mb-1">Co zyskujesz?</p>
-                      <ul className="text-muted-foreground space-y-1">
-                        <li>• Twój profil pojawi się w katalogu wykonawców</li>
-                        <li>• Zleceniodawcy będą mogli Cię wyszukać i skontaktować się bezpośrednio</li>
-                        <li>• Jednorazowa opłata - bez ukrytych kosztów</li>
-                      </ul>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={handlePayForVisibility}
-                    disabled={paymentLoading}
-                    variant="outline"
-                    className="w-full h-12 rounded-xl gap-2"
-                  >
-                    {paymentLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Eye className="h-4 w-4" />
-                        Wykup widoczność za 5 zł
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Możesz to zrobić teraz lub później z poziomu profilu
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Visibility confirmed - compact success info */}
-          {workerVisibilityPaid && (
-            <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
-              <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-              <span className="text-sm font-medium">
-                Widoczność aktywna - zleceniodawcy mogą Cię znaleźć w katalogu wykonawców
-              </span>
-            </div>
-          )}
+          {/* Free visibility info */}
+          <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
+            <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="text-sm font-medium">
+              Darmowa widoczność - po aktywacji profilu zleceniodawcy będą mogli Cię znaleźć w katalogu wykonawców
+            </span>
+          </div>
 
           {/* Submit Button - FREE activation */}
           <div className="space-y-3">
