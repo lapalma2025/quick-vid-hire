@@ -54,12 +54,22 @@ export const Layout = ({ children }: LayoutProps) => {
                     Jak to działa
                   </Link>
                 </li>
+                {/* Cennik link commented out
                 <li>
                   <Link
                     to="/pricing"
                     className="text-muted-foreground hover:text-primary transition-colors duration-300"
                   >
                     Cennik
+                  </Link>
+                </li>
+                */}
+                <li>
+                  <Link
+                    to="/safety"
+                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                  >
+                    O platformie
                   </Link>
                 </li>
                 <li>
