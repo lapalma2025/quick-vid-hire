@@ -17,6 +17,7 @@ import {
 	Home,
 	UtensilsCrossed,
 	TreePine,
+	MessageCircle,
 } from "lucide-react";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 import { useEffect, useState, useRef } from "react";
@@ -497,7 +498,7 @@ export default function Index() {
 								{ icon: CheckCircle2, text: "Bez ukrytych opłat" },
 								{ icon: Users, text: "Rosnąca społeczność" },
 								{ icon: Zap, text: "Szybka publikacja" },
-								{ icon: Users, text: "Wsparcie społeczności" },
+								{ icon: MessageCircle, text: "Łatwy kontakt" },
 							].map((item, i) => (
 								<div
 									key={i}
