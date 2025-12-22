@@ -317,30 +317,30 @@ export default function Jobs() {
 			{/* Hero Header */}
 			<div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
 				<div className="absolute inset-0">
-					<div className="absolute top-10 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-					<div className="absolute bottom-10 right-10 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
+					<div className="absolute top-10 left-10 w-48 sm:w-64 h-48 sm:h-64 bg-primary/10 rounded-full blur-3xl" />
+					<div className="absolute bottom-10 right-10 w-36 sm:w-48 h-36 sm:h-48 bg-accent/10 rounded-full blur-3xl" />
 				</div>
-				<div ref={headerRef} className="container relative py-16 md:py-20">
-					<div className="flex items-center gap-3 mb-4">
-						<div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-							<Search className="h-6 w-6 text-primary" />
+				<div ref={headerRef} className="container relative py-10 sm:py-16 md:py-20 px-4 sm:px-6">
+					<div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+						<div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+							<Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
 						</div>
-						<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-							<Sparkles className="h-3.5 w-3.5" />
+						<div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
+							<Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
 							{totalCount} zleceń
 						</div>
 					</div>
-					<h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+					<h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold mb-2 sm:mb-4">
 						Znajdź idealne zlecenie
 					</h1>
-					<p className="text-lg text-muted-foreground max-w-2xl">
+					<p className="text-sm sm:text-lg text-muted-foreground max-w-2xl">
 						Przeglądaj dostępne zlecenia w Polsce i za granicą
 					</p>
 				</div>
 			</div>
 
-			<div className="container py-10">
-				<div className="grid lg:grid-cols-[380px_1fr] gap-10">
+			<div className="container py-6 sm:py-10 px-4 sm:px-6">
+				<div className="grid lg:grid-cols-[320px_1fr] xl:grid-cols-[380px_1fr] gap-6 sm:gap-10">
 					<aside className="hidden lg:block">
 						<div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/40 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 pr-2">
 							<JobFilters onFiltersChange={setFilters} />
@@ -354,22 +354,22 @@ export default function Jobs() {
 
 					<div>
 						{loading ? (
-							<div className="flex flex-col items-center justify-center py-24 gap-4">
-								<div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-									<Loader2 className="h-8 w-8 animate-spin text-primary" />
+							<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+								<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+									<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
 								</div>
-								<p className="text-muted-foreground font-medium">
+								<p className="text-muted-foreground font-medium text-sm sm:text-base">
 									Ładowanie zleceń...
 								</p>
 							</div>
 						) : jobs.length === 0 ? (
-							<div className="flex flex-col items-center justify-center py-24 gap-4">
-								<div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
-									<Search className="h-10 w-10 text-muted-foreground" />
+							<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+								<div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center">
+									<Search className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
 								</div>
 								<div className="text-center">
-									<p className="text-lg font-semibold mb-1">Brak zleceń</p>
-									<p className="text-muted-foreground">
+									<p className="text-base sm:text-lg font-semibold mb-1">Brak zleceń</p>
+									<p className="text-sm sm:text-base text-muted-foreground">
 										Nie znaleziono zleceń spełniających kryteria
 									</p>
 								</div>
@@ -378,7 +378,7 @@ export default function Jobs() {
 							<>
 								<div
 									ref={gridRef}
-									className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6"
+									className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
 								>
 									{jobs.map((job) => (
 										<div key={job.id} className="job-card">
