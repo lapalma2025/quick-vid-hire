@@ -418,7 +418,7 @@ export default function Index() {
 					</div>
 				</div>
 
-			{/* Floating Icons - visible on all screens */}
+				{/* Floating Icons - visible on all screens */}
 				<div
 					ref={floatingIconsRef}
 					className="flex justify-center items-center gap-2 xs:gap-3 sm:gap-4 md:gap-6 pb-8 sm:pb-10 pt-4 sm:pt-6 mb-2 sm:mb-4 flex-wrap px-4"
@@ -453,14 +453,6 @@ export default function Index() {
 
 				<div className="container relative z-10">
 					<div className="max-w-4xl mx-auto text-center space-y-8">
-						{/* Badge */}
-						<div className="stat-item inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-							<Sparkles className="h-5 w-5 text-primary" />
-							<span className="font-semibold text-primary">
-								Promocja startowa
-							</span>
-						</div>
-
 						{/* Main heading */}
 						<h2 className="stat-item text-3xl sm:text-4xl md:text-5xl font-display font-bold">
 							Dodawaj zlecenia{" "}
@@ -505,7 +497,9 @@ export default function Index() {
 									className="promo-pill flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300"
 								>
 									<item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-									<span className="font-medium text-xs sm:text-sm whitespace-nowrap">{item.text}</span>
+									<span className="font-medium text-xs sm:text-sm whitespace-nowrap">
+										{item.text}
+									</span>
 								</div>
 							))}
 						</div>
@@ -562,7 +556,10 @@ export default function Index() {
 			</section>
 
 			{/* How it works */}
-			<section ref={howItWorksRef} className="py-10 sm:py-14 md:py-18 bg-muted/30">
+			<section
+				ref={howItWorksRef}
+				className="py-10 sm:py-14 md:py-18 bg-muted/30"
+			>
 				<div className="container px-4 sm:px-6">
 					<div className="text-center mb-8 sm:mb-14">
 						<h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">
@@ -677,7 +674,9 @@ export default function Index() {
 									<h3 className="font-display font-bold text-base sm:text-lg mb-1 sm:mb-2">
 										{feature.title}
 									</h3>
-									<p className="text-muted-foreground text-xs sm:text-base leading-relaxed">{feature.desc}</p>
+									<p className="text-muted-foreground text-xs sm:text-base leading-relaxed">
+										{feature.desc}
+									</p>
 								</div>
 							</div>
 						))}
@@ -686,7 +685,10 @@ export default function Index() {
 			</section>
 
 			{/* CTA */}
-			<section ref={ctaRef} className="py-12 sm:py-16 md:py-20 relative overflow-hidden">
+			<section
+				ref={ctaRef}
+				className="py-12 sm:py-16 md:py-20 relative overflow-hidden"
+			>
 				{/* Animated background elements */}
 				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-primary/5 blur-3xl" />
 				<div className="cta-bg-element absolute -right-32 top-1/4 w-48 sm:w-80 h-48 sm:h-80 rounded-full bg-accent/10 blur-3xl" />
@@ -721,7 +723,9 @@ export default function Index() {
 									className="group h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-1 transition-all duration-300"
 								>
 									<Link to="/register" className="flex items-center gap-2">
-										<span className="whitespace-nowrap">Zarejestruj się za darmo</span>
+										<span className="whitespace-nowrap">
+											Zarejestruj się za darmo
+										</span>
 										<ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
 									</Link>
 								</Button>
@@ -821,7 +825,9 @@ export default function Index() {
 								<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-muted/50 flex items-center justify-center">
 									<item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
 								</div>
-								<span className="font-medium text-xs sm:text-sm">{item.label}</span>
+								<span className="font-medium text-xs sm:text-sm">
+									{item.label}
+								</span>
 							</div>
 						))}
 					</div>
