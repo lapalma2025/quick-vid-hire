@@ -10,6 +10,7 @@ import {
 	Users,
 	Star,
 	MapPin,
+	Gift,
 	CheckCircle2,
 	Sparkles,
 	Wrench,
@@ -369,7 +370,7 @@ export default function Index() {
 			>
 				{/* Background blobs */}
 				<div className="hero-blob absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-				<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animation-delay-2000" />
+				<div className="hero-blob absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animation-delay-2000" />
 				<div className="hero-blob absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
 
 				<div
@@ -447,9 +448,9 @@ export default function Index() {
 				className="py-12 md:py-20 border-y border-border/50 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden"
 			>
 				{/* Animated background elements */}
-				<div className="promo-bg-element absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-				<div className="promo-bg-element absolute bottom-0 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
-				<div className="promo-bg-element absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+				<div className="promo-bg-element absolute top-0 left-0 w-64 h-64 rounded-full blur-3xl" />
+				<div className="promo-bg-element absolute bottom-0 right-0 w-80 h-80 blur-3xl" />
+				<div className="promo-bg-element absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full blur-3xl" />
 
 				<div className="container relative z-10">
 					<div className="max-w-4xl mx-auto text-center space-y-8">
@@ -691,7 +692,7 @@ export default function Index() {
 			>
 				{/* Animated background elements */}
 				<div className="cta-bg-element absolute -left-32 top-1/2 -translate-y-1/2 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-primary/5 blur-3xl" />
-				<div className="cta-bg-element absolute -right-32 top-1/4 w-48 sm:w-80 h-48 sm:h-80 rounded-full bg-accent/10 blur-3xl" />
+				<div className="cta-bg-element absolute -right-32 top-1/4 w-48 sm:w-80 h-48 sm:h-80 rounded-full blur-3xl" />
 				<div className="cta-bg-element absolute left-1/2 -translate-x-1/2 -bottom-20 w-full max-w-[600px] h-40 rounded-full blur-3xl" />
 
 				<div className="container relative z-10 px-4 sm:px-6">
@@ -800,7 +801,9 @@ export default function Index() {
 
 							<div className="cta-card absolute bottom-0 right-8 w-48 p-4 rounded-2xl bg-primary text-primary-foreground shadow-xl">
 								<div className="flex items-center gap-3">
-									<Sparkles className="w-6 h-6" />
+									<div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+										<Gift className="w-5 h-5" />
+									</div>
 									<div>
 										<p className="font-bold text-2xl">0 zł</p>
 										<p className="text-xs opacity-80">całkowicie za darmo</p>

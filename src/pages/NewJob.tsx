@@ -352,7 +352,7 @@ export default function NewJob() {
 	};
 
 	const handleSubmit = async () => {
-		if (!profile || !paymentComplete) return;
+		if (!profile) return;
 
 		setLoading(true);
 
@@ -385,7 +385,10 @@ export default function NewJob() {
 				promotion_expires_at: addons.promote_24h
 					? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 					: null,
-				applicant_limit: form.applicant_limit && form.applicant_limit !== "unlimited" ? parseInt(form.applicant_limit) : null,
+				applicant_limit:
+					form.applicant_limit && form.applicant_limit !== "unlimited"
+						? parseInt(form.applicant_limit)
+						: null,
 			})
 			.select()
 			.single();
@@ -851,7 +854,7 @@ export default function NewJob() {
 								</div>
 							)}
 							*/}
-							
+
 							{/* FREE ACCESS INFO */}
 							<div className="rounded-lg border p-4 border-primary/30 bg-primary/5">
 								<div className="flex items-center gap-2 mb-2">
@@ -859,7 +862,9 @@ export default function NewJob() {
 									<span className="font-medium">Darmowy dostęp</span>
 								</div>
 								<p className="text-sm text-muted-foreground">
-									Publikacja ogłoszeń jest obecnie <strong className="text-primary">całkowicie darmowa</strong> dla wszystkich zarejestrowanych użytkowników!
+									Publikacja ogłoszeń jest obecnie{" "}
+									<strong className="text-primary">całkowicie darmowa</strong>{" "}
+									dla wszystkich zarejestrowanych użytkowników!
 								</p>
 							</div>
 
@@ -962,7 +967,7 @@ export default function NewJob() {
 							*/}
 
 							{/* Payment summary */}
-							<div className="space-y-4">
+							{/*<div className="space-y-4">
 								<div className="bg-muted rounded-lg p-4 space-y-2">
 									<div className="flex items-center gap-2 mb-3">
 										<CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -1018,7 +1023,7 @@ export default function NewJob() {
 										</Button>
 									</div>
 								)}
-							</div>
+							</div> */}
 						</CardContent>
 					</Card>
 				)}
@@ -1046,10 +1051,7 @@ export default function NewJob() {
 							<ArrowRight className="h-4 w-4 ml-2" />
 						</Button>
 					) : (
-						<Button
-							onClick={handleSubmit}
-							disabled={loading || !paymentComplete}
-						>
+						<Button onClick={handleSubmit} disabled={loading}>
 							{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 							Opublikuj zlecenie
 						</Button>
