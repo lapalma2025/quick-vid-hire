@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,11 +25,18 @@ import {
 	X,
 	Sparkles,
 	ArrowRight,
+	Map,
+	List,
 } from "lucide-react";
 import gsap from "gsap";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { WOJEWODZTWA } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import WorkersMap from "@/components/tracking/WorkersMap";
+import CreateOrderDialog from "@/components/tracking/CreateOrderDialog";
+import OrderTrackingClient from "@/components/tracking/OrderTrackingClient";
 
 const PAGE_SIZE = 10;
 
@@ -54,6 +61,8 @@ interface Category {
 }
 
 export default function Workers() {
+	const navigate = useNavigate();
+	const { profile, isAuthenticated } = useAuth();
 	const [workers, setWorkers] = useState<Worker[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -61,6 +70,9 @@ export default function Workers() {
 	const [hasMore, setHasMore] = useState(true);
 	const [totalCount, setTotalCount] = useState(0);
 	const [showFilters, setShowFilters] = useState(true);
+	const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+	const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+	const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
 	const gridRef = useRef<HTMLDivElement>(null);
 	const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -72,6 +84,21 @@ export default function Workers() {
 		maxRate: "",
 		minRating: "",
 	});
+
+	const handleOrderWorker = (workerId: string) => {
+		if (!isAuthenticated) {
+			toast.error('Musisz być zalogowany, aby zamówić wykonawcę');
+			navigate('/login');
+			return;
+		}
+		setSelectedWorkerId(workerId);
+		setOrderDialogOpen(true);
+	};
+
+	const handleOrderCreated = (orderId: string) => {
+		setOrderDialogOpen(false);
+		toast.success('Zamówienie utworzone! Śledź status poniżej.');
+	};
 
 	useEffect(() => {
 		fetchCategories();
@@ -346,20 +373,43 @@ export default function Workers() {
 			</div>
 
 			<div className="container py-6 sm:py-10 px-4 sm:px-6">
-				{/* Filters Toggle */}
-				<div className="flex justify-end mb-4 sm:mb-6">
+			{/* Active Order Tracking */}
+			<OrderTrackingClient />
+
+			{/* View Toggle & Filters */}
+			<div className="flex justify-between items-center mb-4 sm:mb-6">
+				<div className="flex gap-2">
 					<Button
-						variant="outline"
-						onClick={() => setShowFilters(!showFilters)}
-						className="gap-2 h-10 sm:h-12 text-sm sm:text-base"
+						variant={viewMode === 'list' ? 'default' : 'outline'}
+						onClick={() => setViewMode('list')}
+						size="sm"
+						className="gap-2"
 					>
-						<Filter className="h-4 w-4" />
-						Filtry
-						{hasActiveFilters && (
-							<Badge className="bg-primary text-white ml-1">!</Badge>
-						)}
+						<List className="h-4 w-4" />
+						Lista
+					</Button>
+					<Button
+						variant={viewMode === 'map' ? 'default' : 'outline'}
+						onClick={() => setViewMode('map')}
+						size="sm"
+						className="gap-2"
+					>
+						<Map className="h-4 w-4" />
+						Mapa
 					</Button>
 				</div>
+				<Button
+					variant="outline"
+					onClick={() => setShowFilters(!showFilters)}
+					className="gap-2 h-10 sm:h-12 text-sm sm:text-base"
+				>
+					<Filter className="h-4 w-4" />
+					Filtry
+					{hasActiveFilters && (
+						<Badge className="bg-primary text-white ml-1">!</Badge>
+					)}
+				</Button>
+			</div>
 
 				{showFilters && (
 				<Card className="mb-6 sm:mb-8 card-modern">
@@ -448,14 +498,28 @@ export default function Workers() {
 					</Card>
 				)}
 
-				{/* Workers Grid */}
-				{loading ? (
-					<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
-						<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-							<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-						</div>
-						<p className="text-muted-foreground font-medium text-sm sm:text-base">
-							Ładowanie wykonawców...
+			{/* Map View */}
+			{viewMode === 'map' && !loading && (
+				<div className="mb-8">
+					<WorkersMap 
+						workers={workers.map(w => ({
+							...w,
+							is_available: true,
+						}))} 
+						onOrderWorker={handleOrderWorker}
+						showOrderButton={true}
+					/>
+				</div>
+			)}
+
+			{/* Workers Grid */}
+			{viewMode === 'list' && loading ? (
+				<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+					<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+						<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
+					</div>
+					<p className="text-muted-foreground font-medium text-sm sm:text-base">
+						Ładowanie wykonawców...
 						</p>
 					</div>
 				) : workers.length === 0 ? (

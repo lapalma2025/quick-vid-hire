@@ -317,6 +317,63 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          client_id: string
+          client_lat: number | null
+          client_lng: number | null
+          created_at: string
+          eta_seconds: number | null
+          id: string
+          provider_id: string
+          provider_lat: number | null
+          provider_lng: number | null
+          status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          client_lat?: number | null
+          client_lng?: number | null
+          created_at?: string
+          eta_seconds?: number | null
+          id?: string
+          provider_id: string
+          provider_lat?: number | null
+          provider_lng?: number | null
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          client_lat?: number | null
+          client_lng?: number | null
+          created_at?: string
+          eta_seconds?: number | null
+          id?: string
+          provider_id?: string
+          provider_lat?: number | null
+          provider_lng?: number | null
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -454,6 +511,38 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_live_location: {
+        Row: {
+          id: string
+          lat: number
+          lng: number
+          provider_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lat: number
+          lng: number
+          provider_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lat?: number
+          lng?: number
+          provider_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_live_location_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -587,6 +676,13 @@ export type Database = {
         | "done"
         | "archived"
         | "closed"
+      order_status:
+        | "requested"
+        | "accepted"
+        | "en_route"
+        | "arrived"
+        | "done"
+        | "cancelled"
       user_role: "client" | "worker" | "admin"
     }
     CompositeTypes: {
@@ -722,6 +818,14 @@ export const Constants = {
         "done",
         "archived",
         "closed",
+      ],
+      order_status: [
+        "requested",
+        "accepted",
+        "en_route",
+        "arrived",
+        "done",
+        "cancelled",
       ],
       user_role: ["client", "worker", "admin"],
     },
