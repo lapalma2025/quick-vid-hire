@@ -1,629 +1,563 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { StarRating } from "@/components/ui/star-rating";
 import {
-	MapPin,
-	Banknote,
-	Loader2,
-	Users,
-	Filter,
-	X,
-	ArrowRight,
-	Map,
-	List,
+  Loader2,
+  Users,
+  Filter,
+  X,
+  Map,
+  List,
 } from "lucide-react";
 import gsap from "gsap";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { WOJEWODZTWA } from "@/lib/constants";
 import WorkersMap from "@/components/workers/WorkersMap";
+import { WorkerListItem } from "@/components/workers/WorkerListItem";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 interface Worker {
-	id: string;
-	name: string | null;
-	avatar_url: string | null;
-	bio: string | null;
-	wojewodztwo: string | null;
-	miasto: string | null;
-	hourly_rate: number | null;
-	rating_avg: number;
-	rating_count: number;
-	categories: { name: string }[];
-	available_from: string | null;
-	available_to: string | null;
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  wojewodztwo: string | null;
+  miasto: string | null;
+  hourly_rate: number | null;
+  rating_avg: number;
+  rating_count: number;
+  categories: { name: string }[];
+  available_from: string | null;
+  available_to: string | null;
 }
 
 interface Category {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 }
 
 export default function Workers() {
-	const [workers, setWorkers] = useState<Worker[]>([]);
-	const [categories, setCategories] = useState<Category[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [hasMore, setHasMore] = useState(true);
-	const [totalCount, setTotalCount] = useState(0);
-	const [showFilters, setShowFilters] = useState(true);
-	const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-	const gridRef = useRef<HTMLDivElement>(null);
-	const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
+  const [highlightedWorkerId, setHighlightedWorkerId] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-	const [filters, setFilters] = useState({
-		wojewodztwo: "",
-		miasto: "",
-		category: "",
-		minRate: "",
-		maxRate: "",
-		minRating: "",
-	});
+  const [filters, setFilters] = useState({
+    wojewodztwo: "",
+    miasto: "",
+    category: "",
+    minRate: "",
+    maxRate: "",
+    minRating: "",
+  });
 
-	useEffect(() => {
-		fetchCategories();
-	}, []);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-	// Initial fetch with category filtering
-	const fetchWorkers = useCallback(async () => {
-		setLoading(true);
-		setWorkers([]);
-		setHasMore(true);
+  // Initial fetch with category filtering
+  const fetchWorkers = useCallback(async () => {
+    setLoading(true);
+    setWorkers([]);
+    setHasMore(true);
 
-		try {
-			// If category filter is active, first get worker IDs that have this category
-			let workerIdsWithCategory: string[] | null = null;
+    try {
+      let workerIdsWithCategory: string[] | null = null;
 
-			if (filters.category) {
-				const { data: categoryData } = await supabase
-					.from("categories")
-					.select("id")
-					.eq("name", filters.category)
-					.maybeSingle();
+      if (filters.category) {
+        const { data: categoryData } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("name", filters.category)
+          .maybeSingle();
 
-				if (categoryData) {
-					const { data: workerCats } = await supabase
-						.from("worker_categories")
-						.select("worker_id")
-						.eq("category_id", categoryData.id);
+        if (categoryData) {
+          const { data: workerCats } = await supabase
+            .from("worker_categories")
+            .select("worker_id")
+            .eq("category_id", categoryData.id);
 
-					workerIdsWithCategory = workerCats?.map((wc) => wc.worker_id) || [];
-				} else {
-					// Category not found, return empty
-					setWorkers([]);
-					setTotalCount(0);
-					setHasMore(false);
-					setLoading(false);
-					return;
-				}
-			}
+          workerIdsWithCategory = workerCats?.map((wc) => wc.worker_id) || [];
+        } else {
+          setWorkers([]);
+          setTotalCount(0);
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
+      }
 
-			let query = supabase
-				.from("profiles")
-				.select(
-					`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
-					{ count: "exact" }
-			)
-			.eq("is_available", true)
-			.eq("worker_profile_completed", true);
-			// COMMENTED OUT - visibility payment requirement
-			// .eq("worker_visibility_paid", true);
+      let query = supabase
+        .from("profiles")
+        .select(
+          `id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
+          { count: "exact" }
+        )
+        .eq("is_available", true)
+        .eq("worker_profile_completed", true);
 
-			// Apply category filter via worker IDs
-			if (workerIdsWithCategory !== null) {
-				if (workerIdsWithCategory.length === 0) {
-					setWorkers([]);
-					setTotalCount(0);
-					setHasMore(false);
-					setLoading(false);
-					return;
-				}
-				query = query.in("id", workerIdsWithCategory);
-			}
+      if (workerIdsWithCategory !== null) {
+        if (workerIdsWithCategory.length === 0) {
+          setWorkers([]);
+          setTotalCount(0);
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
+        query = query.in("id", workerIdsWithCategory);
+      }
 
-			if (filters.wojewodztwo)
-				query = query.eq("wojewodztwo", filters.wojewodztwo);
-			if (filters.miasto) query = query.eq("miasto", filters.miasto);
-			if (filters.minRate)
-				query = query.gte("hourly_rate", parseFloat(filters.minRate));
-			if (filters.maxRate)
-				query = query.lte("hourly_rate", parseFloat(filters.maxRate));
-			if (filters.minRating)
-				query = query.gte("rating_avg", parseFloat(filters.minRating));
+      if (filters.wojewodztwo)
+        query = query.eq("wojewodztwo", filters.wojewodztwo);
+      if (filters.miasto) query = query.eq("miasto", filters.miasto);
+      if (filters.minRate)
+        query = query.gte("hourly_rate", parseFloat(filters.minRate));
+      if (filters.maxRate)
+        query = query.lte("hourly_rate", parseFloat(filters.maxRate));
+      if (filters.minRating)
+        query = query.gte("rating_avg", parseFloat(filters.minRating));
 
-			const { data, error, count } = await query
-				.order("rating_avg", { ascending: false })
-				.range(0, PAGE_SIZE - 1);
+      const { data, error, count } = await query
+        .order("rating_avg", { ascending: false })
+        .range(0, PAGE_SIZE - 1);
 
-			if (data && !error) {
-				let workersData = data.map((w: any) => ({
-					...w,
-					categories:
-						w.worker_categories
-							?.map((wc: any) => wc.category)
-							.filter(Boolean) || [],
-				}));
+      if (data && !error) {
+        let workersData = data.map((w: any) => ({
+          ...w,
+          categories:
+            w.worker_categories
+              ?.map((wc: any) => wc.category)
+              .filter(Boolean) || [],
+        }));
 
-				setWorkers(workersData);
-				setTotalCount(count || 0);
-				setHasMore(data.length === PAGE_SIZE);
-			}
-		} catch (err) {
-			console.error("Error fetching workers:", err);
-		}
-		setLoading(false);
-	}, [filters]);
+        setWorkers(workersData);
+        setTotalCount(count || 0);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      console.error("Error fetching workers:", err);
+    }
+    setLoading(false);
+  }, [filters]);
 
-	// Load more
-	const loadMore = useCallback(async () => {
-		if (loadingMore || !hasMore) return;
+  // Load more
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
 
-		setLoadingMore(true);
+    setLoadingMore(true);
 
-		try {
-			// If category filter is active, first get worker IDs that have this category
-			let workerIdsWithCategory: string[] | null = null;
+    try {
+      let workerIdsWithCategory: string[] | null = null;
 
-			if (filters.category) {
-				const { data: categoryData } = await supabase
-					.from("categories")
-					.select("id")
-					.eq("name", filters.category)
-					.maybeSingle();
+      if (filters.category) {
+        const { data: categoryData } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("name", filters.category)
+          .maybeSingle();
 
-				if (categoryData) {
-					const { data: workerCats } = await supabase
-						.from("worker_categories")
-						.select("worker_id")
-						.eq("category_id", categoryData.id);
+        if (categoryData) {
+          const { data: workerCats } = await supabase
+            .from("worker_categories")
+            .select("worker_id")
+            .eq("category_id", categoryData.id);
 
-					workerIdsWithCategory = workerCats?.map((wc) => wc.worker_id) || [];
-				}
-			}
+          workerIdsWithCategory = workerCats?.map((wc) => wc.worker_id) || [];
+        }
+      }
 
-			let query = supabase
-				.from("profiles")
-				.select(
-				`id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
-			)
-			.eq("is_available", true)
-			.eq("worker_profile_completed", true);
-			// COMMENTED OUT - visibility payment requirement
-			// .eq("worker_visibility_paid", true);
+      let query = supabase
+        .from("profiles")
+        .select(
+          `id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
+        )
+        .eq("is_available", true)
+        .eq("worker_profile_completed", true);
 
-			if (workerIdsWithCategory !== null) {
-				if (workerIdsWithCategory.length === 0) {
-					setHasMore(false);
-					setLoadingMore(false);
-					return;
-				}
-				query = query.in("id", workerIdsWithCategory);
-			}
+      if (workerIdsWithCategory !== null) {
+        if (workerIdsWithCategory.length === 0) {
+          setHasMore(false);
+          setLoadingMore(false);
+          return;
+        }
+        query = query.in("id", workerIdsWithCategory);
+      }
 
-			if (filters.wojewodztwo)
-				query = query.eq("wojewodztwo", filters.wojewodztwo);
-			if (filters.miasto) query = query.eq("miasto", filters.miasto);
-			if (filters.minRate)
-				query = query.gte("hourly_rate", parseFloat(filters.minRate));
-			if (filters.maxRate)
-				query = query.lte("hourly_rate", parseFloat(filters.maxRate));
-			if (filters.minRating)
-				query = query.gte("rating_avg", parseFloat(filters.minRating));
+      if (filters.wojewodztwo)
+        query = query.eq("wojewodztwo", filters.wojewodztwo);
+      if (filters.miasto) query = query.eq("miasto", filters.miasto);
+      if (filters.minRate)
+        query = query.gte("hourly_rate", parseFloat(filters.minRate));
+      if (filters.maxRate)
+        query = query.lte("hourly_rate", parseFloat(filters.maxRate));
+      if (filters.minRating)
+        query = query.gte("rating_avg", parseFloat(filters.minRating));
 
-			const { data, error } = await query
-				.order("rating_avg", { ascending: false })
-				.range(workers.length, workers.length + PAGE_SIZE - 1);
+      const { data, error } = await query
+        .order("rating_avg", { ascending: false })
+        .range(workers.length, workers.length + PAGE_SIZE - 1);
 
-			if (!error && data) {
-				let newWorkersData = data.map((w: any) => ({
-					...w,
-					categories:
-						w.worker_categories
-							?.map((wc: any) => wc.category)
-							.filter(Boolean) || [],
-				}));
+      if (!error && data) {
+        let newWorkersData = data.map((w: any) => ({
+          ...w,
+          categories:
+            w.worker_categories
+              ?.map((wc: any) => wc.category)
+              .filter(Boolean) || [],
+        }));
 
-				setWorkers((prev) => [...prev, ...newWorkersData]);
-				setHasMore(data.length === PAGE_SIZE);
-			}
-		} catch (err) {
-			console.error("Error loading more workers:", err);
-		}
-		setLoadingMore(false);
-	}, [workers.length, loadingMore, hasMore, filters]);
+        setWorkers((prev) => [...prev, ...newWorkersData]);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      console.error("Error loading more workers:", err);
+    }
+    setLoadingMore(false);
+  }, [workers.length, loadingMore, hasMore, filters]);
 
-	useEffect(() => {
-		fetchWorkers();
-	}, [filters]);
+  useEffect(() => {
+    fetchWorkers();
+  }, [filters]);
 
-	// Intersection Observer for infinite scroll
-	useEffect(() => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
-					loadMore();
-				}
-			},
-			{ threshold: 0.1 }
-		);
+  useEffect(() => {
+    if (listRef.current && !loading && workers.length > 0) {
+      gsap.fromTo(
+        listRef.current.querySelectorAll(".worker-item:not(.animated)"),
+        { opacity: 0, x: -20 },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.3,
+          stagger: 0.05,
+          ease: "power2.out",
+          onComplete: function () {
+            this.targets().forEach((el: Element) =>
+              el.classList.add("animated")
+            );
+          },
+        }
+      );
+    }
+  }, [loading, workers]);
 
-		if (loadMoreRef.current) {
-			observer.observe(loadMoreRef.current);
-		}
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("name");
+    if (data) setCategories(data);
+  };
 
-		return () => observer.disconnect();
-	}, [hasMore, loading, loadingMore, loadMore]);
+  const updateFilter = (key: string, value: string) => {
+    setFilters((prev) => {
+      const updated = { ...prev, [key]: value };
+      if (key === "wojewodztwo") updated.miasto = "";
+      return updated;
+    });
+  };
 
-	useEffect(() => {
-		if (gridRef.current && !loading && workers.length > 0) {
-			gsap.fromTo(
-				gridRef.current.querySelectorAll(".worker-card:not(.animated)"),
-				{ opacity: 0, y: 30, scale: 0.95 },
-				{
-					opacity: 1,
-					y: 0,
-					scale: 1,
-					duration: 0.5,
-					stagger: 0.08,
-					ease: "power3.out",
-					onComplete: function () {
-						this.targets().forEach((el: Element) =>
-							el.classList.add("animated")
-						);
-					},
-				}
-			);
-		}
-	}, [loading, workers]);
+  const clearFilters = () => {
+    setFilters({
+      wojewodztwo: "",
+      miasto: "",
+      category: "",
+      minRate: "",
+      maxRate: "",
+      minRating: "",
+    });
+  };
 
-	const fetchCategories = async () => {
-		const { data } = await supabase
-			.from("categories")
-			.select("id, name")
-			.order("name");
-		if (data) setCategories(data);
-	};
+  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
 
-	const updateFilter = (key: string, value: string) => {
-		setFilters((prev) => {
-			const updated = { ...prev, [key]: value };
-			if (key === "wojewodztwo") updated.miasto = "";
-			return updated;
-		});
-	};
+  const handleWorkerHover = (workerId: string | null) => {
+    setHighlightedWorkerId(workerId);
+  };
 
-	const clearFilters = () => {
-		setFilters({
-			wojewodztwo: "",
-			miasto: "",
-			category: "",
-			minRate: "",
-			maxRate: "",
-			minRating: "",
-		});
-	};
+  return (
+    <Layout>
+      {/* Header */}
+      <div className="border-b border-border bg-background">
+        <div className="container py-4 px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold">Wykonawcy</h1>
+                <p className="text-sm text-muted-foreground">
+                  {totalCount} dostępnych wykonawców
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* View Toggle */}
+              <div className="flex bg-muted rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'map' ? 'default' : 'ghost'}
+                  onClick={() => setViewMode('map')}
+                  size="sm"
+                  className="gap-2 h-8"
+                >
+                  <Map className="h-4 w-4" />
+                  <span className="hidden sm:inline">Mapa</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  onClick={() => setViewMode('list')}
+                  size="sm"
+                  className="gap-2 h-8"
+                >
+                  <List className="h-4 w-4" />
+                  <span className="hidden sm:inline">Lista</span>
+                </Button>
+              </div>
+              
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                size="sm"
+                className="gap-2 h-8"
+              >
+                <Filter className="h-4 w-4" />
+                Filtry
+                {hasActiveFilters && (
+                  <Badge className="bg-primary text-white h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    !
+                  </Badge>
+                )}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Filters */}
+          {showFilters && (
+            <Card className="mt-4">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Województwo</Label>
+                    <WojewodztwoSelect
+                      value={filters.wojewodztwo}
+                      onChange={(v) => updateFilter("wojewodztwo", v)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Miasto</Label>
+                    <CityAutocomplete
+                      value={filters.miasto}
+                      onChange={(miasto, region) => {
+                        const newFilters = { ...filters, miasto };
+                        if (region) {
+                          const normalizedRegion = region.toLowerCase();
+                          const matchedWojewodztwo = WOJEWODZTWA.find(
+                            (w) => w.toLowerCase() === normalizedRegion
+                          );
+                          if (matchedWojewodztwo) {
+                            newFilters.wojewodztwo = matchedWojewodztwo;
+                          }
+                        }
+                        setFilters(newFilters);
+                      }}
+                      placeholder="Wpisz miasto..."
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Kategoria</Label>
+                    <Select
+                      value={filters.category || "__all__"}
+                      onValueChange={(v) =>
+                        updateFilter("category", v === "__all__" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Wszystkie" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Wszystkie</SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={c.name}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Min. ocena</Label>
+                    <Select
+                      value={filters.minRating || "__all__"}
+                      onValueChange={(v) =>
+                        updateFilter("minRating", v === "__all__" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Dowolna" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Dowolna</SelectItem>
+                        <SelectItem value="3">3+ ⭐</SelectItem>
+                        <SelectItem value="4">4+ ⭐</SelectItem>
+                        <SelectItem value="4.5">4.5+ ⭐</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="mt-3 gap-2 text-xs"
+                  >
+                    <X className="h-3 w-3" />
+                    Wyczyść filtry
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
 
-	const hasActiveFilters = Object.values(filters).some((v) => v !== "");
-
-	return (
-		<Layout>
-			{/* Hero Header */}
-			<div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
-				<div className="absolute inset-0">
-					<div className="absolute top-10 right-10 w-48 sm:w-64 h-48 sm:h-64 bg-primary/10 rounded-full blur-3xl" />
-					<div className="absolute bottom-10 left-10 w-36 sm:w-48 h-36 sm:h-48 bg-accent/10 rounded-full blur-3xl" />
-				</div>
-				<div className="container relative py-10 sm:py-16 md:py-20 px-4 sm:px-6">
-					<div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-						<div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-							<Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-						</div>
-						<div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
-							{totalCount} wykonawców
-						</div>
-					</div>
-					<h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold mb-2 sm:mb-4">
-						Znajdź idealnego wykonawcę
-					</h1>
-					<p className="text-sm sm:text-lg text-muted-foreground max-w-2xl">
-						Przeglądaj profile zweryfikowanych wykonawców i wybierz najlepszego
-						do swojego zlecenia
-					</p>
-				</div>
-			</div>
-
-			<div className="container py-6 sm:py-10 px-4 sm:px-6">
-
-			{/* View Toggle & Filters */}
-			<div className="flex justify-between items-center mb-4 sm:mb-6">
-				<div className="flex gap-2">
-					<Button
-						variant={viewMode === 'list' ? 'default' : 'outline'}
-						onClick={() => setViewMode('list')}
-						size="sm"
-						className="gap-2"
-					>
-						<List className="h-4 w-4" />
-						Lista
-					</Button>
-					<Button
-						variant={viewMode === 'map' ? 'default' : 'outline'}
-						onClick={() => setViewMode('map')}
-						size="sm"
-						className="gap-2"
-					>
-						<Map className="h-4 w-4" />
-						Mapa
-					</Button>
-				</div>
-				<Button
-					variant="outline"
-					onClick={() => setShowFilters(!showFilters)}
-					className="gap-2 h-10 sm:h-12 text-sm sm:text-base"
-				>
-					<Filter className="h-4 w-4" />
-					Filtry
-					{hasActiveFilters && (
-						<Badge className="bg-primary text-white ml-1">!</Badge>
-					)}
-				</Button>
-			</div>
-
-				{showFilters && (
-				<Card className="mb-6 sm:mb-8 card-modern">
-						<CardContent className="p-4 sm:p-6">
-							<div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-								<div className="space-y-1.5 sm:space-y-2">
-									<Label className="font-medium text-xs sm:text-sm">Województwo</Label>
-									<WojewodztwoSelect
-										value={filters.wojewodztwo}
-										onChange={(v) => updateFilter("wojewodztwo", v)}
-									/>
-								</div>
-								<div className="space-y-1.5 sm:space-y-2">
-									<Label className="font-medium text-xs sm:text-sm">Miasto</Label>
-									<CityAutocomplete
-										value={filters.miasto}
-										onChange={(miasto, region) => {
-											const newFilters = { ...filters, miasto };
-											if (region) {
-												const normalizedRegion = region.toLowerCase();
-												const matchedWojewodztwo = WOJEWODZTWA.find(
-													(w) => w.toLowerCase() === normalizedRegion
-												);
-												if (matchedWojewodztwo) {
-													newFilters.wojewodztwo = matchedWojewodztwo;
-												}
-											}
-											setFilters(newFilters);
-										}}
-										placeholder="Wpisz miasto..."
-									/>
-								</div>
-								<div className="space-y-1.5 sm:space-y-2">
-									<Label className="font-medium text-xs sm:text-sm">Kategoria</Label>
-									<Select
-										value={filters.category || "__all__"}
-										onValueChange={(v) =>
-											updateFilter("category", v === "__all__" ? "" : v)
-										}
-									>
-										<SelectTrigger className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm">
-											<SelectValue placeholder="Wszystkie" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="__all__">Wszystkie</SelectItem>
-											{categories.map((c) => (
-												<SelectItem key={c.id} value={c.name}>
-													{c.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="space-y-1.5 sm:space-y-2">
-									<Label className="font-medium text-xs sm:text-sm">Min. ocena</Label>
-									<Select
-										value={filters.minRating || "__all__"}
-										onValueChange={(v) =>
-											updateFilter("minRating", v === "__all__" ? "" : v)
-										}
-									>
-										<SelectTrigger className="h-10 sm:h-11 rounded-lg sm:rounded-xl text-sm">
-											<SelectValue placeholder="Dowolna" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="__all__">Dowolna</SelectItem>
-											<SelectItem value="3">3+ ⭐</SelectItem>
-											<SelectItem value="4">4+ ⭐</SelectItem>
-											<SelectItem value="4.5">4.5+ ⭐</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-							{hasActiveFilters && (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={clearFilters}
-									className="mt-3 sm:mt-4 gap-2 text-xs sm:text-sm"
-								>
-									<X className="h-3 w-3 sm:h-4 sm:w-4" />
-									Wyczyść filtry
-								</Button>
-							)}
-						</CardContent>
-					</Card>
-				)}
-
-			{/* Map View */}
-			{viewMode === 'map' && !loading && (
-				<div className="mb-8">
-					<WorkersMap 
-						workers={workers.map(w => ({
-							...w,
-							is_available: true,
-						}))} 
-					/>
-				</div>
-			)}
-
-			{/* Workers Grid */}
-			{viewMode === 'list' && (
-				<>
-					{loading ? (
-						<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
-							<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-								<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-							</div>
-							<p className="text-muted-foreground font-medium text-sm sm:text-base">
-								Ładowanie wykonawców...
-							</p>
-						</div>
-					) : workers.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
-							<div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center">
-								<Users className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
-							</div>
-							<p className="text-base sm:text-lg font-semibold">Brak wyników</p>
-							<p className="text-sm sm:text-base text-muted-foreground text-center">
-								Nie znaleziono wykonawców. Spróbuj zmienić filtry.
-							</p>
-						</div>
-					) : (
-						<>
-							<div
-								ref={gridRef}
-								className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-							>
-								{workers.map((worker) => (
-									<Link key={worker.id} to={`/worker/${worker.id}`}>
-										<Card className="worker-card card-modern h-full group">
-											<CardContent className="p-6">
-												<div className="flex items-start gap-4 mb-4">
-													<Avatar className="h-16 w-16 rounded-xl border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
-														<AvatarImage src={worker.avatar_url || ""} />
-														<AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary-glow text-white rounded-xl">
-															{worker.name?.charAt(0)?.toUpperCase() || "W"}
-														</AvatarFallback>
-													</Avatar>
-													<div className="flex-1 min-w-0">
-														<h3 className="font-display font-bold text-lg truncate group-hover:text-primary transition-colors">
-															{worker.name || "Wykonawca"}
-														</h3>
-														{worker.rating_count > 0 ? (
-															<div className="flex items-center gap-1 text-sm">
-																<StarRating
-																	value={worker.rating_avg}
-																	readonly
-																	size="sm"
-																/>
-																<span className="text-muted-foreground">
-																	({worker.rating_count})
-																</span>
-															</div>
-														) : (
-															<span className="text-sm text-muted-foreground">
-																Nowy wykonawca
-															</span>
-														)}
-													</div>
-													<div className="opacity-0 group-hover:opacity-100 transition-opacity">
-														<div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-															<ArrowRight className="h-5 w-5 text-primary" />
-														</div>
-													</div>
-												</div>
-
-												{worker.bio && (
-													<p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-														{worker.bio}
-													</p>
-												)}
-
-												<div className="space-y-2">
-													{(worker.miasto || worker.wojewodztwo) && (
-														<div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-															<MapPin className="h-3.5 w-3.5" />
-															<span>
-																{worker.miasto}
-																{worker.miasto && worker.wojewodztwo && ", "}
-																{worker.wojewodztwo}
-															</span>
-														</div>
-													)}
-													{worker.hourly_rate && (
-														<div className="flex items-center gap-1.5 text-sm">
-															<Banknote className="h-3.5 w-3.5 text-primary" />
-															<span className="font-semibold text-primary">
-																{worker.hourly_rate} zł/h
-															</span>
-														</div>
-													)}
-												</div>
-
-												{worker.categories.length > 0 && (
-													<div className="flex flex-wrap gap-1.5 mt-4">
-														{worker.categories.slice(0, 3).map((cat, idx) => (
-															<Badge
-																key={idx}
-																variant="secondary"
-																className="text-xs"
-															>
-																{cat.name}
-															</Badge>
-														))}
-														{worker.categories.length > 3 && (
-															<Badge
-																variant="outline"
-																className="text-xs"
-															>
-																+{worker.categories.length - 3}
-															</Badge>
-														)}
-													</div>
-												)}
-											</CardContent>
-										</Card>
-									</Link>
-								))}
-							</div>
-
-							{/* Load more trigger */}
-							<div ref={loadMoreRef} className="py-8 flex justify-center">
-								{loadingMore && (
-									<div className="flex items-center gap-3 text-muted-foreground">
-										<Loader2 className="h-5 w-5 animate-spin" />
-										<span>Ładowanie kolejnych...</span>
-									</div>
-								)}
-								{!hasMore && workers.length > 0 && (
-									<p className="text-muted-foreground text-sm">
-										Wyświetlono wszystkich wykonawców ({workers.length})
-									</p>
-								)}
-							</div>
-						</>
-					)}
-				</>
-			)}
-
-			</div>
-		</Layout>
-	);
+      {/* Main Content */}
+      {viewMode === 'map' ? (
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)]">
+          {/* Left: Worker List */}
+          <div className="w-full lg:w-[400px] xl:w-[450px] border-r border-border bg-background overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-border bg-muted/30">
+              <p className="text-sm font-medium">
+                {workers.length} wykonawców
+              </p>
+            </div>
+            
+            {loading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-muted-foreground text-sm">Ładowanie...</span>
+                </div>
+              </div>
+            ) : workers.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center p-4">
+                <div className="text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">Brak wykonawców</p>
+                </div>
+              </div>
+            ) : (
+              <ScrollArea className="flex-1">
+                <div ref={listRef} className="p-3 space-y-2">
+                  {workers.map((worker) => (
+                    <div key={worker.id} className="worker-item">
+                      <WorkerListItem
+                        worker={worker}
+                        isHighlighted={highlightedWorkerId === worker.id}
+                        onHover={handleWorkerHover}
+                      />
+                    </div>
+                  ))}
+                  
+                  {hasMore && (
+                    <div ref={loadMoreRef} className="py-4 text-center">
+                      <Button 
+                        variant="outline" 
+                        onClick={loadMore}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Ładowanie...
+                          </>
+                        ) : (
+                          'Załaduj więcej'
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+          
+          {/* Right: Map */}
+          <div className="flex-1 h-[400px] lg:h-full">
+            <WorkersMap
+              workers={workers.map(w => ({
+                ...w,
+                is_available: true,
+              }))}
+              highlightedWorkerId={highlightedWorkerId}
+              onMarkerHover={handleWorkerHover}
+            />
+          </div>
+        </div>
+      ) : (
+        /* List View Only */
+        <div className="container py-6 px-4 sm:px-6">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground">Ładowanie wykonawców...</p>
+            </div>
+          ) : workers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Users className="h-16 w-16 text-muted-foreground" />
+              <p className="text-muted-foreground">Brak wykonawców spełniających kryteria</p>
+            </div>
+          ) : (
+            <div ref={listRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {workers.map((worker) => (
+                <div key={worker.id} className="worker-item">
+                  <WorkerListItem worker={worker} />
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {hasMore && !loading && (
+            <div className="py-8 text-center">
+              <Button 
+                variant="outline" 
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Ładowanie...
+                  </>
+                ) : (
+                  'Załaduj więcej'
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </Layout>
+  );
 }

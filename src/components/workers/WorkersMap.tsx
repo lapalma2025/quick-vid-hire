@@ -1,16 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link } from 'react-router-dom';
-import { StarRating } from '@/components/ui/star-rating';
-import { MapPin, Loader2, Banknote } from 'lucide-react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface Worker {
   id: string;
   name: string | null;
   avatar_url: string | null;
-  is_available: boolean;
+  is_available?: boolean;
   hourly_rate: number | null;
   rating_avg: number;
   miasto: string | null;
@@ -19,6 +14,9 @@ interface Worker {
 
 interface WorkersMapProps {
   workers: Worker[];
+  highlightedWorkerId?: string | null;
+  onMarkerClick?: (workerId: string) => void;
+  onMarkerHover?: (workerId: string | null) => void;
 }
 
 // City coordinates for Poland (approximate)
@@ -105,10 +103,26 @@ function getWorkerCoordinates(worker: Worker): [number, number] | null {
   return null;
 }
 
-export default function WorkersMap({ workers }: WorkersMapProps) {
+export default function WorkersMap({ 
+  workers, 
+  highlightedWorkerId, 
+  onMarkerClick,
+  onMarkerHover 
+}: WorkersMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<Map<string, any>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+
+  // Memoize worker coordinates to avoid recalculating
+  const workerCoords = useMemo(() => {
+    const coords = new Map<string, [number, number]>();
+    workers.forEach(worker => {
+      const coord = getWorkerCoordinates(worker);
+      if (coord) coords.set(worker.id, coord);
+    });
+    return coords;
+  }, [workers]);
 
   useEffect(() => {
     let isMounted = true;
@@ -134,126 +148,125 @@ export default function WorkersMap({ workers }: WorkersMapProps) {
         mapInstanceRef.current = map;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Create custom icons
-        const createIcon = (isAvailable: boolean) => L.divIcon({
+        // Create markers
+        const createIcon = (isHighlighted: boolean) => L.divIcon({
           className: 'custom-marker',
           html: `
-            <div style="
-              width: 40px;
-              height: 40px;
+            <div class="worker-marker ${isHighlighted ? 'highlighted' : ''}" style="
+              width: ${isHighlighted ? '48px' : '36px'};
+              height: ${isHighlighted ? '48px' : '36px'};
               border-radius: 50%;
-              background: ${isAvailable ? 'linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%))' : 'linear-gradient(135deg, hsl(220, 10%, 50%), hsl(220, 10%, 60%))'};
-              border: 3px solid white;
-              box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+              background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%));
+              border: ${isHighlighted ? '4px' : '3px'} solid white;
+              box-shadow: ${isHighlighted ? '0 6px 20px rgba(0,0,0,0.4)' : '0 3px 10px rgba(0,0,0,0.25)'};
               display: flex;
               align-items: center;
               justify-content: center;
-              transition: transform 0.2s ease;
+              cursor: pointer;
+              transform: ${isHighlighted ? 'scale(1.1)' : 'scale(1)'};
+              transition: all 0.2s ease;
+              z-index: ${isHighlighted ? '1000' : '1'};
             ">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <svg width="${isHighlighted ? '20' : '16'}" height="${isHighlighted ? '20' : '16'}" viewBox="0 0 24 24" fill="white">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
           `,
-          iconSize: [40, 40],
-          iconAnchor: [20, 40],
-          popupAnchor: [0, -40],
+          iconSize: [isHighlighted ? 48 : 36, isHighlighted ? 48 : 36],
+          iconAnchor: [isHighlighted ? 24 : 18, isHighlighted ? 48 : 36],
+          popupAnchor: [0, isHighlighted ? -48 : -36],
         });
 
-        // Add markers for workers
         workers.forEach(worker => {
-          const coords = getWorkerCoordinates(worker);
+          const coords = workerCoords.get(worker.id);
           if (!coords) return;
 
-          const marker = L.marker(coords, { icon: createIcon(worker.is_available) }).addTo(map);
-          
+          const marker = L.marker(coords, { 
+            icon: createIcon(false),
+          }).addTo(map);
+
+          // Store marker reference
+          markersRef.current.set(worker.id, { marker, L });
+
+          // Create minimal popup
           const popupContent = `
-            <div style="min-width: 220px; font-family: system-ui, -apple-system, sans-serif;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="padding: 8px; min-width: 180px; font-family: system-ui, -apple-system, sans-serif;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
                 <div style="
-                  width: 48px; 
-                  height: 48px; 
-                  border-radius: 12px; 
+                  width: 40px; 
+                  height: 40px; 
+                  border-radius: 10px; 
                   background: ${worker.avatar_url ? `url(${worker.avatar_url}) center/cover` : 'linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%))'};
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   color: white;
                   font-weight: 600;
-                  font-size: 18px;
-                  border: 2px solid hsl(152, 76%, 42%, 0.2);
+                  font-size: 16px;
                 ">${!worker.avatar_url ? (worker.name?.charAt(0)?.toUpperCase() || 'W') : ''}</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">${worker.name || 'Wykonawca'}</div>
-                  <div style="
-                    display: inline-block;
-                    padding: 2px 8px;
-                    border-radius: 12px;
-                    font-size: 11px;
-                    font-weight: 500;
-                    background: ${worker.is_available ? 'hsl(152, 76%, 42%)' : 'hsl(220, 10%, 70%)'};
-                    color: white;
-                  ">${worker.is_available ? 'Dostępny' : 'Niedostępny'}</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${worker.name || 'Wykonawca'}</div>
+                  ${worker.rating_avg > 0 ? `
+                    <div style="display: flex; align-items: center; gap: 3px; font-size: 12px; color: #666;">
+                      <span style="color: hsl(45, 93%, 47%);">★</span>
+                      <span>${worker.rating_avg.toFixed(1)}</span>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
-              
-              <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; font-size: 13px; color: hsl(220, 10%, 40%);">
-                ${worker.rating_avg > 0 ? `
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <span style="color: hsl(45, 93%, 47%);">★</span>
-                    <span style="font-weight: 500;">${worker.rating_avg.toFixed(1)}</span>
-                  </div>
-                ` : ''}
-                ${worker.miasto ? `
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                      <circle cx="12" cy="10" r="3"/>
-                    </svg>
-                    ${worker.miasto}
-                  </div>
-                ` : ''}
-                ${worker.hourly_rate ? `
-                  <div style="display: flex; align-items: center; gap: 4px; color: hsl(152, 76%, 42%); font-weight: 600;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                      <line x1="1" y1="10" x2="23" y2="10"/>
-                    </svg>
-                    ${worker.hourly_rate} zł/h
-                  </div>
-                ` : ''}
-              </div>
-              
+              ${worker.miasto ? `
+                <div style="font-size: 12px; color: #888; margin-bottom: 10px; display: flex; align-items: center; gap: 4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  ${worker.miasto}
+                </div>
+              ` : ''}
+              ${worker.hourly_rate ? `
+                <div style="font-size: 13px; color: hsl(152, 76%, 42%); font-weight: 600; margin-bottom: 10px;">
+                  ${worker.hourly_rate} zł/h
+                </div>
+              ` : ''}
               <a 
                 href="/worker/${worker.id}" 
                 style="
                   display: block;
                   width: 100%;
-                  padding: 10px 16px;
+                  padding: 8px 12px;
                   background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 50%));
                   color: white;
                   text-align: center;
-                  border-radius: 10px;
+                  border-radius: 8px;
                   font-weight: 600;
-                  font-size: 13px;
+                  font-size: 12px;
                   text-decoration: none;
-                  transition: opacity 0.2s;
                 "
-                onmouseover="this.style.opacity='0.9'"
-                onmouseout="this.style.opacity='1'"
               >
-                Zobacz profil
+                Zobacz profil →
               </a>
             </div>
           `;
 
           marker.bindPopup(popupContent, {
-            maxWidth: 280,
-            className: 'modern-popup'
+            maxWidth: 240,
+            className: 'worker-popup'
+          });
+
+          marker.on('mouseover', () => {
+            onMarkerHover?.(worker.id);
+          });
+
+          marker.on('mouseout', () => {
+            onMarkerHover?.(null);
+          });
+
+          marker.on('click', () => {
+            onMarkerClick?.(worker.id);
           });
         });
 
@@ -272,13 +285,61 @@ export default function WorkersMap({ workers }: WorkersMapProps) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      markersRef.current.clear();
     };
-  }, [workers]);
+  }, [workers, workerCoords]);
+
+  // Update marker styles when highlighted worker changes
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    markersRef.current.forEach((data, workerId) => {
+      const { marker, L } = data;
+      const isHighlighted = workerId === highlightedWorkerId;
+      
+      const newIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+          <div class="worker-marker ${isHighlighted ? 'highlighted' : ''}" style="
+            width: ${isHighlighted ? '48px' : '36px'};
+            height: ${isHighlighted ? '48px' : '36px'};
+            border-radius: 50%;
+            background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%));
+            border: ${isHighlighted ? '4px' : '3px'} solid white;
+            box-shadow: ${isHighlighted ? '0 6px 20px rgba(0,0,0,0.4)' : '0 3px 10px rgba(0,0,0,0.25)'};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          ">
+            <svg width="${isHighlighted ? '20' : '16'}" height="${isHighlighted ? '20' : '16'}" viewBox="0 0 24 24" fill="white">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+        `,
+        iconSize: [isHighlighted ? 48 : 36, isHighlighted ? 48 : 36],
+        iconAnchor: [isHighlighted ? 24 : 18, isHighlighted ? 48 : 36],
+        popupAnchor: [0, isHighlighted ? -48 : -36],
+      });
+
+      marker.setIcon(newIcon);
+
+      // Pan to highlighted marker
+      if (isHighlighted) {
+        const coords = workerCoords.get(workerId);
+        if (coords) {
+          mapInstanceRef.current.panTo(coords, { animate: true });
+        }
+      }
+    });
+  }, [highlightedWorkerId, workerCoords]);
 
   return (
-    <div className="relative">
+    <div className="relative h-full w-full">
       {isLoading && (
-        <div className="absolute inset-0 z-10 rounded-2xl bg-muted flex items-center justify-center">
+        <div className="absolute inset-0 z-10 bg-muted flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="text-muted-foreground font-medium">Ładowanie mapy...</span>
@@ -287,41 +348,27 @@ export default function WorkersMap({ workers }: WorkersMapProps) {
       )}
       <div 
         ref={mapRef} 
-        className="h-[500px] rounded-2xl overflow-hidden border border-border shadow-lg"
+        className="h-full w-full"
         style={{ background: 'hsl(var(--muted))' }}
       />
       
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-border z-[1000]">
-        <div className="flex items-center gap-4 text-xs font-medium">
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-full bg-primary shadow-sm" />
-            <span>Dostępny</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3.5 h-3.5 rounded-full bg-muted-foreground/50 shadow-sm" />
-            <span>Niedostępny</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Map overlay info */}
-      <div className="absolute top-4 right-4 bg-background/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-border z-[1000]">
+      {/* Info badge */}
+      <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border z-[1000]">
         <div className="text-sm font-medium">
-          {workers.filter(w => getWorkerCoordinates(w)).length} wykonawców na mapie
+          {workerCoords.size} wykonawców na mapie
         </div>
       </div>
 
       <style>{`
-        .modern-popup .leaflet-popup-content-wrapper {
-          border-radius: 16px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        .worker-popup .leaflet-popup-content-wrapper {
+          border-radius: 12px;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.15);
           padding: 0;
         }
-        .modern-popup .leaflet-popup-content {
-          margin: 16px;
+        .worker-popup .leaflet-popup-content {
+          margin: 0;
         }
-        .modern-popup .leaflet-popup-tip {
+        .worker-popup .leaflet-popup-tip {
           box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
       `}</style>
