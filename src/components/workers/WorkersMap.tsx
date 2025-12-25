@@ -112,18 +112,32 @@ export default function WorkersMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
+  const leafletRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
 
-  // Memoize worker coordinates to avoid recalculating
-  const workerCoords = useMemo(() => {
+  // Stabilize worker coordinates with a ref to avoid recalculation on every render
+  const workerCoordsRef = useRef<Map<string, [number, number]>>(new Map());
+  
+  // Only recalculate coords when worker IDs change
+  const workerIds = useMemo(() => workers.map(w => w.id).sort().join(','), [workers]);
+  
+  useEffect(() => {
     const coords = new Map<string, [number, number]>();
     workers.forEach(worker => {
-      const coord = getWorkerCoordinates(worker);
-      if (coord) coords.set(worker.id, coord);
+      // Reuse existing coords if available to prevent marker jumping
+      const existing = workerCoordsRef.current.get(worker.id);
+      if (existing) {
+        coords.set(worker.id, existing);
+      } else {
+        const coord = getWorkerCoordinates(worker);
+        if (coord) coords.set(worker.id, coord);
+      }
     });
-    return coords;
-  }, [workers]);
+    workerCoordsRef.current = coords;
+  }, [workerIds, workers]);
 
+  // Initialize map only once
   useEffect(() => {
     let isMounted = true;
 
@@ -136,6 +150,8 @@ export default function WorkersMap({
 
         if (!isMounted || !mapRef.current) return;
 
+        leafletRef.current = L;
+
         // Fix default marker icons
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
@@ -144,133 +160,20 @@ export default function WorkersMap({
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         });
 
-        const map = L.map(mapRef.current).setView([52.0693, 19.4803], 6);
+        const map = L.map(mapRef.current, {
+          preferCanvas: true, // Better performance
+        }).setView([52.0693, 19.4803], 6);
+        
         mapInstanceRef.current = map;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap'
+          attribution: '© OpenStreetMap',
+          updateWhenIdle: true,
+          updateWhenZooming: false,
         }).addTo(map);
 
-        // Create markers
-        const createIcon = (isHighlighted: boolean) => L.divIcon({
-          className: 'custom-marker',
-          html: `
-            <div class="worker-marker ${isHighlighted ? 'highlighted' : ''}" style="
-              width: ${isHighlighted ? '48px' : '36px'};
-              height: ${isHighlighted ? '48px' : '36px'};
-              border-radius: 50%;
-              background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%));
-              border: ${isHighlighted ? '4px' : '3px'} solid white;
-              box-shadow: ${isHighlighted ? '0 6px 20px rgba(0,0,0,0.4)' : '0 3px 10px rgba(0,0,0,0.25)'};
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              cursor: pointer;
-              transform: ${isHighlighted ? 'scale(1.1)' : 'scale(1)'};
-              transition: all 0.2s ease;
-              z-index: ${isHighlighted ? '1000' : '1'};
-            ">
-              <svg width="${isHighlighted ? '20' : '16'}" height="${isHighlighted ? '20' : '16'}" viewBox="0 0 24 24" fill="white">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-          `,
-          iconSize: [isHighlighted ? 48 : 36, isHighlighted ? 48 : 36],
-          iconAnchor: [isHighlighted ? 24 : 18, isHighlighted ? 48 : 36],
-          popupAnchor: [0, isHighlighted ? -48 : -36],
-        });
-
-        workers.forEach(worker => {
-          const coords = workerCoords.get(worker.id);
-          if (!coords) return;
-
-          const marker = L.marker(coords, { 
-            icon: createIcon(false),
-          }).addTo(map);
-
-          // Store marker reference
-          markersRef.current.set(worker.id, { marker, L });
-
-          // Create minimal popup
-          const popupContent = `
-            <div style="padding: 8px; min-width: 180px; font-family: system-ui, -apple-system, sans-serif;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <div style="
-                  width: 40px; 
-                  height: 40px; 
-                  border-radius: 10px; 
-                  background: ${worker.avatar_url ? `url(${worker.avatar_url}) center/cover` : 'linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%))'};
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  color: white;
-                  font-weight: 600;
-                  font-size: 16px;
-                ">${!worker.avatar_url ? (worker.name?.charAt(0)?.toUpperCase() || 'W') : ''}</div>
-                <div style="flex: 1; min-width: 0;">
-                  <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${worker.name || 'Wykonawca'}</div>
-                  ${worker.rating_avg > 0 ? `
-                    <div style="display: flex; align-items: center; gap: 3px; font-size: 12px; color: #666;">
-                      <span style="color: hsl(45, 93%, 47%);">★</span>
-                      <span>${worker.rating_avg.toFixed(1)}</span>
-                    </div>
-                  ` : ''}
-                </div>
-              </div>
-              ${worker.miasto ? `
-                <div style="font-size: 12px; color: #888; margin-bottom: 10px; display: flex; align-items: center; gap: 4px;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                  </svg>
-                  ${worker.miasto}
-                </div>
-              ` : ''}
-              ${worker.hourly_rate ? `
-                <div style="font-size: 13px; color: hsl(152, 76%, 42%); font-weight: 600; margin-bottom: 10px;">
-                  ${worker.hourly_rate} zł/h
-                </div>
-              ` : ''}
-              <a 
-                href="/worker/${worker.id}" 
-                style="
-                  display: block;
-                  width: 100%;
-                  padding: 8px 12px;
-                  background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 50%));
-                  color: white;
-                  text-align: center;
-                  border-radius: 8px;
-                  font-weight: 600;
-                  font-size: 12px;
-                  text-decoration: none;
-                "
-              >
-                Zobacz profil →
-              </a>
-            </div>
-          `;
-
-          marker.bindPopup(popupContent, {
-            maxWidth: 240,
-            className: 'worker-popup'
-          });
-
-          marker.on('mouseover', () => {
-            onMarkerHover?.(worker.id);
-          });
-
-          marker.on('mouseout', () => {
-            onMarkerHover?.(null);
-          });
-
-          marker.on('click', () => {
-            onMarkerClick?.(worker.id);
-          });
-        });
-
         setIsLoading(false);
+        setMapReady(true);
       } catch (error) {
         console.error('Failed to load map:', error);
         setIsLoading(false);
@@ -287,54 +190,154 @@ export default function WorkersMap({
       }
       markersRef.current.clear();
     };
-  }, [workers, workerCoords]);
+  }, []);
+
+  // Create icon helper
+  const createIcon = useRef((L: any, isHighlighted: boolean) => L.divIcon({
+    className: 'custom-marker',
+    html: `
+      <div class="worker-marker" style="
+        width: ${isHighlighted ? '48px' : '36px'};
+        height: ${isHighlighted ? '48px' : '36px'};
+        border-radius: 50%;
+        background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%));
+        border: ${isHighlighted ? '4px' : '3px'} solid white;
+        box-shadow: ${isHighlighted ? '0 6px 20px rgba(0,0,0,0.4)' : '0 3px 10px rgba(0,0,0,0.25)'};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      ">
+        <svg width="${isHighlighted ? '20' : '16'}" height="${isHighlighted ? '20' : '16'}" viewBox="0 0 24 24" fill="white">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [isHighlighted ? 48 : 36, isHighlighted ? 48 : 36],
+    iconAnchor: [isHighlighted ? 24 : 18, isHighlighted ? 48 : 36],
+    popupAnchor: [0, isHighlighted ? -48 : -36],
+  })).current;
+
+  // Update markers when workers change (separate from map init)
+  useEffect(() => {
+    if (!mapReady || !mapInstanceRef.current || !leafletRef.current) return;
+
+    const L = leafletRef.current;
+    const map = mapInstanceRef.current;
+    const currentWorkerIds = new Set(workers.map(w => w.id));
+
+    // Remove markers for workers no longer present
+    markersRef.current.forEach((marker, workerId) => {
+      if (!currentWorkerIds.has(workerId)) {
+        map.removeLayer(marker);
+        markersRef.current.delete(workerId);
+      }
+    });
+
+    // Add or update markers
+    workers.forEach(worker => {
+      const coords = workerCoordsRef.current.get(worker.id);
+      if (!coords) return;
+
+      // Skip if marker already exists
+      if (markersRef.current.has(worker.id)) return;
+
+      const marker = L.marker(coords, { 
+        icon: createIcon(L, worker.id === highlightedWorkerId),
+      }).addTo(map);
+
+      markersRef.current.set(worker.id, marker);
+
+      // Create popup
+      const popupContent = `
+        <div style="padding: 8px; min-width: 180px; font-family: system-ui, -apple-system, sans-serif;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <div style="
+              width: 40px; 
+              height: 40px; 
+              border-radius: 10px; 
+              background: ${worker.avatar_url ? `url(${worker.avatar_url}) center/cover` : 'linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%))'};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: 600;
+              font-size: 16px;
+            ">${!worker.avatar_url ? (worker.name?.charAt(0)?.toUpperCase() || 'W') : ''}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${worker.name || 'Wykonawca'}</div>
+              ${worker.rating_avg > 0 ? `
+                <div style="display: flex; align-items: center; gap: 3px; font-size: 12px; color: #666;">
+                  <span style="color: hsl(45, 93%, 47%);">★</span>
+                  <span>${worker.rating_avg.toFixed(1)}</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          ${worker.miasto ? `
+            <div style="font-size: 12px; color: #888; margin-bottom: 10px; display: flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              ${worker.miasto}
+            </div>
+          ` : ''}
+          ${worker.hourly_rate ? `
+            <div style="font-size: 13px; color: hsl(152, 76%, 42%); font-weight: 600; margin-bottom: 10px;">
+              ${worker.hourly_rate} zł/h
+            </div>
+          ` : ''}
+          <a 
+            href="/worker/${worker.id}" 
+            style="
+              display: block;
+              width: 100%;
+              padding: 8px 12px;
+              background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 50%));
+              color: white;
+              text-align: center;
+              border-radius: 8px;
+              font-weight: 600;
+              font-size: 12px;
+              text-decoration: none;
+            "
+          >
+            Zobacz profil →
+          </a>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent, {
+        maxWidth: 240,
+        className: 'worker-popup'
+      });
+
+      marker.on('mouseover', () => onMarkerHover?.(worker.id));
+      marker.on('mouseout', () => onMarkerHover?.(null));
+      marker.on('click', () => onMarkerClick?.(worker.id));
+    });
+  }, [mapReady, workers, highlightedWorkerId, onMarkerClick, onMarkerHover, createIcon]);
 
   // Update marker styles when highlighted worker changes
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapReady || !leafletRef.current) return;
 
-    markersRef.current.forEach((data, workerId) => {
-      const { marker, L } = data;
+    const L = leafletRef.current;
+
+    markersRef.current.forEach((marker, workerId) => {
       const isHighlighted = workerId === highlightedWorkerId;
-      
-      const newIcon = L.divIcon({
-        className: 'custom-marker',
-        html: `
-          <div class="worker-marker ${isHighlighted ? 'highlighted' : ''}" style="
-            width: ${isHighlighted ? '48px' : '36px'};
-            height: ${isHighlighted ? '48px' : '36px'};
-            border-radius: 50%;
-            background: linear-gradient(135deg, hsl(152, 76%, 42%), hsl(152, 76%, 52%));
-            border: ${isHighlighted ? '4px' : '3px'} solid white;
-            box-shadow: ${isHighlighted ? '0 6px 20px rgba(0,0,0,0.4)' : '0 3px 10px rgba(0,0,0,0.25)'};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          ">
-            <svg width="${isHighlighted ? '20' : '16'}" height="${isHighlighted ? '20' : '16'}" viewBox="0 0 24 24" fill="white">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-        `,
-        iconSize: [isHighlighted ? 48 : 36, isHighlighted ? 48 : 36],
-        iconAnchor: [isHighlighted ? 24 : 18, isHighlighted ? 48 : 36],
-        popupAnchor: [0, isHighlighted ? -48 : -36],
-      });
+      marker.setIcon(createIcon(L, isHighlighted));
 
-      marker.setIcon(newIcon);
-
-      // Pan to highlighted marker
-      if (isHighlighted) {
-        const coords = workerCoords.get(workerId);
+      if (isHighlighted && mapInstanceRef.current) {
+        const coords = workerCoordsRef.current.get(workerId);
         if (coords) {
-          mapInstanceRef.current.panTo(coords, { animate: true });
+          mapInstanceRef.current.panTo(coords, { animate: true, duration: 0.3 });
         }
       }
     });
-  }, [highlightedWorkerId, workerCoords]);
+  }, [highlightedWorkerId, createIcon]);
 
   return (
     <div className="relative h-full w-full">
@@ -352,10 +355,9 @@ export default function WorkersMap({
         style={{ background: 'hsl(var(--muted))' }}
       />
       
-      {/* Info badge */}
       <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border z-[1000]">
         <div className="text-sm font-medium">
-          {workerCoords.size} wykonawców na mapie
+          {workerCoordsRef.current.size} wykonawców na mapie
         </div>
       </div>
 
