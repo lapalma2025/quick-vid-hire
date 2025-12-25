@@ -1,5 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
 import { StarRating } from '@/components/ui/star-rating';
-import { MapPin, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Loader2 } from 'lucide-react';
 
 // Fix for default marker icons in Leaflet with React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -129,22 +128,18 @@ const WOJEWODZTWO_CENTERS: Record<string, [number, number]> = {
 };
 
 function getWorkerCoordinates(worker: Worker): [number, number] | null {
-  // If worker has explicit coordinates
   if (worker.lat && worker.lng) {
     return [worker.lat, worker.lng];
   }
   
-  // Try to get coordinates from city
   if (worker.miasto) {
     const cityCoords = CITY_COORDINATES[worker.miasto];
     if (cityCoords) {
-      // Add small random offset so markers don't overlap
       const offset = () => (Math.random() - 0.5) * 0.02;
       return [cityCoords[0] + offset(), cityCoords[1] + offset()];
     }
   }
   
-  // Fallback to województwo center
   if (worker.wojewodztwo) {
     const wojCoords = WOJEWODZTWO_CENTERS[worker.wojewodztwo];
     if (wojCoords) {
@@ -156,37 +151,19 @@ function getWorkerCoordinates(worker: Worker): [number, number] | null {
   return null;
 }
 
-export default function WorkersMap({ workers, onOrderWorker, showOrderButton = true }: WorkersMapProps) {
-  const [mapReady, setMapReady] = useState(false);
+// Inner map component that uses react-leaflet
+function WorkersMapInner({ workers, onOrderWorker, showOrderButton }: WorkersMapProps) {
+  const { MapContainer, TileLayer, Marker, Popup } = require('react-leaflet');
   const mapRef = useRef<L.Map | null>(null);
 
-  // Poland center
   const defaultCenter: [number, number] = [52.0693, 19.4803];
 
-  // Filter workers with valid coordinates
   const workersWithCoords = workers
     .map(worker => ({
       ...worker,
       coordinates: getWorkerCoordinates(worker)
     }))
     .filter(w => w.coordinates !== null);
-
-  useEffect(() => {
-    // Small delay to ensure proper mounting
-    const timer = setTimeout(() => setMapReady(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!mapReady) {
-    return (
-      <div className="h-[400px] md:h-[500px] rounded-2xl bg-muted flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-muted-foreground">Ładowanie mapy...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-border shadow-lg">
@@ -281,5 +258,32 @@ export default function WorkersMap({ workers, onOrderWorker, showOrderButton = t
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WorkersMap({ workers, onOrderWorker, showOrderButton = true }: WorkersMapProps) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="h-[500px] rounded-2xl bg-muted flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-muted-foreground">Ładowanie mapy...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <WorkersMapInner 
+      workers={workers} 
+      onOrderWorker={onOrderWorker} 
+      showOrderButton={showOrderButton} 
+    />
   );
 }

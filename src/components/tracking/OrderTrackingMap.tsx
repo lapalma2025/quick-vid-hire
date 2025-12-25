@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent } from '@/components/ui/card';
@@ -91,7 +90,7 @@ async function fetchRoute(from: [number, number], to: [number, number]): Promise
     
     if (data.code === 'Ok' && data.routes && data.routes[0]) {
       const coords = data.routes[0].geometry.coordinates.map((c: [number, number]) => [c[1], c[0]] as [number, number]);
-      const duration = data.routes[0].duration; // seconds
+      const duration = data.routes[0].duration;
       return { route: coords, duration };
     }
     return null;
@@ -117,7 +116,8 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   done: { label: 'Zakończono', color: 'bg-muted' },
 };
 
-export default function OrderTrackingMap({
+// Inner map component
+function OrderTrackingMapInner({
   clientLat,
   clientLng,
   providerLat,
@@ -126,16 +126,15 @@ export default function OrderTrackingMap({
   etaSeconds,
   status,
 }: OrderTrackingMapProps) {
+  const { MapContainer, TileLayer, Marker, Popup, Polyline } = require('react-leaflet');
   const [route, setRoute] = useState<[number, number][]>([]);
   const [calculatedEta, setCalculatedEta] = useState<number | null>(null);
-  const [mapReady, setMapReady] = useState(false);
   const lastRouteUpdate = useRef<number>(0);
 
   const clientPos: [number, number] = [clientLat, clientLng];
   const providerPos: [number, number] = [providerLat, providerLng];
 
   const updateRoute = useCallback(async () => {
-    // Don't update more than once every 15 seconds
     const now = Date.now();
     if (now - lastRouteUpdate.current < 15000) return;
     lastRouteUpdate.current = now;
@@ -149,30 +148,12 @@ export default function OrderTrackingMap({
 
   useEffect(() => {
     updateRoute();
-    
-    // Update route periodically
     const interval = setInterval(updateRoute, 30000);
     return () => clearInterval(interval);
   }, [updateRoute]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setMapReady(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   const displayEta = etaSeconds || calculatedEta;
   const statusInfo = STATUS_LABELS[status] || STATUS_LABELS.accepted;
-
-  if (!mapReady) {
-    return (
-      <div className="h-[400px] rounded-2xl bg-muted flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-muted-foreground">Ładowanie mapy...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -221,7 +202,6 @@ export default function OrderTrackingMap({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {/* Route polyline */}
           {route.length > 0 && (
             <Polyline 
               positions={route} 
@@ -231,7 +211,6 @@ export default function OrderTrackingMap({
             />
           )}
           
-          {/* Client marker */}
           <Marker position={clientPos} icon={createClientIcon()}>
             <Popup>
               <div className="p-2">
@@ -243,7 +222,6 @@ export default function OrderTrackingMap({
             </Popup>
           </Marker>
           
-          {/* Provider marker */}
           <Marker position={providerPos} icon={createProviderIcon(status === 'en_route')}>
             <Popup>
               <div className="p-2">
@@ -257,7 +235,6 @@ export default function OrderTrackingMap({
           </Marker>
         </MapContainer>
 
-        {/* Live indicator */}
         {status === 'en_route' && (
           <div className="absolute top-4 right-4 flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded-full text-sm font-medium z-[1000]">
             <span className="relative flex h-2 w-2">
@@ -270,4 +247,25 @@ export default function OrderTrackingMap({
       </div>
     </div>
   );
+}
+
+export default function OrderTrackingMap(props: OrderTrackingMapProps) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="h-[400px] rounded-2xl bg-muted flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-muted-foreground">Ładowanie mapy...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return <OrderTrackingMapInner {...props} />;
 }
