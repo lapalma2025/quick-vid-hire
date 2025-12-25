@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Navigation, Clock, MapPin, User } from 'lucide-react';
+import { Navigation, Clock, MapPin, User, Loader2 } from 'lucide-react';
 
 // Fix for default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -66,7 +66,6 @@ const createProviderIcon = (isMoving: boolean) => {
         display: flex;
         align-items: center;
         justify-content: center;
-        ${isMoving ? 'animation: pulse 1.5s infinite;' : ''}
       ">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
           <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C1.4 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h1"/>
@@ -81,18 +80,6 @@ const createProviderIcon = (isMoving: boolean) => {
     popupAnchor: [0, -48],
   });
 };
-
-// Component to fit map bounds
-function FitBounds({ clientPos, providerPos }: { clientPos: [number, number], providerPos: [number, number] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    const bounds = L.latLngBounds([clientPos, providerPos]);
-    map.fitBounds(bounds, { padding: [50, 50] });
-  }, [clientPos, providerPos, map]);
-  
-  return null;
-}
 
 // Fetch route from OSRM
 async function fetchRoute(from: [number, number], to: [number, number]): Promise<{ route: [number, number][], duration: number } | null> {
@@ -169,7 +156,8 @@ export default function OrderTrackingMap({
   }, [updateRoute]);
 
   useEffect(() => {
-    setMapReady(true);
+    const timer = setTimeout(() => setMapReady(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const displayEta = etaSeconds || calculatedEta;
@@ -179,7 +167,7 @@ export default function OrderTrackingMap({
     return (
       <div className="h-[400px] rounded-2xl bg-muted flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <Navigation className="h-8 w-8 animate-pulse text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="text-muted-foreground">Ładowanie mapy...</span>
         </div>
       </div>
@@ -233,8 +221,6 @@ export default function OrderTrackingMap({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          <FitBounds clientPos={clientPos} providerPos={providerPos} />
-          
           {/* Route polyline */}
           {route.length > 0 && (
             <Polyline 
@@ -282,14 +268,6 @@ export default function OrderTrackingMap({
           </div>
         )}
       </div>
-
-      {/* Add pulse animation style */}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-      `}</style>
     </div>
   );
 }

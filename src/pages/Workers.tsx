@@ -513,138 +513,153 @@ export default function Workers() {
 			)}
 
 			{/* Workers Grid */}
-			{viewMode === 'list' && loading ? (
-				<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
-					<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-						<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-					</div>
-					<p className="text-muted-foreground font-medium text-sm sm:text-base">
-						Ładowanie wykonawców...
-						</p>
-					</div>
-				) : workers.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
-						<div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center">
-							<Users className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
+			{viewMode === 'list' && (
+				<>
+					{loading ? (
+						<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+							<div className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+								<Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
+							</div>
+							<p className="text-muted-foreground font-medium text-sm sm:text-base">
+								Ładowanie wykonawców...
+							</p>
 						</div>
-						<p className="text-base sm:text-lg font-semibold">Brak wyników</p>
-						<p className="text-sm sm:text-base text-muted-foreground text-center">
-							Nie znaleziono wykonawców. Spróbuj zmienić filtry.
-						</p>
-					</div>
-				) : (
-					<>
-						<div
-							ref={gridRef}
-							className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-						>
-							{workers.map((worker) => (
-								<Link key={worker.id} to={`/worker/${worker.id}`}>
-									<Card className="worker-card card-modern h-full group">
-										<CardContent className="p-6">
-											<div className="flex items-start gap-4 mb-4">
-												<Avatar className="h-16 w-16 rounded-xl border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
-													<AvatarImage src={worker.avatar_url || ""} />
-													<AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary-glow text-white rounded-xl">
-														{worker.name?.charAt(0)?.toUpperCase() || "W"}
-													</AvatarFallback>
-												</Avatar>
-												<div className="flex-1 min-w-0">
-													<h3 className="font-display font-bold text-lg truncate group-hover:text-primary transition-colors">
-														{worker.name || "Wykonawca"}
-													</h3>
-													{worker.rating_count > 0 ? (
-														<div className="flex items-center gap-1 text-sm">
-															<StarRating
-																value={worker.rating_avg}
-																readonly
-																size="sm"
-															/>
-															<span className="text-muted-foreground">
-																({worker.rating_count})
+					) : workers.length === 0 ? (
+						<div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3 sm:gap-4">
+							<div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl sm:rounded-2xl bg-muted flex items-center justify-center">
+								<Users className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
+							</div>
+							<p className="text-base sm:text-lg font-semibold">Brak wyników</p>
+							<p className="text-sm sm:text-base text-muted-foreground text-center">
+								Nie znaleziono wykonawców. Spróbuj zmienić filtry.
+							</p>
+						</div>
+					) : (
+						<>
+							<div
+								ref={gridRef}
+								className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+							>
+								{workers.map((worker) => (
+									<Link key={worker.id} to={`/worker/${worker.id}`}>
+										<Card className="worker-card card-modern h-full group">
+											<CardContent className="p-6">
+												<div className="flex items-start gap-4 mb-4">
+													<Avatar className="h-16 w-16 rounded-xl border-2 border-primary/10 group-hover:border-primary/30 transition-colors">
+														<AvatarImage src={worker.avatar_url || ""} />
+														<AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary-glow text-white rounded-xl">
+															{worker.name?.charAt(0)?.toUpperCase() || "W"}
+														</AvatarFallback>
+													</Avatar>
+													<div className="flex-1 min-w-0">
+														<h3 className="font-display font-bold text-lg truncate group-hover:text-primary transition-colors">
+															{worker.name || "Wykonawca"}
+														</h3>
+														{worker.rating_count > 0 ? (
+															<div className="flex items-center gap-1 text-sm">
+																<StarRating
+																	value={worker.rating_avg}
+																	readonly
+																	size="sm"
+																/>
+																<span className="text-muted-foreground">
+																	({worker.rating_count})
+																</span>
+															</div>
+														) : (
+															<span className="text-sm text-muted-foreground">
+																Nowy wykonawca
+															</span>
+														)}
+													</div>
+													<div className="opacity-0 group-hover:opacity-100 transition-opacity">
+														<div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+															<ArrowRight className="h-5 w-5 text-primary" />
+														</div>
+													</div>
+												</div>
+
+												{worker.bio && (
+													<p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+														{worker.bio}
+													</p>
+												)}
+
+												<div className="space-y-2">
+													{(worker.miasto || worker.wojewodztwo) && (
+														<div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+															<MapPin className="h-3.5 w-3.5" />
+															<span>
+																{worker.miasto}
+																{worker.miasto && worker.wojewodztwo && ", "}
+																{worker.wojewodztwo}
 															</span>
 														</div>
-													) : (
-														<span className="text-sm text-muted-foreground">
-															Nowy wykonawca
-														</span>
+													)}
+													{worker.hourly_rate && (
+														<div className="flex items-center gap-1.5 text-sm">
+															<Banknote className="h-3.5 w-3.5 text-primary" />
+															<span className="font-semibold text-primary">
+																{worker.hourly_rate} zł/h
+															</span>
+														</div>
 													)}
 												</div>
-												<div className="opacity-0 group-hover:opacity-100 transition-opacity">
-													<div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-														<ArrowRight className="h-5 w-5 text-primary" />
-													</div>
-												</div>
-											</div>
 
-											{worker.bio && (
-												<p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-													{worker.bio}
-												</p>
-											)}
-
-											<div className="space-y-2">
-												{(worker.miasto || worker.wojewodztwo) && (
-													<div className="flex items-center gap-2 text-sm text-muted-foreground">
-														<MapPin className="h-4 w-4 text-primary/60" />
-														{[worker.miasto, worker.wojewodztwo]
-															.filter(Boolean)
-															.join(", ")}
-													</div>
-												)}
-												{worker.hourly_rate && (
-													<div className="flex items-center gap-2 text-sm">
-														<Banknote className="h-4 w-4 text-primary" />
-														<span className="font-display font-bold text-primary">
-															{worker.hourly_rate} zł/h
-														</span>
+												{worker.categories.length > 0 && (
+													<div className="flex flex-wrap gap-1.5 mt-4">
+														{worker.categories.slice(0, 3).map((cat, idx) => (
+															<Badge
+																key={idx}
+																variant="secondary"
+																className="text-xs"
+															>
+																{cat.name}
+															</Badge>
+														))}
+														{worker.categories.length > 3 && (
+															<Badge
+																variant="outline"
+																className="text-xs"
+															>
+																+{worker.categories.length - 3}
+															</Badge>
+														)}
 													</div>
 												)}
-											</div>
+											</CardContent>
+										</Card>
+									</Link>
+								))}
+							</div>
 
-											{worker.categories.length > 0 && (
-												<div className="flex flex-wrap gap-1.5 mt-4 pt-4 border-t border-border/50">
-													{worker.categories.slice(0, 3).map((cat, i) => (
-														<Badge
-															key={i}
-															variant="secondary"
-															className="text-xs rounded-lg"
-														>
-															{cat.name}
-														</Badge>
-													))}
-													{worker.categories.length > 3 && (
-														<Badge
-															variant="outline"
-															className="text-xs rounded-lg"
-														>
-															+{worker.categories.length - 3}
-														</Badge>
-													)}
-												</div>
-											)}
-										</CardContent>
-									</Card>
-								</Link>
-							))}
-						</div>
+							{/* Load more trigger */}
+							<div ref={loadMoreRef} className="py-8 flex justify-center">
+								{loadingMore && (
+									<div className="flex items-center gap-3 text-muted-foreground">
+										<Loader2 className="h-5 w-5 animate-spin" />
+										<span>Ładowanie kolejnych...</span>
+									</div>
+								)}
+								{!hasMore && workers.length > 0 && (
+									<p className="text-muted-foreground text-sm">
+										Wyświetlono wszystkich wykonawców ({workers.length})
+									</p>
+								)}
+							</div>
+						</>
+					)}
+				</>
+			)}
 
-						{/* Load more trigger */}
-						<div ref={loadMoreRef} className="py-8 flex justify-center">
-							{loadingMore && (
-								<div className="flex items-center gap-3 text-muted-foreground">
-									<Loader2 className="h-5 w-5 animate-spin" />
-									<span>Ładowanie kolejnych...</span>
-								</div>
-							)}
-							{!hasMore && workers.length > 0 && (
-								<p className="text-muted-foreground text-sm">
-									Wyświetlono wszystkich wykonawców ({workers.length})
-								</p>
-							)}
-						</div>
-					</>
-				)}
+			{/* Create Order Dialog */}
+			<CreateOrderDialog
+				open={orderDialogOpen}
+				onOpenChange={setOrderDialogOpen}
+				workerId={selectedWorkerId || ''}
+				workerName={workers.find(w => w.id === selectedWorkerId)?.name || undefined}
+				onOrderCreated={handleOrderCreated}
+			/>
 			</div>
 		</Layout>
 	);

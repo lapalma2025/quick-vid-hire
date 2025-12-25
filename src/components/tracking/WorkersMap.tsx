@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
 import { StarRating } from '@/components/ui/star-rating';
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, Navigation, Loader2 } from 'lucide-react';
 
 // Fix for default marker icons in Leaflet with React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -63,19 +63,6 @@ const createWorkerIcon = (isAvailable: boolean) => {
     popupAnchor: [0, -36],
   });
 };
-
-// Map center control component
-function MapCenterControl({ center }: { center: [number, number] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (center) {
-      map.setView(center, 6);
-    }
-  }, [center, map]);
-  
-  return null;
-}
 
 // City coordinates for Poland (approximate)
 const CITY_COORDINATES: Record<string, [number, number]> = {
@@ -185,14 +172,16 @@ export default function WorkersMap({ workers, onOrderWorker, showOrderButton = t
     .filter(w => w.coordinates !== null);
 
   useEffect(() => {
-    setMapReady(true);
+    // Small delay to ensure proper mounting
+    const timer = setTimeout(() => setMapReady(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!mapReady) {
     return (
       <div className="h-[400px] md:h-[500px] rounded-2xl bg-muted flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <Navigation className="h-8 w-8 animate-pulse text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="text-muted-foreground">Ładowanie mapy...</span>
         </div>
       </div>
