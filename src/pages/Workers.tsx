@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { StarRating } from "@/components/ui/star-rating";
-import { Input } from "@/components/ui/input";
 import {
 	MapPin,
 	Banknote,
@@ -23,7 +22,6 @@ import {
 	Users,
 	Filter,
 	X,
-	Sparkles,
 	ArrowRight,
 	Map,
 	List,
@@ -32,11 +30,7 @@ import gsap from "gsap";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { WOJEWODZTWA } from "@/lib/constants";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
-import WorkersMap from "@/components/tracking/WorkersMap";
-import CreateOrderDialog from "@/components/tracking/CreateOrderDialog";
-import OrderTrackingClient from "@/components/tracking/OrderTrackingClient";
+import WorkersMap from "@/components/workers/WorkersMap";
 
 const PAGE_SIZE = 10;
 
@@ -61,8 +55,6 @@ interface Category {
 }
 
 export default function Workers() {
-	const navigate = useNavigate();
-	const { profile, isAuthenticated } = useAuth();
 	const [workers, setWorkers] = useState<Worker[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -71,8 +63,6 @@ export default function Workers() {
 	const [totalCount, setTotalCount] = useState(0);
 	const [showFilters, setShowFilters] = useState(true);
 	const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-	const [orderDialogOpen, setOrderDialogOpen] = useState(false);
-	const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
 	const gridRef = useRef<HTMLDivElement>(null);
 	const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -84,21 +74,6 @@ export default function Workers() {
 		maxRate: "",
 		minRating: "",
 	});
-
-	const handleOrderWorker = (workerId: string) => {
-		if (!isAuthenticated) {
-			toast.error('Musisz być zalogowany, aby zamówić wykonawcę');
-			navigate('/login');
-			return;
-		}
-		setSelectedWorkerId(workerId);
-		setOrderDialogOpen(true);
-	};
-
-	const handleOrderCreated = (orderId: string) => {
-		setOrderDialogOpen(false);
-		toast.success('Zamówienie utworzone! Śledź status poniżej.');
-	};
 
 	useEffect(() => {
 		fetchCategories();
@@ -373,8 +348,6 @@ export default function Workers() {
 			</div>
 
 			<div className="container py-6 sm:py-10 px-4 sm:px-6">
-			{/* Active Order Tracking */}
-			<OrderTrackingClient />
 
 			{/* View Toggle & Filters */}
 			<div className="flex justify-between items-center mb-4 sm:mb-6">
@@ -506,8 +479,6 @@ export default function Workers() {
 							...w,
 							is_available: true,
 						}))} 
-						onOrderWorker={handleOrderWorker}
-						showOrderButton={true}
 					/>
 				</div>
 			)}
@@ -652,14 +623,6 @@ export default function Workers() {
 				</>
 			)}
 
-			{/* Create Order Dialog */}
-			<CreateOrderDialog
-				open={orderDialogOpen}
-				onOpenChange={setOrderDialogOpen}
-				workerId={selectedWorkerId || ''}
-				workerName={workers.find(w => w.id === selectedWorkerId)?.name || undefined}
-				onOrderCreated={handleOrderCreated}
-			/>
 			</div>
 		</Layout>
 	);
