@@ -5,11 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
 import { MapPin, Banknote, ArrowRight } from "lucide-react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useState } from "react";
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface Worker {
   id: string;
@@ -98,21 +97,17 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                   </Badge>
                 )}
                 {hasHiddenCategories && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs shrink-0 cursor-pointer hover:bg-accent transition-colors"
+                  <HoverCard openDelay={120} closeDelay={80}>
+                    <HoverCardTrigger asChild>
+                      <Badge
+                        variant="outline"
+                        className="text-xs shrink-0 cursor-help"
                         onClick={(e) => e.preventDefault()}
                       >
                         +{hiddenCategories.length}
                       </Badge>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      side="top" 
-                      className="w-auto max-w-[280px] p-3"
-                      onClick={(e) => e.preventDefault()}
-                    >
+                    </HoverCardTrigger>
+                    <HoverCardContent side="top" className="w-auto max-w-[280px] p-3">
                       <p className="text-xs font-medium text-muted-foreground mb-2">
                         Pozostałe specjalizacje:
                       </p>
@@ -123,8 +118,8 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                           </Badge>
                         ))}
                       </div>
-                    </PopoverContent>
-                  </Popover>
+                    </HoverCardContent>
+                  </HoverCard>
                 )}
               </div>
               
