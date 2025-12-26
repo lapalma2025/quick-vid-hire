@@ -30,10 +30,10 @@ interface WorkerListItemProps {
   onHover?: (workerId: string | null) => void;
 }
 
-const MAX_VISIBLE_CATEGORIES = 2;
+const MAX_VISIBLE_CATEGORIES = 1;
 
 export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListItemProps) {
-  const visibleCategories = worker.categories.slice(0, MAX_VISIBLE_CATEGORIES);
+  const firstCategory = worker.categories[0];
   const hiddenCategories = worker.categories.slice(MAX_VISIBLE_CATEGORIES);
   const hasHiddenCategories = hiddenCategories.length > 0;
 
@@ -91,12 +91,12 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
             
             {/* Footer: Categories & Rate - always at bottom */}
             <div className="flex items-center justify-between gap-2 mt-auto pt-2">
-              <div className="flex items-center gap-1 min-w-0">
-                {visibleCategories.map((cat, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs shrink-0 max-w-[80px] truncate">
-                    {cat.name}
+              <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
+                {firstCategory && (
+                  <Badge variant="secondary" className="text-xs shrink-0">
+                    {firstCategory.name}
                   </Badge>
-                ))}
+                )}
                 {hasHiddenCategories && (
                   <TooltipProvider delayDuration={100}>
                     <Tooltip>
@@ -105,7 +105,7 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                           +{hiddenCategories.length}
                         </Badge>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[200px]">
+                      <TooltipContent side="top" className="max-w-[250px]">
                         <div className="flex flex-wrap gap-1">
                           {hiddenCategories.map((cat, i) => (
                             <Badge key={i} variant="secondary" className="text-xs">
