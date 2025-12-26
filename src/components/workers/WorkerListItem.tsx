@@ -4,6 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
 import { MapPin, Banknote, ArrowRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Worker {
   id: string;
@@ -24,19 +30,25 @@ interface WorkerListItemProps {
   onHover?: (workerId: string | null) => void;
 }
 
+const MAX_VISIBLE_CATEGORIES = 2;
+
 export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListItemProps) {
+  const visibleCategories = worker.categories.slice(0, MAX_VISIBLE_CATEGORIES);
+  const hiddenCategories = worker.categories.slice(MAX_VISIBLE_CATEGORIES);
+  const hasHiddenCategories = hiddenCategories.length > 0;
+
   return (
     <Link to={`/worker/${worker.id}`}>
       <Card 
-        className={`group p-4 transition-all duration-200 hover:shadow-lg hover:border-primary/30 cursor-pointer ${
+        className={`group p-4 transition-all duration-200 hover:shadow-lg hover:border-primary/30 cursor-pointer h-[140px] flex flex-col ${
           isHighlighted ? 'border-primary shadow-lg ring-2 ring-primary/20' : ''
         }`}
         onMouseEnter={() => onHover?.(worker.id)}
         onMouseLeave={() => onHover?.(null)}
       >
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-1 min-h-0">
           {/* Avatar */}
-          <Avatar className="h-16 w-16 rounded-xl border-2 border-border shrink-0">
+          <Avatar className="h-14 w-14 rounded-xl border-2 border-border shrink-0">
             <AvatarImage src={worker.avatar_url || undefined} alt={worker.name || "Worker"} />
             <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold rounded-xl">
               {worker.name?.charAt(0)?.toUpperCase() || "W"}
@@ -44,10 +56,10 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
           </Avatar>
           
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col">
             {/* Name & Rating */}
-            <div className="flex items-start justify-between gap-2 mb-1.5">
-              <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">
                 {worker.name || "Wykonawca"}
               </h3>
               {worker.rating_avg > 0 && (
@@ -62,39 +74,54 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
             
             {/* Location */}
             {(worker.miasto || worker.wojewodztwo) && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                <MapPin className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
+                <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate">
                   {[worker.miasto, worker.wojewodztwo].filter(Boolean).join(", ")}
                 </span>
               </div>
             )}
             
-            {/* Bio */}
+            {/* Bio - single line with ellipsis */}
             {worker.bio && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+              <p className="text-xs text-muted-foreground line-clamp-1 mb-auto">
                 {worker.bio}
               </p>
             )}
             
-            {/* Footer: Categories & Rate */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {worker.categories.slice(0, 2).map((cat, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
+            {/* Footer: Categories & Rate - always at bottom */}
+            <div className="flex items-center justify-between gap-2 mt-auto pt-2">
+              <div className="flex items-center gap-1 min-w-0">
+                {visibleCategories.map((cat, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs shrink-0 max-w-[80px] truncate">
                     {cat.name}
                   </Badge>
                 ))}
-                {worker.categories.length > 2 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{worker.categories.length - 2}
-                  </Badge>
+                {hasHiddenCategories && (
+                  <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="text-xs shrink-0 cursor-help">
+                          +{hiddenCategories.length}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px]">
+                        <div className="flex flex-wrap gap-1">
+                          {hiddenCategories.map((cat, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {cat.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
               
               {worker.hourly_rate && (
-                <div className="flex items-center gap-1 text-primary font-semibold text-sm shrink-0">
-                  <Banknote className="h-4 w-4" />
+                <div className="flex items-center gap-1 text-primary font-semibold text-xs shrink-0">
+                  <Banknote className="h-3.5 w-3.5" />
                   {worker.hourly_rate} zł/h
                 </div>
               )}
@@ -102,7 +129,7 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
           </div>
           
           {/* Arrow */}
-          <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 self-center" />
         </div>
       </Card>
     </Link>
