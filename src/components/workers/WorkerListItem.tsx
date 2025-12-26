@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
 import { MapPin, Banknote, ArrowRight } from "lucide-react";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useState } from "react";
 
 interface Worker {
   id: string;
@@ -98,24 +98,33 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                   </Badge>
                 )}
                 {hasHiddenCategories && (
-                  <TooltipProvider delayDuration={100}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="text-xs shrink-0 cursor-help">
-                          +{hiddenCategories.length}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[250px]">
-                        <div className="flex flex-wrap gap-1">
-                          {hiddenCategories.map((cat, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {cat.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs shrink-0 cursor-pointer hover:bg-accent transition-colors"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        +{hiddenCategories.length}
+                      </Badge>
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      side="top" 
+                      className="w-auto max-w-[280px] p-3"
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Pozostałe specjalizacje:
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {hiddenCategories.map((cat, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {cat.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
               
