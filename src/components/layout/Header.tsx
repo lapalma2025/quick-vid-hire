@@ -21,6 +21,7 @@ import {
 	Crown,
 	BarChart3,
 	UserPlus,
+	MapPin,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
@@ -147,6 +148,13 @@ export const Header = () => {
 						className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
 					>
 						Panel Wykonawcy
+					</Link>
+					<Link
+						to="/work-map"
+						className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full flex items-center gap-1"
+					>
+						<MapPin className="h-3.5 w-3.5" />
+						Mapa Pracy
 					</Link>
 					{isAuthenticated && isClientView && (
 						<Button
@@ -355,6 +363,14 @@ export const Header = () => {
 									onClick={() => setMobileOpen(false)}
 								>
 									Panel Wykonawcy
+								</Link>
+								<Link
+									to="/work-map"
+									className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
+									onClick={() => setMobileOpen(false)}
+								>
+									<MapPin className="h-5 w-5" />
+									Mapa Pracy
 								</Link>
 								{isAuthenticated ? (
 									<>
