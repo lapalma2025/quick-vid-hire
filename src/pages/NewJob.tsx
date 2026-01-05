@@ -46,7 +46,7 @@ import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CountrySelect } from "@/components/jobs/CountrySelect";
 import { ForeignCitySelect } from "@/components/jobs/ForeignCitySelect";
 import { LocationTypeToggle } from "@/components/jobs/LocationTypeToggle";
-import { WOJEWODZTWA } from "@/lib/constants";
+import { WOJEWODZTWA, WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
 import { PREMIUM_ADDONS } from "@/lib/stripe";
 
 interface Category {
@@ -82,6 +82,8 @@ export default function NewJob() {
 		is_foreign: false,
 		wojewodztwo: "",
 		miasto: "",
+		district: "",
+		street: "",
 		country: "",
 		start_time: "",
 		end_time: "",
@@ -173,6 +175,12 @@ export default function NewJob() {
 			const updated = { ...prev, [field]: value };
 			if (field === "wojewodztwo") {
 				updated.miasto = "";
+				updated.district = "";
+				updated.street = "";
+			}
+			if (field === "miasto") {
+				updated.district = "";
+				updated.street = "";
 			}
 			if (field === "country") {
 				updated.miasto = "";
@@ -181,6 +189,8 @@ export default function NewJob() {
 				updated.wojewodztwo = "";
 				updated.miasto = "";
 				updated.country = "";
+				updated.district = "";
+				updated.street = "";
 			}
 			return updated;
 		});
@@ -356,6 +366,22 @@ export default function NewJob() {
 
 		setLoading(true);
 
+		// Calculate coordinates for Wrocław area
+		let locationLat: number | null = null;
+		let locationLng: number | null = null;
+		
+		if (!form.is_foreign) {
+			if (form.miasto.toLowerCase() === "wrocław" && form.district && WROCLAW_DISTRICTS[form.district]) {
+				const coords = WROCLAW_DISTRICTS[form.district];
+				locationLat = coords.lat + (Math.random() - 0.5) * 0.003;
+				locationLng = coords.lng + (Math.random() - 0.5) * 0.003;
+			} else if (WROCLAW_AREA_CITIES[form.miasto]) {
+				const coords = WROCLAW_AREA_CITIES[form.miasto];
+				locationLat = coords.lat + (Math.random() - 0.5) * 0.01;
+				locationLng = coords.lng + (Math.random() - 0.5) * 0.01;
+			}
+		}
+
 		const { data: job, error } = await supabase
 			.from("jobs")
 			.insert({
@@ -366,7 +392,10 @@ export default function NewJob() {
 				is_foreign: form.is_foreign,
 				wojewodztwo: form.is_foreign ? form.country : form.wojewodztwo,
 				miasto: form.miasto,
+				district: form.district || null,
 				country: form.is_foreign ? form.country : null,
+				location_lat: locationLat,
+				location_lng: locationLng,
 				start_time: form.start_time || null,
 				end_time: form.end_time || null,
 				duration_hours: form.duration_hours
@@ -627,42 +656,90 @@ export default function NewJob() {
 							</div>
 
 							{!form.is_foreign && (
-								<div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
-									<div className="space-y-2">
-										<Label>Województwo *</Label>
-										<WojewodztwoSelect
-											value={form.wojewodztwo}
-											onChange={(v) => updateForm("wojewodztwo", v)}
-										/>
+								<>
+									<div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
+										<div className="space-y-2">
+											<Label>Województwo *</Label>
+											<WojewodztwoSelect
+												value={form.wojewodztwo}
+												onChange={(v) => updateForm("wojewodztwo", v)}
+											/>
+										</div>
+
+										<div className="space-y-2">
+											<Label>Miasto *</Label>
+											<CityAutocomplete
+												value={form.miasto}
+												onChange={(miasto, region) => {
+													updateForm("miasto", miasto);
+													if (region) {
+														const normalizedRegion = region.toLowerCase();
+														const matchedWojewodztwo = WOJEWODZTWA.find(
+															(w) => w.toLowerCase() === normalizedRegion
+														);
+														if (
+															matchedWojewodztwo &&
+															matchedWojewodztwo !== form.wojewodztwo
+														) {
+															setForm((prev) => ({
+																...prev,
+																miasto,
+																wojewodztwo: matchedWojewodztwo,
+															}));
+														}
+													}
+												}}
+												placeholder="Wpisz miasto..."
+											/>
+										</div>
 									</div>
 
-									<div className="space-y-2">
-										<Label>Miasto *</Label>
-										<CityAutocomplete
-											value={form.miasto}
-											onChange={(miasto, region) => {
-												updateForm("miasto", miasto);
-												if (region) {
-													const normalizedRegion = region.toLowerCase();
-													const matchedWojewodztwo = WOJEWODZTWA.find(
-														(w) => w.toLowerCase() === normalizedRegion
-													);
-													if (
-														matchedWojewodztwo &&
-														matchedWojewodztwo !== form.wojewodztwo
-													) {
-														setForm((prev) => ({
-															...prev,
-															miasto,
-															wojewodztwo: matchedWojewodztwo,
-														}));
-													}
-												}
-											}}
-											placeholder="Wpisz miasto..."
-										/>
-									</div>
-								</div>
+									{/* District selector for Wrocław */}
+									{form.miasto.toLowerCase() === "wrocław" && (
+										<div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
+											<div className="space-y-2">
+												<Label>Dzielnica (opcjonalnie)</Label>
+												<Select
+													value={form.district}
+													onValueChange={(v) => updateForm("district", v)}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Wybierz dzielnicę" />
+													</SelectTrigger>
+													<SelectContent>
+														{Object.keys(WROCLAW_DISTRICTS).map((district) => (
+															<SelectItem key={district} value={district}>
+																{district}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<p className="text-xs text-muted-foreground">
+													Pomoże w wyświetlaniu na Mapie Pracy
+												</p>
+											</div>
+
+											<div className="space-y-2">
+												<Label>Ulica (opcjonalnie)</Label>
+												<Input
+													placeholder="np. Świdnicka 12"
+													value={form.street}
+													onChange={(e) => updateForm("street", e.target.value)}
+												/>
+											</div>
+										</div>
+									)}
+
+									{/* Info for Wrocław area cities */}
+									{form.miasto && WROCLAW_AREA_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
+										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+											<Sparkles className="h-4 w-4 text-primary" />
+											<p className="text-sm text-muted-foreground">
+												Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla aglomeracji wrocławskiej
+											</p>
+										</div>
+									)}
+								</>
 							)}
 
 							{form.is_foreign && (
