@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Hotspot } from "@/pages/WorkMap";
+import { supabase } from "@/integrations/supabase/client";
+import { WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
 
 export interface Vehicle {
   id: string;
@@ -9,6 +11,18 @@ export interface Vehicle {
   timestamp: string;
 }
 
+export interface JobMarker {
+  id: string;
+  title: string;
+  miasto: string;
+  district?: string;
+  lat: number;
+  lng: number;
+  category?: string;
+  budget?: number;
+  urgent?: boolean;
+}
+
 interface VehicleApiRecord {
   _id: number;
   Nr_Tab?: string;
@@ -16,7 +30,6 @@ interface VehicleApiRecord {
   Ostatnia_Pozycja_Szerokosc?: number;
   Ostatnia_Pozycja_Dlugosc?: number;
   Data_Aktualizacji?: string;
-  // Alternative field names
   latitude?: number;
   longitude?: number;
   lat?: number;
@@ -62,6 +75,36 @@ function generateFallbackVehicles(): Vehicle[] {
   return vehicles;
 }
 
+// Get coordinates for a job based on miasto/district
+function getJobCoordinates(miasto: string, district?: string | null): { lat: number; lng: number } | null {
+  // Check if miasto is in Wrocław area
+  if (miasto.toLowerCase() === "wrocław") {
+    if (district && WROCLAW_DISTRICTS[district]) {
+      const coords = WROCLAW_DISTRICTS[district];
+      return {
+        lat: coords.lat + (Math.random() - 0.5) * 0.005,
+        lng: coords.lng + (Math.random() - 0.5) * 0.005,
+      };
+    }
+    // Random location in Wrocław
+    return {
+      lat: WROCLAW_CENTER.lat + (Math.random() - 0.5) * 0.04,
+      lng: WROCLAW_CENTER.lng + (Math.random() - 0.5) * 0.06,
+    };
+  }
+  
+  // Check if miasto is in Wrocław area cities
+  if (WROCLAW_AREA_CITIES[miasto]) {
+    const coords = WROCLAW_AREA_CITIES[miasto];
+    return {
+      lat: coords.lat + (Math.random() - 0.5) * 0.01,
+      lng: coords.lng + (Math.random() - 0.5) * 0.01,
+    };
+  }
+  
+  return null;
+}
+
 // Grid-based clustering for hotspot detection
 const GRID_SIZE = 0.005; // ~500m
 
@@ -78,17 +121,20 @@ function createGrid(points: { lat: number; lng: number }[]): Map<string, number>
   return grid;
 }
 
-function detectHotspots(vehicles: Vehicle[]): Hotspot[] {
-  if (vehicles.length === 0) return [];
+function detectHotspots(vehicles: Vehicle[], jobs: JobMarker[]): Hotspot[] {
+  const allPoints = [
+    ...vehicles,
+    ...jobs.map(j => ({ lat: j.lat, lng: j.lng })),
+  ];
   
-  const grid = createGrid(vehicles);
+  if (allPoints.length === 0) return [];
+  
+  const grid = createGrid(allPoints);
   const entries = Array.from(grid.entries());
   
-  // Sort by count and take top cells
   entries.sort((a, b) => b[1] - a[1]);
   const topCells = entries.slice(0, 10);
   
-  // Calculate percentiles for level assignment
   const counts = entries.map(e => e[1]);
   const maxCount = Math.max(...counts);
   
@@ -130,6 +176,7 @@ function detectHotspots(vehicles: Vehicle[]): Hotspot[] {
 
 export function useVehicleData(intervalMinutes: number = 30) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [jobs, setJobs] = useState<JobMarker[]>([]);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [heatmapPoints, setHeatmapPoints] = useState<[number, number, number][]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,6 +185,52 @@ export function useVehicleData(intervalMinutes: number = 30) {
   
   const cacheRef = useRef<Vehicle[]>([]);
   const intervalRef = useRef<number | null>(null);
+
+  // Fetch jobs from database
+  const fetchJobs = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("jobs")
+        .select("id, title, miasto, district, location_lat, location_lng, budget, urgent, category_id, categories(name)")
+        .eq("status", "active")
+        .not("miasto", "is", null);
+      
+      if (error) throw error;
+      
+      const jobMarkers: JobMarker[] = [];
+      
+      data?.forEach((job: any) => {
+        // Use stored coordinates or calculate from miasto/district
+        let coords: { lat: number; lng: number } | null = null;
+        
+        if (job.location_lat && job.location_lng) {
+          coords = { lat: job.location_lat, lng: job.location_lng };
+        } else {
+          coords = getJobCoordinates(job.miasto, job.district);
+        }
+        
+        if (coords) {
+          jobMarkers.push({
+            id: job.id,
+            title: job.title,
+            miasto: job.miasto,
+            district: job.district,
+            lat: coords.lat,
+            lng: coords.lng,
+            category: job.categories?.name,
+            budget: job.budget,
+            urgent: job.urgent,
+          });
+        }
+      });
+      
+      setJobs(jobMarkers);
+      return jobMarkers;
+    } catch (err) {
+      console.error("Error fetching jobs:", err);
+      return [];
+    }
+  }, []);
 
   const fetchVehicles = useCallback(async () => {
     try {
@@ -164,7 +257,6 @@ export function useVehicleData(intervalMinutes: number = 30) {
           
           if (!lat || !lng) return null;
           
-          // Filter to Wrocław area
           if (lat < 50.9 || lat > 51.3 || lng < 16.8 || lng > 17.3) return null;
           
           return {
@@ -182,65 +274,70 @@ export function useVehicleData(intervalMinutes: number = 30) {
       setLastUpdate(new Date());
       setError(null);
       
-      // Generate hotspots
-      const detectedHotspots = detectHotspots(parsedVehicles);
-      setHotspots(detectedHotspots);
-      
-      // Generate heatmap points [lat, lng, intensity]
-      const heatPoints: [number, number, number][] = parsedVehicles.map(v => [
-        v.lat,
-        v.lng,
-        0.5 + Math.random() * 0.5, // Random intensity for visual variety
-      ]);
-      setHeatmapPoints(heatPoints);
-      
+      return parsedVehicles;
     } catch (err) {
       console.error("Error fetching vehicle data (using fallback):", err);
-      setError(null); // Don't show error, use fallback
+      setError(null);
       
-      // Use fallback data when API is not available
       const fallbackVehicles = generateFallbackVehicles();
       cacheRef.current = fallbackVehicles;
       setVehicles(fallbackVehicles);
       setLastUpdate(new Date());
       
-      // Generate hotspots from fallback
-      const detectedHotspots = detectHotspots(fallbackVehicles);
-      setHotspots(detectedHotspots);
-      
-      // Generate heatmap points
-      const heatPoints: [number, number, number][] = fallbackVehicles.map(v => [
-        v.lat,
-        v.lng,
-        0.5 + Math.random() * 0.5,
-      ]);
-      setHeatmapPoints(heatPoints);
-    } finally {
-      setIsLoading(false);
+      return fallbackVehicles;
     }
   }, []);
 
-  useEffect(() => {
-    fetchVehicles();
+  const fetchAllData = useCallback(async () => {
+    setIsLoading(true);
     
-    // Set up polling interval
-    const intervalMs = intervalMinutes * 1000; // Use seconds for demo, in production use * 60 * 1000
-    intervalRef.current = window.setInterval(fetchVehicles, Math.max(30000, intervalMs));
+    const [vehicleData, jobData] = await Promise.all([
+      fetchVehicles(),
+      fetchJobs(),
+    ]);
+    
+    // Generate hotspots from both vehicles and jobs
+    const detectedHotspots = detectHotspots(vehicleData, jobData);
+    setHotspots(detectedHotspots);
+    
+    // Generate heatmap points - vehicles get lower intensity, jobs get higher
+    const vehicleHeatPoints: [number, number, number][] = vehicleData.map(v => [
+      v.lat,
+      v.lng,
+      0.3 + Math.random() * 0.3,
+    ]);
+    
+    const jobHeatPoints: [number, number, number][] = jobData.map(j => [
+      j.lat,
+      j.lng,
+      0.7 + Math.random() * 0.3, // Jobs have higher intensity
+    ]);
+    
+    setHeatmapPoints([...vehicleHeatPoints, ...jobHeatPoints]);
+    setIsLoading(false);
+  }, [fetchVehicles, fetchJobs]);
+
+  useEffect(() => {
+    fetchAllData();
+    
+    const intervalMs = intervalMinutes * 1000;
+    intervalRef.current = window.setInterval(fetchAllData, Math.max(30000, intervalMs));
     
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchVehicles, intervalMinutes]);
+  }, [fetchAllData, intervalMinutes]);
 
   return {
     vehicles,
+    jobs,
     hotspots,
     heatmapPoints,
     isLoading,
     lastUpdate,
     error,
-    refetch: fetchVehicles,
+    refetch: fetchAllData,
   };
 }

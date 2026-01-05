@@ -212,12 +212,15 @@ export type Database = {
           country: string | null
           created_at: string | null
           description: string | null
+          district: string | null
           duration_hours: number | null
           end_time: string | null
           id: string
           is_foreign: boolean | null
           is_highlighted: boolean | null
           is_promoted: boolean | null
+          location_lat: number | null
+          location_lng: number | null
           max_workers: number | null
           miasto: string
           min_workers: number | null
@@ -242,12 +245,15 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           description?: string | null
+          district?: string | null
           duration_hours?: number | null
           end_time?: string | null
           id?: string
           is_foreign?: boolean | null
           is_highlighted?: boolean | null
           is_promoted?: boolean | null
+          location_lat?: number | null
+          location_lng?: number | null
           max_workers?: number | null
           miasto: string
           min_workers?: number | null
@@ -272,12 +278,15 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           description?: string | null
+          district?: string | null
           duration_hours?: number | null
           end_time?: string | null
           id?: string
           is_foreign?: boolean | null
           is_highlighted?: boolean | null
           is_promoted?: boolean | null
+          location_lat?: number | null
+          location_lng?: number | null
           max_workers?: number | null
           miasto?: string
           min_workers?: number | null

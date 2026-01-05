@@ -3,10 +3,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
 import { MapFilters, Hotspot } from "@/pages/WorkMap";
-import { Vehicle } from "@/hooks/useVehicleData";
+import { Vehicle, JobMarker } from "@/hooks/useVehicleData";
 import { Loader2 } from "lucide-react";
 
-// Extend Leaflet types for heat layer
 declare module "leaflet" {
   function heatLayer(
     latlngs: [number, number, number][],
@@ -24,6 +23,7 @@ declare module "leaflet" {
 interface WorkMapLeafletProps {
   filters: MapFilters;
   vehicles: Vehicle[];
+  jobs: JobMarker[];
   hotspots: Hotspot[];
   heatmapPoints: [number, number, number][];
 }
@@ -71,9 +71,32 @@ function createVehicleIcon() {
   });
 }
 
+function createJobIcon(urgent: boolean = false) {
+  const color = urgent ? "#ef4444" : "#8b5cf6";
+  const size = urgent ? 36 : 32;
+  
+  return L.divIcon({
+    className: "job-marker",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size],
+    html: `
+      <div class="job-marker-wrapper" style="width: ${size}px; height: ${size}px;">
+        ${urgent ? '<div class="job-pulse" style="background: #ef4444;"></div>' : ''}
+        <div class="job-pin" style="background: ${color};">
+          <svg viewBox="0 0 24 24" fill="white" width="${size * 0.5}" height="${size * 0.5}">
+            <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
+          </svg>
+        </div>
+      </div>
+    `,
+  });
+}
+
 export function WorkMapLeaflet({ 
   filters, 
-  vehicles, 
+  vehicles,
+  jobs,
   hotspots, 
   heatmapPoints 
 }: WorkMapLeafletProps) {
@@ -82,6 +105,7 @@ export function WorkMapLeaflet({
   const heatLayerRef = useRef<L.Layer | null>(null);
   const vehicleMarkersRef = useRef<L.Marker[]>([]);
   const hotspotMarkersRef = useRef<L.Marker[]>([]);
+  const jobMarkersRef = useRef<L.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Initialize map
@@ -94,7 +118,6 @@ export function WorkMapLeaflet({
       zoomControl: true,
     });
 
-    // Modern tile layer
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
@@ -113,7 +136,6 @@ export function WorkMapLeaflet({
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 
-    // Remove existing heat layer
     if (heatLayerRef.current) {
       mapRef.current.removeLayer(heatLayerRef.current);
       heatLayerRef.current = null;
@@ -146,7 +168,6 @@ export function WorkMapLeaflet({
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 
-    // Clear existing vehicle markers
     vehicleMarkersRef.current.forEach(marker => marker.remove());
     vehicleMarkersRef.current = [];
 
@@ -172,11 +193,57 @@ export function WorkMapLeaflet({
     }
   }, [filters.showVehicles, vehicles, isLoaded]);
 
+  // Update job markers
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return;
+
+    jobMarkersRef.current.forEach(marker => marker.remove());
+    jobMarkersRef.current = [];
+
+    jobs.forEach(job => {
+      const icon = createJobIcon(job.urgent);
+      const marker = L.marker([job.lat, job.lng], { 
+        icon,
+        zIndexOffset: 300,
+      });
+      
+      marker.bindPopup(`
+        <div class="job-popup">
+          <div class="job-popup-header">
+            <strong>${job.title}</strong>
+            ${job.urgent ? '<span class="job-urgent-badge">PILNE</span>' : ''}
+          </div>
+          <div class="job-popup-content">
+            <div class="job-popup-row">
+              <span class="label">Lokalizacja:</span>
+              <span class="value">${job.miasto}${job.district ? `, ${job.district}` : ''}</span>
+            </div>
+            ${job.category ? `
+              <div class="job-popup-row">
+                <span class="label">Kategoria:</span>
+                <span class="value">${job.category}</span>
+              </div>
+            ` : ''}
+            ${job.budget ? `
+              <div class="job-popup-row">
+                <span class="label">Budżet:</span>
+                <span class="value">${job.budget} zł</span>
+              </div>
+            ` : ''}
+          </div>
+          <a href="/jobs/${job.id}" class="job-popup-link">Zobacz szczegóły →</a>
+        </div>
+      `);
+      
+      marker.addTo(mapRef.current!);
+      jobMarkersRef.current.push(marker);
+    });
+  }, [jobs, isLoaded]);
+
   // Update hotspot markers
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 
-    // Clear existing hotspot markers
     hotspotMarkersRef.current.forEach(marker => marker.remove());
     hotspotMarkersRef.current = [];
 
@@ -230,6 +297,36 @@ export function WorkMapLeaflet({
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="text-sm text-muted-foreground">Ładowanie mapy...</span>
           </div>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-border/50 text-xs">
+        <div className="font-medium mb-2">Legenda</div>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-violet-500"></div>
+            <span>Oferty pracy</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-red-500"></div>
+            <span>Pilne oferty</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+            <span>Pojazdy MPK</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"></div>
+            <span>Hotspoty</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Job count badge */}
+      {jobs.length > 0 && (
+        <div className="absolute top-4 left-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg">
+          {jobs.length} {jobs.length === 1 ? 'oferta' : jobs.length < 5 ? 'oferty' : 'ofert'} na mapie
         </div>
       )}
 
@@ -311,6 +408,45 @@ export function WorkMapLeaflet({
           transform: scale(1.2);
         }
         
+        .job-marker-wrapper {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .job-pulse {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          opacity: 0;
+          animation: pulse 2s ease-out infinite;
+        }
+        
+        .job-pin {
+          width: 100%;
+          height: 100%;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          transition: transform 0.2s ease;
+        }
+        
+        .job-pin svg {
+          transform: rotate(45deg);
+        }
+        
+        .job-marker:hover .job-pin {
+          transform: rotate(-45deg) scale(1.1);
+        }
+        
         .leaflet-popup-content-wrapper {
           border-radius: 12px;
           padding: 0;
@@ -321,42 +457,52 @@ export function WorkMapLeaflet({
           margin: 0;
         }
         
-        .hotspot-popup {
+        .hotspot-popup, .job-popup {
           padding: 12px 16px;
-          min-width: 180px;
+          min-width: 200px;
         }
         
-        .hotspot-popup-header {
+        .hotspot-popup-header, .job-popup-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 8px;
           margin-bottom: 8px;
           padding-bottom: 8px;
           border-bottom: 1px solid #e5e7eb;
         }
         
-        .hotspot-popup-header strong {
+        .hotspot-popup-header strong, .job-popup-header strong {
           font-size: 14px;
           color: #1f2937;
         }
         
-        .hotspot-popup-content {
+        .job-urgent-badge {
+          background: #ef4444;
+          color: white;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: bold;
+        }
+        
+        .hotspot-popup-content, .job-popup-content {
           display: flex;
           flex-direction: column;
           gap: 6px;
         }
         
-        .hotspot-popup-row {
+        .hotspot-popup-row, .job-popup-row {
           display: flex;
           justify-content: space-between;
           font-size: 12px;
         }
         
-        .hotspot-popup-row .label {
+        .hotspot-popup-row .label, .job-popup-row .label {
           color: #6b7280;
         }
         
-        .hotspot-popup-row .value {
+        .hotspot-popup-row .value, .job-popup-row .value {
           font-weight: 500;
           color: #1f2937;
         }
@@ -365,6 +511,22 @@ export function WorkMapLeaflet({
         .hotspot-popup-row .value.wysoka { color: #f97316; }
         .hotspot-popup-row .value.średnia { color: #eab308; }
         .hotspot-popup-row .value.niska { color: #3b82f6; }
+        
+        .job-popup-link {
+          display: block;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #e5e7eb;
+          color: #8b5cf6;
+          font-size: 12px;
+          font-weight: 500;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        
+        .job-popup-link:hover {
+          color: #7c3aed;
+        }
         
         .vehicle-popup {
           padding: 8px 12px;
