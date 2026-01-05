@@ -88,6 +88,54 @@ export const MIASTA_BY_KRAJ: Record<string, string[]> = {
   "Zjednoczone Emiraty Arabskie": ["Dubaj", "Abu Zabi", "Szardża"],
 };
 
+// Dzielnice Wrocławia z przybliżonymi współrzędnymi
+export const WROCLAW_DISTRICTS: Record<string, { lat: number; lng: number }> = {
+  "Stare Miasto": { lat: 51.1100, lng: 17.0320 },
+  "Śródmieście": { lat: 51.1080, lng: 17.0400 },
+  "Nadodrze": { lat: 51.1200, lng: 17.0450 },
+  "Ołbin": { lat: 51.1150, lng: 17.0550 },
+  "Plac Grunwaldzki": { lat: 51.1120, lng: 17.0620 },
+  "Biskupin": { lat: 51.0950, lng: 17.0800 },
+  "Sępolno": { lat: 51.1020, lng: 17.0900 },
+  "Krzyki": { lat: 51.0850, lng: 17.0200 },
+  "Borek": { lat: 51.0780, lng: 17.0350 },
+  "Huby": { lat: 51.0920, lng: 17.0280 },
+  "Gaj": { lat: 51.0750, lng: 17.0500 },
+  "Tarnogaj": { lat: 51.0680, lng: 17.0550 },
+  "Fabryczna": { lat: 51.1050, lng: 16.9800 },
+  "Grabiszyn": { lat: 51.0900, lng: 16.9900 },
+  "Muchobór": { lat: 51.0950, lng: 16.9650 },
+  "Popowice": { lat: 51.1100, lng: 16.9700 },
+  "Pilczyce": { lat: 51.1180, lng: 16.9550 },
+  "Psie Pole": { lat: 51.1400, lng: 17.0600 },
+  "Karłowice": { lat: 51.1300, lng: 17.0450 },
+  "Różanka": { lat: 51.1350, lng: 17.0350 },
+  "Kowale": { lat: 51.1450, lng: 17.0750 },
+  "Zakrzów": { lat: 51.1550, lng: 17.0850 },
+};
+
+// Miasta w okolicy Wrocławia (aglomeracja) z przybliżonymi współrzędnymi
+export const WROCLAW_AREA_CITIES: Record<string, { lat: number; lng: number }> = {
+  "Wrocław": { lat: 51.1079, lng: 17.0385 },
+  "Oborniki Śląskie": { lat: 51.3050, lng: 16.9200 },
+  "Trzebnica": { lat: 51.3100, lng: 17.0630 },
+  "Oleśnica": { lat: 51.2100, lng: 17.3850 },
+  "Środa Śląska": { lat: 51.1650, lng: 16.5950 },
+  "Wołów": { lat: 51.3400, lng: 16.6400 },
+  "Oława": { lat: 50.9450, lng: 17.2900 },
+  "Strzelin": { lat: 50.7800, lng: 17.0650 },
+  "Sobótka": { lat: 50.9300, lng: 16.7400 },
+  "Kąty Wrocławskie": { lat: 51.0300, lng: 16.7700 },
+  "Jelcz-Laskowice": { lat: 51.0400, lng: 17.3400 },
+  "Brzeg Dolny": { lat: 51.2700, lng: 16.7150 },
+  "Siechnice": { lat: 51.0350, lng: 17.1500 },
+  "Długołęka": { lat: 51.1800, lng: 17.2000 },
+  "Czernica": { lat: 51.0500, lng: 17.2200 },
+  "Kobierzyce": { lat: 50.9850, lng: 16.9300 },
+  "Żórawina": { lat: 51.0150, lng: 17.0500 },
+  "Miękinia": { lat: 51.1550, lng: 16.7500 },
+};
+
 export const CATEGORY_ICONS: Record<string, string> = {
   "Prace fizyczne": "Hammer",
   "Sprzątanie": "Sparkles",

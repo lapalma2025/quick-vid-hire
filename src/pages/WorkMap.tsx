@@ -34,7 +34,7 @@ const WorkMap = () => {
     timeInterval: 30,
   });
 
-  const { vehicles, hotspots, heatmapPoints, isLoading, lastUpdate } = useVehicleData(filters.timeInterval);
+  const { vehicles, jobs, hotspots, heatmapPoints, isLoading, lastUpdate } = useVehicleData(filters.timeInterval);
 
   const handleFilterChange = useCallback((key: keyof MapFilters, value: boolean | number) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -96,6 +96,7 @@ const WorkMap = () => {
                 <WorkMapLeaflet
                   filters={filters}
                   vehicles={vehicles}
+                  jobs={jobs}
                   hotspots={hotspots}
                   heatmapPoints={heatmapPoints}
                 />
