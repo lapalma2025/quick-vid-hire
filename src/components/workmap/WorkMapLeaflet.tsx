@@ -285,10 +285,10 @@ export function WorkMapLeaflet({
   }, [filters.showHotspots, hotspots, isLoaded]);
 
   return (
-    <div className="relative">
+    <div className="relative z-0">
       <div 
         ref={mapContainerRef} 
-        className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden"
+        className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden z-0"
       />
       
       {!isLoaded && (
@@ -532,6 +532,11 @@ export function WorkMapLeaflet({
           padding: 8px 12px;
           font-size: 13px;
         }
+        
+        /* Fix z-index for Leaflet controls */
+        .leaflet-pane { z-index: 1 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
+        .leaflet-control { z-index: 10 !important; }
       `}</style>
     </div>
   );

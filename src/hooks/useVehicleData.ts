@@ -37,8 +37,6 @@ interface VehicleApiRecord {
 }
 
 const WROCLAW_CENTER = { lat: 51.1079, lng: 17.0385 };
-const MPK_API_URL = "https://www.wroclaw.pl/open-data/api/action/datastore_search";
-const RESOURCE_ID = "a9b3841d-e977-474e-9e86-8789e470a85a";
 
 // Fallback data for Wrocław when API is not available (CORS issues in browser)
 function generateFallbackVehicles(): Vehicle[] {
@@ -234,15 +232,12 @@ export function useVehicleData(intervalMinutes: number = 30) {
 
   const fetchVehicles = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${MPK_API_URL}?resource_id=${RESOURCE_ID}&limit=1000`
-      );
+      // Use Supabase Edge Function to bypass CORS
+      const { data, error } = await supabase.functions.invoke('mpk-proxy');
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+      if (error) {
+        throw new Error(`Edge function error: ${error.message}`);
       }
-      
-      const data = await response.json();
       
       if (!data.success || !data.result?.records) {
         throw new Error("Invalid API response");
@@ -268,6 +263,8 @@ export function useVehicleData(intervalMinutes: number = 30) {
           } as Vehicle;
         })
         .filter((v): v is Vehicle => v !== null);
+      
+      console.log(`Fetched ${parsedVehicles.length} vehicles from MPK API`);
       
       cacheRef.current = parsedVehicles;
       setVehicles(parsedVehicles);
