@@ -159,3 +159,19 @@ export const JOB_STATUSES = {
   archived: { label: "Archiwalne", color: "muted" },
   closed: { label: "Zamknięte", color: "destructive" },
 } as const;
+
+// Parkingi P+R we Wrocławiu ze współrzędnymi
+export const WROCLAW_PARKINGS: Record<string, { lat: number; lng: number; capacity: number }> = {
+  "PR01A - Psie Pole - Stacja PKP parking nr 1": { lat: 51.1413, lng: 17.0615, capacity: 100 },
+  "PR01B - Psie Pole - Stacja PKP parking nr 3": { lat: 51.1403, lng: 17.0625, capacity: 150 },
+  "PR02 - ul. Bystrzycka-Idzikowskiego (Kuźniki)": { lat: 51.0983, lng: 16.9431, capacity: 60 },
+  "PR03A - Grabiszyn południe": { lat: 51.0876, lng: 16.9912, capacity: 80 },
+  "PR03B - Grabiszyn północ": { lat: 51.0898, lng: 16.9895, capacity: 50 },
+  "PR04 - ul. Snycerska-Majchra (Leśnica)": { lat: 51.1132, lng: 16.8893, capacity: 100 },
+  "PR05 - ul. Sołtysowicka (Sołtysowice)": { lat: 51.1380, lng: 17.0180, capacity: 120 },
+  "PR06 - ul. Krakowska (Krzyki)": { lat: 51.0720, lng: 17.0310, capacity: 200 },
+  "PR07 - ul. Wołowska (Popowice)": { lat: 51.1150, lng: 16.9650, capacity: 80 },
+  "PR08 - al. Hallera (Biskupin)": { lat: 51.0980, lng: 17.0850, capacity: 60 },
+  "PR09 - ul. Kleczkowska (Nadodrze)": { lat: 51.1220, lng: 17.0380, capacity: 40 },
+  "PR10 - ul. Bardzka (Jagodno)": { lat: 51.0450, lng: 17.0950, capacity: 100 },
+};
