@@ -366,54 +366,158 @@ export default function NewJob() {
 
 		setLoading(true);
 
+		const normalizePlaceName = (input: string) =>
+			input
+				.trim()
+				.replace(/\s+/g, " ")
+				.split(" ")
+				.map((word) =>
+					word
+						.split("-")
+						.map((part) =>
+							part
+								? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+								: part
+						)
+						.join("-")
+				)
+				.join(" ");
+
+		const miastoNormalized = normalizePlaceName(form.miasto);
+		const streetNormalized = form.street.trim();
+
 		// Calculate coordinates for Wrocław area
 		let locationLat: number | null = null;
 		let locationLng: number | null = null;
-		
-		if (!form.is_foreign) {
-			// Try geocoding if street is provided
-			if (form.street && form.miasto) {
-				try {
-					const searchQuery = `${form.street}, ${form.miasto}, Polska`;
-					const geocodeResponse = await fetch(
-						`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
-					);
-					const geocodeData = await geocodeResponse.json();
-					
-					if (geocodeData && geocodeData.length > 0) {
-						const result = geocodeData[0];
-						locationLat = parseFloat(result.lat);
-						locationLng = parseFloat(result.lon);
-						
-						// Verify it's within 50km of Wrocław
-						const wroclawLat = 51.1079;
-						const wroclawLng = 17.0385;
-						const distance = Math.sqrt(
-							Math.pow((locationLat - wroclawLat) * 111, 2) + 
-							Math.pow((locationLng - wroclawLng) * 111 * Math.cos(wroclawLat * Math.PI / 180), 2)
-						);
-						
-						if (distance > 50) {
-							// Reset to city center if too far
-							locationLat = null;
-							locationLng = null;
-						}
+
+		const WROCLAW_LAT = 51.1079;
+		const WROCLAW_LNG = 17.0385;
+		const MAX_DISTANCE_KM = 50;
+
+		const distanceKm = (lat: number, lng: number) =>
+			Math.sqrt(
+				Math.pow((lat - WROCLAW_LAT) * 111, 2) +
+					Math.pow(
+						(lng - WROCLAW_LNG) *
+							111 *
+							Math.cos((WROCLAW_LAT * Math.PI) / 180),
+						2
+					)
+			);
+
+		const buildViewbox = () => {
+			const dLat = MAX_DISTANCE_KM / 111;
+			const dLng =
+				MAX_DISTANCE_KM /
+				(111 * Math.cos((WROCLAW_LAT * Math.PI) / 180));
+			const left = WROCLAW_LNG - dLng;
+			const right = WROCLAW_LNG + dLng;
+			const top = WROCLAW_LAT + dLat;
+			const bottom = WROCLAW_LAT - dLat;
+			return `${left},${top},${right},${bottom}`;
+		};
+
+		const geocodeInArea = async (query: string, exactPlaceName?: string) => {
+			try {
+				const params = new URLSearchParams({
+					q: query,
+					format: "json",
+					addressdetails: "1",
+					limit: "5",
+					countrycodes: "pl",
+					"accept-language": "pl",
+					dedupe: "1",
+					viewbox: buildViewbox(),
+					bounded: "1",
+				});
+
+				const res = await fetch(
+					`https://nominatim.openstreetmap.org/search?${params.toString()}`,
+					{
+						headers: {
+							"User-Agent": "ZlecenieTeraz/1.0",
+						},
 					}
-				} catch (err) {
-					console.error("Geocoding error:", err);
+				);
+
+				if (!res.ok) return null;
+				const data = await res.json();
+				if (!Array.isArray(data) || data.length === 0) return null;
+
+				const best = (() => {
+					if (!exactPlaceName) return data[0];
+					const wanted = exactPlaceName.toLowerCase();
+					return (
+						data.find((it: any) => {
+							const name =
+								it.address?.city ||
+								it.address?.town ||
+								it.address?.village ||
+								it.address?.municipality ||
+								it.name;
+							return (
+								typeof name === "string" && name.toLowerCase() === wanted
+							);
+						}) || data[0]
+					);
+				})();
+
+				const lat = parseFloat(best.lat);
+				const lng = parseFloat(best.lon);
+				if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+				if (distanceKm(lat, lng) > MAX_DISTANCE_KM) return null;
+
+				return { lat, lng };
+			} catch (err) {
+				console.error("Geocoding error:", err);
+				return null;
+			}
+		};
+
+		if (!form.is_foreign) {
+			// 1) Street + city (dokładnie przy ulicy)
+			if (streetNormalized && miastoNormalized) {
+				const query = `${streetNormalized}, ${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
+				const coords = await geocodeInArea(query);
+				if (coords) {
+					locationLat = coords.lat;
+					locationLng = coords.lng;
 				}
 			}
-			
-			// Fallback to district/city coordinates if geocoding failed
+
+			// 2) Same city (centrum miejscowości) – działa też dla wpisów typu "wilkszyn"
+			if ((locationLat === null || locationLng === null) && miastoNormalized) {
+				const query = `${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
+				const coords = await geocodeInArea(query, miastoNormalized);
+				if (coords) {
+					locationLat = coords.lat;
+					locationLng = coords.lng;
+				}
+			}
+
+			// 3) Fallback: district/city coordinates if geocoding failed
 			if (locationLat === null || locationLng === null) {
-				if (form.miasto.toLowerCase() === "wrocław" && form.district && WROCLAW_DISTRICTS[form.district]) {
+				if (
+					miastoNormalized.toLowerCase() === "wrocław" &&
+					form.district &&
+					WROCLAW_DISTRICTS[form.district]
+				) {
 					const coords = WROCLAW_DISTRICTS[form.district];
 					locationLat = coords.lat + (Math.random() - 0.5) * 0.003;
 					locationLng = coords.lng + (Math.random() - 0.5) * 0.003;
-				} else if (WROCLAW_AREA_CITIES[form.miasto]) {
-					const coords = WROCLAW_AREA_CITIES[form.miasto];
-					locationLat = coords.lat + (Math.random() - 0.5) * 0.005;
-					locationLng = coords.lng + (Math.random() - 0.5) * 0.005;
+				} else {
+					const exact = WROCLAW_AREA_CITIES[miastoNormalized];
+					const key =
+						exact
+							? miastoNormalized
+							: Object.keys(WROCLAW_AREA_CITIES).find(
+								(k) => k.toLowerCase() === miastoNormalized.toLowerCase()
+							);
+					if (key) {
+						const coords = WROCLAW_AREA_CITIES[key];
+						locationLat = coords.lat + (Math.random() - 0.5) * 0.005;
+						locationLng = coords.lng + (Math.random() - 0.5) * 0.005;
+					}
 				}
 			}
 		}
@@ -427,7 +531,7 @@ export default function NewJob() {
 				category_id: form.category_id,
 				is_foreign: form.is_foreign,
 				wojewodztwo: form.is_foreign ? form.country : form.wojewodztwo,
-				miasto: form.miasto,
+				miasto: miastoNormalized,
 				district: form.district || null,
 				country: form.is_foreign ? form.country : null,
 				location_lat: locationLat,
