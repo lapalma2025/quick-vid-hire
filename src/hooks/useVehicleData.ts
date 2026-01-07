@@ -307,27 +307,36 @@ export function useVehicleData(intervalMinutes: number = 30) {
           .map((record) => {
             const lat = record.Ostatnia_Pozycja_Szerokosc || record.latitude || record.lat;
             const lng = record.Ostatnia_Pozycja_Dlugosc || record.longitude || record.lng;
-            
+
             if (!lat || !lng) return null;
             if (lat < 50.9 || lat > 51.3 || lng < 16.8 || lng > 17.3) return null;
-            
-            // Get line number - try different field names
-            const line = record.Linia || record.Nr_Tab?.toString() || undefined;
-            
+
+            const rawLine =
+              (record as any).Linia ??
+              (record as any).linia ??
+              (record as any).NR_LINII ??
+              (record as any).nr_linii ??
+              (record as any).line;
+
+            const line = typeof rawLine === "string" ? rawLine.trim() : rawLine != null ? String(rawLine).trim() : undefined;
+
             return {
               id: String(record._id || record.Nr_Tab || Math.random()),
               lat,
               lng,
-              line,
+              line: line || undefined,
               timestamp: record.Data_Aktualizacji || new Date().toISOString(),
             } as Vehicle;
           })
           .filter((v): v is Vehicle => v !== null);
-        
+
         // Log sample for debugging
         if (parsedVehicles.length > 0) {
           const sample = parsedVehicles.slice(0, 3);
-          console.log(`Sample vehicles:`, sample.map(v => ({ id: v.id, line: v.line })));
+          console.log(
+            `Sample vehicles:`,
+            sample.map((v) => ({ id: v.id, line: v.line }))
+          );
         }
         console.log(`Fetched ${parsedVehicles.length} vehicles from MPK API`);
       }

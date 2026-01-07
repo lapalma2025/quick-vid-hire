@@ -32,7 +32,7 @@ const WROCLAW_CENTER: L.LatLngTuple = [51.1079, 17.0385];
 const DEFAULT_ZOOM = 13;
 
 // Custom SVG markers
-function createHotspotIcon(level: number) {
+function createHotspotIcon(level: number, rank: number) {
   const size = 40 + level * 4;
   const color = level >= 4 ? "#ef4444" : level >= 3 ? "#f97316" : level >= 2 ? "#eab308" : "#22c55e";
   
@@ -50,7 +50,7 @@ function createHotspotIcon(level: number) {
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>
         </div>
-        <div class="hotspot-level">${level}</div>
+        <div class="hotspot-level">${rank}</div>
       </div>
     `,
   });
@@ -248,8 +248,9 @@ export function WorkMapLeaflet({
     hotspotMarkersRef.current = [];
 
     if (filters.showHotspots) {
-      hotspots.forEach(hotspot => {
-        const icon = createHotspotIcon(hotspot.level);
+      hotspots.forEach((hotspot, index) => {
+        const rank = index + 1;
+        const icon = createHotspotIcon(hotspot.level, rank);
         const marker = L.marker([hotspot.lat, hotspot.lng], { 
           icon,
           zIndexOffset: 200,
@@ -258,7 +259,7 @@ export function WorkMapLeaflet({
         marker.bindPopup(`
           <div class="hotspot-popup">
             <div class="hotspot-popup-header">
-              <strong>${hotspot.name}</strong>
+              <strong>${rank}. ${hotspot.name}</strong>
               <span class="hotspot-level-badge">${"🔥".repeat(hotspot.level)}</span>
             </div>
             <div class="hotspot-popup-content">
