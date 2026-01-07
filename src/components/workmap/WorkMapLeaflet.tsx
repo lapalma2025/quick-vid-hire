@@ -221,7 +221,7 @@ export function WorkMapLeaflet({
       marker.bindPopup(`
         <div class="job-popup">
           <div class="job-popup-header">
-            <strong>${job.title}</strong>
+            <span class="job-title">${job.title}</span>
             ${job.urgent ? '<span class="job-urgent-badge">PILNE</span>' : ''}
           </div>
           <div class="job-popup-content">
@@ -244,7 +244,7 @@ export function WorkMapLeaflet({
           </div>
           <a href="/jobs/${job.id}" class="job-popup-link">Zobacz szczegóły →</a>
         </div>
-      `);
+      `, { minWidth: 220, maxWidth: 280 });
       
       marker.addTo(mapRef.current!);
       jobMarkersRef.current.push(marker);
@@ -335,9 +335,9 @@ export function WorkMapLeaflet({
         </div>
       </div>
 
-      {/* Job count badge */}
+      {/* Job count badge - positioned to avoid zoom controls */}
       {jobs.length > 0 && (
-        <div className="absolute top-4 left-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg">
+        <div className="absolute top-4 right-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg z-20">
           {jobs.length} {jobs.length === 1 ? 'oferta' : jobs.length < 5 ? 'oferty' : 'ofert'} na mapie
         </div>
       )}
@@ -476,17 +476,23 @@ export function WorkMapLeaflet({
         
         .hotspot-popup-header, .job-popup-header {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
           gap: 8px;
           margin-bottom: 8px;
           padding-bottom: 8px;
           border-bottom: 1px solid #e5e7eb;
+          padding-right: 20px;
         }
         
-        .hotspot-popup-header strong, .job-popup-header strong {
+        .hotspot-popup-header strong, .job-popup-header strong,
+        .job-popup-header .job-title {
           font-size: 14px;
+          font-weight: 600;
           color: #1f2937;
+          flex: 1;
+          word-break: break-word;
+          line-height: 1.3;
         }
         
         .job-urgent-badge {
@@ -496,6 +502,22 @@ export function WorkMapLeaflet({
           border-radius: 4px;
           font-size: 10px;
           font-weight: bold;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        
+        .leaflet-popup-close-button {
+          top: 8px !important;
+          right: 8px !important;
+          width: 20px !important;
+          height: 20px !important;
+          font-size: 18px !important;
+          line-height: 18px !important;
+          color: #6b7280 !important;
+        }
+        
+        .leaflet-popup-close-button:hover {
+          color: #1f2937 !important;
         }
         
         .hotspot-popup-content, .job-popup-content {
