@@ -149,7 +149,25 @@ function generateFallbackVehicles(): Vehicle[] {
 }
 
 // Get coordinates for a job based on miasto/district
-function getJobCoordinates(miasto: string, district?: string | null): { lat: number; lng: number } | null {
+// Only returns coordinates if within 50km of Wrocław
+function getJobCoordinates(miasto: string, district?: string | null, lat?: number | null, lng?: number | null): { lat: number; lng: number } | null {
+  const WROCLAW_LAT = 51.1079;
+  const WROCLAW_LNG = 17.0385;
+  const MAX_DISTANCE_KM = 50;
+  
+  // If coordinates are already provided, check if within range
+  if (lat && lng) {
+    const distance = Math.sqrt(
+      Math.pow((lat - WROCLAW_LAT) * 111, 2) + 
+      Math.pow((lng - WROCLAW_LNG) * 111 * Math.cos(WROCLAW_LAT * Math.PI / 180), 2)
+    );
+    
+    if (distance <= MAX_DISTANCE_KM) {
+      return { lat, lng };
+    }
+    return null; // Outside 50km range
+  }
+  
   if (miasto.toLowerCase() === "wrocław") {
     if (district && WROCLAW_DISTRICTS[district]) {
       const coords = WROCLAW_DISTRICTS[district];
@@ -159,20 +177,20 @@ function getJobCoordinates(miasto: string, district?: string | null): { lat: num
       };
     }
     return {
-      lat: WROCLAW_CENTER.lat + (Math.random() - 0.5) * 0.04,
-      lng: WROCLAW_CENTER.lng + (Math.random() - 0.5) * 0.06,
+      lat: WROCLAW_LAT + (Math.random() - 0.5) * 0.04,
+      lng: WROCLAW_LNG + (Math.random() - 0.5) * 0.06,
     };
   }
   
   if (WROCLAW_AREA_CITIES[miasto]) {
     const coords = WROCLAW_AREA_CITIES[miasto];
     return {
-      lat: coords.lat + (Math.random() - 0.5) * 0.01,
-      lng: coords.lng + (Math.random() - 0.5) * 0.01,
+      lat: coords.lat + (Math.random() - 0.5) * 0.005,
+      lng: coords.lng + (Math.random() - 0.5) * 0.005,
     };
   }
   
-  return null;
+  return null; // City not in Wrocław area
 }
 
 // Transform parking API data to ParkingData with coordinates
@@ -260,11 +278,13 @@ export function useVehicleData(intervalMinutes: number = 30) {
       data?.forEach((job: any) => {
         let coords: { lat: number; lng: number } | null = null;
         
-        if (job.location_lat && job.location_lng) {
-          coords = { lat: job.location_lat, lng: job.location_lng };
-        } else {
-          coords = getJobCoordinates(job.miasto, job.district);
-        }
+        // Use getJobCoordinates which checks 50km limit
+        coords = getJobCoordinates(
+          job.miasto, 
+          job.district, 
+          job.location_lat, 
+          job.location_lng
+        );
         
         if (coords) {
           jobMarkers.push({
