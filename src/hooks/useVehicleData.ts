@@ -58,6 +58,60 @@ interface VehicleApiRecord {
 
 const WROCLAW_CENTER = { lat: 51.1079, lng: 17.0385 };
 
+// Static hotspots for Wrocław based on real data
+const STATIC_HOTSPOTS: Hotspot[] = [
+  {
+    id: "hotspot-1",
+    name: "Stare Miasto",
+    lat: 51.1100,
+    lng: 17.0320,
+    level: 5,
+    activity: "Bardzo wysoka",
+    peakHours: "11:30–14:00, 18:00–22:30",
+    count: 100,
+  },
+  {
+    id: "hotspot-2",
+    name: "Śródmieście",
+    lat: 51.1150,
+    lng: 17.0550,
+    level: 4,
+    activity: "Bardzo wysoka",
+    peakHours: "12:00–15:00, 18:00–22:00",
+    count: 85,
+  },
+  {
+    id: "hotspot-3",
+    name: "Krzyki",
+    lat: 51.0850,
+    lng: 17.0200,
+    level: 4,
+    activity: "Wysoka",
+    peakHours: "8:00–10:00, 15:00–19:00",
+    count: 70,
+  },
+  {
+    id: "hotspot-4",
+    name: "Fabryczna",
+    lat: 51.1050,
+    lng: 16.9800,
+    level: 3,
+    activity: "Wysoka",
+    peakHours: "6:00–8:00, 14:00–18:00",
+    count: 60,
+  },
+  {
+    id: "hotspot-5",
+    name: "Psie Pole",
+    lat: 51.1400,
+    lng: 17.0600,
+    level: 3,
+    activity: "Średnia",
+    peakHours: "9:00–12:00, 16:00–19:00",
+    count: 45,
+  },
+];
+
 // Fallback data for Wrocław when API is not available
 function generateFallbackVehicles(): Vehicle[] {
   const areas = [
@@ -118,201 +172,6 @@ function getJobCoordinates(miasto: string, district?: string | null): { lat: num
   }
   
   return null;
-}
-
-// Calculate distance between two points in meters (Haversine formula)
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Find nearby parkings within radius (in meters)
-function findNearbyParkings(lat: number, lng: number, parkings: ParkingData[], radiusMeters: number = 2000): ParkingData[] {
-  return parkings.filter(p => calculateDistance(lat, lng, p.lat, p.lng) < radiusMeters);
-}
-
-// Calculate peak hours from parking history data
-function calculatePeakHours(
-  parkingHistory: ParkingApiRecord[],
-  nearbyParkingNames: string[],
-  vehicleCount: number
-): string {
-  // Group history by hour
-  const hourlyActivity = new Map<number, { entries: number; exits: number; count: number }>();
-  
-  // Initialize all hours
-  for (let h = 0; h < 24; h++) {
-    hourlyActivity.set(h, { entries: 0, exits: 0, count: 0 });
-  }
-  
-  // Filter for nearby parkings and aggregate by hour
-  const relevantHistory = parkingHistory.filter(entry => 
-    nearbyParkingNames.some(name => entry.name.includes(name) || name.includes(entry.name))
-  );
-  
-  relevantHistory.forEach(entry => {
-    try {
-      const date = new Date(entry.timestamp);
-      const hour = date.getHours();
-      const current = hourlyActivity.get(hour);
-      if (current) {
-        hourlyActivity.set(hour, {
-          entries: current.entries + entry.entering,
-          exits: current.exits + entry.leaving,
-          count: current.count + 1,
-        });
-      }
-    } catch {
-      // Skip invalid timestamps
-    }
-  });
-  
-  // Calculate activity score per hour (average entries + exits)
-  const hourlyScores: { hour: number; score: number }[] = [];
-  
-  hourlyActivity.forEach((data, hour) => {
-    const avgActivity = data.count > 0 
-      ? (data.entries + data.exits) / data.count 
-      : 0;
-    hourlyScores.push({ hour, score: avgActivity });
-  });
-  
-  // Sort by score descending
-  hourlyScores.sort((a, b) => b.score - a.score);
-  
-  // Get top 4 hours and group into time windows
-  const topHours = hourlyScores.slice(0, 4).map(h => h.hour).sort((a, b) => a - b);
-  
-  if (topHours.length === 0) {
-    // Fallback: use typical peak hours based on vehicle count
-    if (vehicleCount > 100) {
-      return "7:00–9:00, 16:00–18:00";
-    } else if (vehicleCount > 50) {
-      return "8:00–10:00, 17:00–19:00";
-    }
-    return "12:00–14:00";
-  }
-  
-  // Group consecutive hours into windows
-  const windows: string[] = [];
-  let windowStart = topHours[0];
-  let windowEnd = topHours[0];
-  
-  for (let i = 1; i < topHours.length; i++) {
-    if (topHours[i] - windowEnd <= 2) {
-      windowEnd = topHours[i];
-    } else {
-      windows.push(`${windowStart}:00–${windowEnd + 1}:00`);
-      windowStart = topHours[i];
-      windowEnd = topHours[i];
-    }
-  }
-  windows.push(`${windowStart}:00–${windowEnd + 1}:00`);
-  
-  return windows.slice(0, 2).join(", ");
-}
-
-// Get district name for coordinates
-function getDistrictName(lat: number, lng: number): string {
-  let closestDistrict = "Wrocław";
-  let minDistance = Infinity;
-  
-  Object.entries(WROCLAW_DISTRICTS).forEach(([name, coords]) => {
-    const distance = calculateDistance(lat, lng, coords.lat, coords.lng);
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestDistrict = name;
-    }
-  });
-  
-  return closestDistrict;
-}
-
-// Grid-based clustering for hotspot detection
-const GRID_SIZE = 0.005; // ~500m
-
-function createGrid(points: { lat: number; lng: number }[]): Map<string, number> {
-  const grid = new Map<string, number>();
-  
-  points.forEach(point => {
-    const gridX = Math.floor(point.lng / GRID_SIZE);
-    const gridY = Math.floor(point.lat / GRID_SIZE);
-    const key = `${gridX},${gridY}`;
-    grid.set(key, (grid.get(key) || 0) + 1);
-  });
-  
-  return grid;
-}
-
-function detectHotspots(
-  vehicles: Vehicle[], 
-  jobs: JobMarker[],
-  parkings: ParkingData[],
-  parkingHistory: ParkingApiRecord[]
-): Hotspot[] {
-  // Combine vehicle points with parking activity (high occupancy = more activity)
-  const allPoints = [
-    ...vehicles,
-    ...jobs.map(j => ({ lat: j.lat, lng: j.lng })),
-    // Add parking locations weighted by occupancy
-    ...parkings.flatMap(p => {
-      const weight = Math.ceil(p.occupancyPercent / 20); // 1-5 points based on occupancy
-      return Array(weight).fill({ lat: p.lat, lng: p.lng });
-    }),
-  ];
-  
-  if (allPoints.length === 0) return [];
-  
-  const grid = createGrid(allPoints);
-  const entries = Array.from(grid.entries());
-  
-  entries.sort((a, b) => b[1] - a[1]);
-  const topCells = entries.slice(0, 10);
-  
-  const counts = entries.map(e => e[1]);
-  const maxCount = Math.max(...counts);
-  
-  return topCells.map(([key, count], index) => {
-    const [gridX, gridY] = key.split(",").map(Number);
-    const lat = (gridY + 0.5) * GRID_SIZE;
-    const lng = (gridX + 0.5) * GRID_SIZE;
-    
-    const percentile = count / maxCount;
-    const level = Math.min(5, Math.max(1, Math.ceil(percentile * 5)));
-    
-    let activity: Hotspot["activity"];
-    if (percentile > 0.8) activity = "Bardzo wysoka";
-    else if (percentile > 0.5) activity = "Wysoka";
-    else if (percentile > 0.3) activity = "Średnia";
-    else activity = "Niska";
-    
-    // Find nearby parkings for this hotspot
-    const nearbyParkings = findNearbyParkings(lat, lng, parkings);
-    const nearbyParkingNames = nearbyParkings.map(p => p.name);
-    
-    // Calculate real peak hours based on parking data
-    const peakHours = calculatePeakHours(parkingHistory, nearbyParkingNames, vehicles.length);
-    
-    // Get real district name
-    const name = getDistrictName(lat, lng);
-    
-    return {
-      id: `hotspot-${index}`,
-      name,
-      lat,
-      lng,
-      level,
-      activity,
-      peakHours,
-      count,
-    };
-  });
 }
 
 // Transform parking API data to ParkingData with coordinates
@@ -382,7 +241,6 @@ export function useVehicleData(intervalMinutes: number = 30) {
   const [error, setError] = useState<string | null>(null);
   
   const cacheRef = useRef<Vehicle[]>([]);
-  const parkingHistoryRef = useRef<ParkingApiRecord[]>([]);
   const intervalRef = useRef<number | null>(null);
 
   // Fetch jobs from database
@@ -472,11 +330,7 @@ export function useVehicleData(intervalMinutes: number = 30) {
         console.log(`Processed ${parkingData.length} parking locations`);
       }
       
-      // Store parking history
-      if (data.parking?.history) {
-        parkingHistoryRef.current = data.parking.history;
-        console.log(`Stored ${data.parking.history.length} parking history records`);
-      }
+      // Parking history not needed for static hotspots
       
       cacheRef.current = parsedVehicles.length > 0 ? parsedVehicles : generateFallbackVehicles();
       setVehicles(cacheRef.current);
@@ -507,14 +361,8 @@ export function useVehicleData(intervalMinutes: number = 30) {
       fetchJobs(),
     ]);
     
-    // Generate hotspots from vehicles, jobs, and parking data
-    const detectedHotspots = detectHotspots(
-      vehicleData, 
-      jobData, 
-      parkingData, 
-      parkingHistoryRef.current
-    );
-    setHotspots(detectedHotspots);
+    // Use static hotspots instead of detecting from API
+    setHotspots(STATIC_HOTSPOTS);
     
     // Generate heatmap points
     const vehicleHeatPoints: [number, number, number][] = vehicleData.map(v => [
