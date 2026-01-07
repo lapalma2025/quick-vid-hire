@@ -371,14 +371,50 @@ export default function NewJob() {
 		let locationLng: number | null = null;
 		
 		if (!form.is_foreign) {
-			if (form.miasto.toLowerCase() === "wrocław" && form.district && WROCLAW_DISTRICTS[form.district]) {
-				const coords = WROCLAW_DISTRICTS[form.district];
-				locationLat = coords.lat + (Math.random() - 0.5) * 0.003;
-				locationLng = coords.lng + (Math.random() - 0.5) * 0.003;
-			} else if (WROCLAW_AREA_CITIES[form.miasto]) {
-				const coords = WROCLAW_AREA_CITIES[form.miasto];
-				locationLat = coords.lat + (Math.random() - 0.5) * 0.01;
-				locationLng = coords.lng + (Math.random() - 0.5) * 0.01;
+			// Try geocoding if street is provided
+			if (form.street && form.miasto) {
+				try {
+					const searchQuery = `${form.street}, ${form.miasto}, Polska`;
+					const geocodeResponse = await fetch(
+						`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+					);
+					const geocodeData = await geocodeResponse.json();
+					
+					if (geocodeData && geocodeData.length > 0) {
+						const result = geocodeData[0];
+						locationLat = parseFloat(result.lat);
+						locationLng = parseFloat(result.lon);
+						
+						// Verify it's within 50km of Wrocław
+						const wroclawLat = 51.1079;
+						const wroclawLng = 17.0385;
+						const distance = Math.sqrt(
+							Math.pow((locationLat - wroclawLat) * 111, 2) + 
+							Math.pow((locationLng - wroclawLng) * 111 * Math.cos(wroclawLat * Math.PI / 180), 2)
+						);
+						
+						if (distance > 50) {
+							// Reset to city center if too far
+							locationLat = null;
+							locationLng = null;
+						}
+					}
+				} catch (err) {
+					console.error("Geocoding error:", err);
+				}
+			}
+			
+			// Fallback to district/city coordinates if geocoding failed
+			if (locationLat === null || locationLng === null) {
+				if (form.miasto.toLowerCase() === "wrocław" && form.district && WROCLAW_DISTRICTS[form.district]) {
+					const coords = WROCLAW_DISTRICTS[form.district];
+					locationLat = coords.lat + (Math.random() - 0.5) * 0.003;
+					locationLng = coords.lng + (Math.random() - 0.5) * 0.003;
+				} else if (WROCLAW_AREA_CITIES[form.miasto]) {
+					const coords = WROCLAW_AREA_CITIES[form.miasto];
+					locationLat = coords.lat + (Math.random() - 0.5) * 0.005;
+					locationLng = coords.lng + (Math.random() - 0.5) * 0.005;
+				}
 			}
 		}
 
@@ -696,37 +732,41 @@ export default function NewJob() {
 
 									{/* District selector for Wrocław */}
 									{form.miasto.toLowerCase() === "wrocław" && (
-										<div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
-											<div className="space-y-2">
-												<Label>Dzielnica (opcjonalnie)</Label>
-												<Select
-													value={form.district}
-													onValueChange={(v) => updateForm("district", v)}
-												>
-													<SelectTrigger>
-														<SelectValue placeholder="Wybierz dzielnicę" />
-													</SelectTrigger>
-													<SelectContent>
-														{Object.keys(WROCLAW_DISTRICTS).map((district) => (
-															<SelectItem key={district} value={district}>
-																{district}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<p className="text-xs text-muted-foreground">
-													Pomoże w wyświetlaniu na Mapie Pracy
-												</p>
-											</div>
+										<div className="space-y-2 animate-fade-in">
+											<Label>Dzielnica (opcjonalnie)</Label>
+											<Select
+												value={form.district}
+												onValueChange={(v) => updateForm("district", v)}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Wybierz dzielnicę" />
+												</SelectTrigger>
+												<SelectContent>
+													{Object.keys(WROCLAW_DISTRICTS).map((district) => (
+														<SelectItem key={district} value={district}>
+															{district}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<p className="text-xs text-muted-foreground">
+												Pomoże w wyświetlaniu na Mapie Pracy
+											</p>
+										</div>
+									)}
 
-											<div className="space-y-2">
-												<Label>Ulica (opcjonalnie)</Label>
-												<Input
-													placeholder="np. Świdnicka 12"
-													value={form.street}
-													onChange={(e) => updateForm("street", e.target.value)}
-												/>
-											</div>
+									{/* Street field for Wrocław and nearby cities */}
+									{form.miasto && WROCLAW_AREA_CITIES[form.miasto] && (
+										<div className="space-y-2 animate-fade-in">
+											<Label>Ulica i numer (opcjonalnie)</Label>
+											<Input
+												placeholder="np. Świdnicka 12"
+												value={form.street}
+												onChange={(e) => updateForm("street", e.target.value)}
+											/>
+											<p className="text-xs text-muted-foreground">
+												Podanie ulicy zwiększy precyzję lokalizacji na Mapie Pracy
+											</p>
 										</div>
 									)}
 
@@ -735,7 +775,17 @@ export default function NewJob() {
 										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
 											<Sparkles className="h-4 w-4 text-primary" />
 											<p className="text-sm text-muted-foreground">
-												Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla aglomeracji wrocławskiej
+												Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla aglomeracji wrocławskiej (50 km)
+											</p>
+										</div>
+									)}
+
+									{/* Warning for cities outside 50km */}
+									{form.miasto && !WROCLAW_AREA_CITIES[form.miasto] && form.wojewodztwo && (
+										<div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+											<AlertTriangle className="h-4 w-4 text-orange-500" />
+											<p className="text-sm text-muted-foreground">
+												To miasto jest poza zasięgiem Mapy Pracy (50 km od Wrocławia). Oferta będzie widoczna tylko na liście zleceń.
 											</p>
 										</div>
 									)}

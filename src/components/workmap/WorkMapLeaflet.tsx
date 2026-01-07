@@ -108,19 +108,30 @@ export function WorkMapLeaflet({
   const jobMarkersRef = useRef<L.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize map
+  // Initialize map with 50km bounds around Wrocław
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
+
+    // 50km bounds around Wrocław (approximately 0.45 degrees lat/lng)
+    const BOUNDS_PADDING = 0.45;
+    const maxBounds = L.latLngBounds(
+      [WROCLAW_CENTER[0] - BOUNDS_PADDING, WROCLAW_CENTER[1] - BOUNDS_PADDING * 1.5], // SW
+      [WROCLAW_CENTER[0] + BOUNDS_PADDING, WROCLAW_CENTER[1] + BOUNDS_PADDING * 1.5]  // NE
+    );
 
     const map = L.map(mapContainerRef.current, {
       center: WROCLAW_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: true,
+      minZoom: 9,
+      maxZoom: 18,
+      maxBounds: maxBounds,
+      maxBoundsViscosity: 0.8,
     });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19,
+      maxZoom: 18,
     }).addTo(map);
 
     mapRef.current = map;
