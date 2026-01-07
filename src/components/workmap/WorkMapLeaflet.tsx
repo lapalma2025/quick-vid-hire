@@ -183,7 +183,7 @@ export function WorkMapLeaflet({
         marker.bindPopup(`
           <div class="vehicle-popup">
             <strong>Pojazd MPK</strong>
-            ${vehicle.line ? `<br>Linia: ${vehicle.line}` : ""}
+            <br>Linia: <strong>${vehicle.line || 'Brak danych'}</strong>
           </div>
         `);
         

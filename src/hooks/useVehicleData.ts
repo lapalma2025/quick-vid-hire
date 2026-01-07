@@ -59,11 +59,12 @@ interface VehicleApiRecord {
 const WROCLAW_CENTER = { lat: 51.1079, lng: 17.0385 };
 
 // Static hotspots for Wrocław based on real data
+// Coordinates verified for proper separation on map
 const STATIC_HOTSPOTS: Hotspot[] = [
   {
     id: "hotspot-1",
     name: "Stare Miasto",
-    lat: 51.1100,
+    lat: 51.1098,
     lng: 17.0320,
     level: 5,
     activity: "Bardzo wysoka",
@@ -73,8 +74,8 @@ const STATIC_HOTSPOTS: Hotspot[] = [
   {
     id: "hotspot-2",
     name: "Śródmieście",
-    lat: 51.1150,
-    lng: 17.0550,
+    lat: 51.1180,
+    lng: 17.0600,
     level: 4,
     activity: "Bardzo wysoka",
     peakHours: "12:00–15:00, 18:00–22:00",
@@ -83,8 +84,8 @@ const STATIC_HOTSPOTS: Hotspot[] = [
   {
     id: "hotspot-3",
     name: "Krzyki",
-    lat: 51.0850,
-    lng: 17.0200,
+    lat: 51.0780,
+    lng: 17.0100,
     level: 4,
     activity: "Wysoka",
     peakHours: "8:00–10:00, 15:00–19:00",
@@ -93,8 +94,8 @@ const STATIC_HOTSPOTS: Hotspot[] = [
   {
     id: "hotspot-4",
     name: "Fabryczna",
-    lat: 51.1050,
-    lng: 16.9800,
+    lat: 51.1000,
+    lng: 16.9500,
     level: 3,
     activity: "Wysoka",
     peakHours: "6:00–8:00, 14:00–18:00",
@@ -103,8 +104,8 @@ const STATIC_HOTSPOTS: Hotspot[] = [
   {
     id: "hotspot-5",
     name: "Psie Pole",
-    lat: 51.1400,
-    lng: 17.0600,
+    lat: 51.1450,
+    lng: 17.0750,
     level: 3,
     activity: "Średnia",
     peakHours: "9:00–12:00, 16:00–19:00",
@@ -310,16 +311,24 @@ export function useVehicleData(intervalMinutes: number = 30) {
             if (!lat || !lng) return null;
             if (lat < 50.9 || lat > 51.3 || lng < 16.8 || lng > 17.3) return null;
             
+            // Get line number - try different field names
+            const line = record.Linia || record.Nr_Tab?.toString() || undefined;
+            
             return {
               id: String(record._id || record.Nr_Tab || Math.random()),
               lat,
               lng,
-              line: record.Linia,
+              line,
               timestamp: record.Data_Aktualizacji || new Date().toISOString(),
             } as Vehicle;
           })
           .filter((v): v is Vehicle => v !== null);
         
+        // Log sample for debugging
+        if (parsedVehicles.length > 0) {
+          const sample = parsedVehicles.slice(0, 3);
+          console.log(`Sample vehicles:`, sample.map(v => ({ id: v.id, line: v.line })));
+        }
         console.log(`Fetched ${parsedVehicles.length} vehicles from MPK API`);
       }
       
