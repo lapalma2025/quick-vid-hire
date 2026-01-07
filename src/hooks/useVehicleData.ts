@@ -444,15 +444,16 @@ export function useVehicleData(intervalMinutes: number = 30) {
   useEffect(() => {
     fetchAllData();
     
-    const intervalMs = intervalMinutes * 1000;
-    intervalRef.current = window.setInterval(fetchAllData, Math.max(30000, intervalMs));
+    // Refresh every 2 hours (7,200,000 ms) instead of frequently
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+    intervalRef.current = window.setInterval(fetchAllData, TWO_HOURS_MS);
     
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchAllData, intervalMinutes]);
+  }, [fetchAllData]);
 
   return {
     vehicles,
