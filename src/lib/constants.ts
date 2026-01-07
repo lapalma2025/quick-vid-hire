@@ -136,7 +136,7 @@ export const WROCLAW_AREA_CITIES: Record<string, { lat: number; lng: number }> =
   "Żórawina": { lat: 51.0150, lng: 17.0500 },
   "Miękinia": { lat: 51.1550, lng: 16.7500 },
   // Gminy i miejscowości do 50km
-  "Wilkszyn": { lat: 51.0850, lng: 16.7950 },
+  "Wilkszyn": { lat: 51.191944, lng: 16.861667 },
   "Święta Katarzyna": { lat: 51.0680, lng: 17.1350 },
   "Bielany Wrocławskie": { lat: 51.0450, lng: 16.9850 },
   "Smolec": { lat: 51.0550, lng: 16.9100 },
