@@ -347,6 +347,8 @@ export function useVehicleData(intervalMinutes: number = 30) {
             if (lat < 50.9 || lat > 51.3 || lng < 16.8 || lng > 17.3) return null;
 
             const rawLine =
+              (record as any).Nazwa_Linii ??
+              (record as any).nazwa_linii ??
               (record as any).Linia ??
               (record as any).linia ??
               (record as any).NR_LINII ??
