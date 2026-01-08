@@ -357,9 +357,9 @@ export function useVehicleData(intervalMinutes: number = 30) {
 
             const line = typeof rawLine === "string" ? rawLine.trim() : rawLine != null ? String(rawLine).trim() : undefined;
 
-            // Some records from the city API have empty line fields ("Nazwa_Linii": "").
+            // Some records from the city API have empty line fields ("Nazwa_Linii": "") or "None" as string.
             // If we can't determine the line number, skip the vehicle to avoid showing "Brak danych".
-            if (!line) return null;
+            if (!line || line.toLowerCase() === "none") return null;
 
             return {
               id: String(record._id || record.Nr_Tab || Math.random()),
