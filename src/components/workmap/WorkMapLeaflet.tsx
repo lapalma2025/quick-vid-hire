@@ -34,7 +34,7 @@ const DEFAULT_ZOOM = 13;
 // Custom SVG markers
 function createHotspotIcon(level: number, rank: number) {
   const size = 40 + level * 4;
-  const color = level >= 4 ? "#ef4444" : level >= 3 ? "#f97316" : level >= 2 ? "#eab308" : "#22c55e";
+  const color = "#f97316"; // All hotspots are orange
   
   return L.divIcon({
     className: "hotspot-marker",
