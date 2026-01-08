@@ -357,11 +357,15 @@ export function useVehicleData(intervalMinutes: number = 30) {
 
             const line = typeof rawLine === "string" ? rawLine.trim() : rawLine != null ? String(rawLine).trim() : undefined;
 
+            // Some records from the city API have empty line fields ("Nazwa_Linii": "").
+            // If we can't determine the line number, skip the vehicle to avoid showing "Brak danych".
+            if (!line) return null;
+
             return {
               id: String(record._id || record.Nr_Tab || Math.random()),
               lat,
               lng,
-              line: line || undefined,
+              line,
               timestamp: record.Data_Aktualizacji || new Date().toISOString(),
             } as Vehicle;
           })
