@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, Clock, Shirt, Phone, Check, X, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -38,6 +37,31 @@ interface JobResponse {
   worker_id: string;
 }
 
+// Predefiniowane szybkie wiadomości
+const QUICK_QUESTIONS = [
+  { id: 'today', label: 'Czy dziś?', icon: Clock },
+  { id: 'hours', label: 'Ile godzin?', icon: HelpCircle },
+  { id: 'clothes', label: 'Czy strój roboczy?', icon: Shirt },
+  { id: 'phone', label: 'Poproszę o numer telefonu', icon: Phone },
+];
+
+const QUICK_RESPONSES = [
+  { id: 'yes', label: 'Tak', icon: Check, variant: 'default' as const },
+  { id: 'no', label: 'Nie', icon: X, variant: 'outline' as const },
+  { id: 'call', label: 'Zadzwoń pod:', icon: Phone, variant: 'secondary' as const },
+];
+
+// Mapowanie ID wiadomości na pełny tekst
+const MESSAGE_MAP: Record<string, string> = {
+  'today': '❓ Czy dziś możesz wykonać zlecenie?',
+  'hours': '❓ Ile godzin zajmie praca?',
+  'clothes': '❓ Czy potrzebuję stroju roboczego?',
+  'phone': '📞 Poproszę o numer telefonu, aby ustalić szczegóły.',
+  'yes': '✅ Tak',
+  'no': '❌ Nie',
+  'call': '📱 Zadzwoń pod numer:',
+};
+
 export default function Chat() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -46,10 +70,11 @@ export default function Chat() {
 
   const [job, setJob] = useState<JobInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -166,14 +191,14 @@ export default function Chat() {
     };
   };
 
-  const handleSend = async () => {
-    if (!newMessage.trim() || !profile || !id) return;
+  const sendQuickMessage = async (messageText: string) => {
+    if (!profile || !id) return;
 
     setSending(true);
     const { error } = await supabase.from('chat_messages').insert({
       job_id: id,
       sender_id: profile.id,
-      message: newMessage.trim(),
+      message: messageText,
     });
     setSending(false);
 
@@ -183,15 +208,32 @@ export default function Chat() {
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      setNewMessage('');
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleQuickQuestion = (questionId: string) => {
+    const message = MESSAGE_MAP[questionId];
+    if (message) {
+      sendQuickMessage(message);
+    }
+  };
+
+  const handleQuickResponse = (responseId: string) => {
+    if (responseId === 'call') {
+      setShowPhoneInput(true);
+    } else {
+      const message = MESSAGE_MAP[responseId];
+      if (message) {
+        sendQuickMessage(message);
+      }
+    }
+  };
+
+  const handleSendPhone = () => {
+    if (phoneInput.trim()) {
+      sendQuickMessage(`📱 Zadzwoń pod numer: ${phoneInput.trim()}`);
+      setPhoneInput('');
+      setShowPhoneInput(false);
     }
   };
 
@@ -227,6 +269,12 @@ export default function Chat() {
   };
   
   const otherParticipant = getOtherParticipant();
+
+  // Sprawdź ostatnią wiadomość, czy to pytanie
+  const lastMessage = messages[messages.length - 1];
+  const isLastMessageQuestion = lastMessage?.message?.startsWith('❓');
+  const isLastMessageFromOther = lastMessage?.sender_id !== profile?.id;
+  const showResponseButtons = isLastMessageQuestion && isLastMessageFromOther;
 
   if (loading) {
     return (
@@ -280,9 +328,12 @@ export default function Chat() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
           {messages.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Rozpocznij rozmowę
-            </p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-2">Szybka komunikacja</p>
+              <p className="text-sm text-muted-foreground">
+                Wybierz jedno z szybkich pytań poniżej, aby rozpocząć rozmowę
+              </p>
+            </div>
           ) : (
             messages.map((msg) => {
               const isOwn = msg.sender_id === profile?.id;
@@ -315,23 +366,72 @@ export default function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
+        {/* Quick Messages Input */}
         {job.status !== 'done' && job.status !== 'archived' ? (
-          <div className="flex gap-2 pt-4 border-t">
-            <Input
-              placeholder="Napisz wiadomość..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={sending}
-            />
-            <Button onClick={handleSend} disabled={sending || !newMessage.trim()}>
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
+          <div className="pt-4 border-t space-y-3">
+            {/* Phone input overlay */}
+            {showPhoneInput ? (
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  placeholder="Wpisz numer telefonu..."
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                  autoFocus
+                />
+                <Button onClick={handleSendPhone} disabled={!phoneInput.trim() || sending}>
+                  Wyślij
+                </Button>
+                <Button variant="ghost" onClick={() => setShowPhoneInput(false)}>
+                  Anuluj
+                </Button>
+              </div>
+            ) : (
+              <>
+                {/* Show response buttons if last message was a question from other person */}
+                {showResponseButtons && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground text-center">Szybka odpowiedź:</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {QUICK_RESPONSES.map((response) => (
+                        <Button
+                          key={response.id}
+                          variant={response.variant}
+                          size="sm"
+                          onClick={() => handleQuickResponse(response.id)}
+                          disabled={sending}
+                          className="gap-2"
+                        >
+                          <response.icon className="h-4 w-4" />
+                          {response.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Always show quick questions */}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground text-center">Szybkie pytania:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {QUICK_QUESTIONS.map((question) => (
+                      <Button
+                        key={question.id}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickQuestion(question.id)}
+                        disabled={sending}
+                        className="gap-2"
+                      >
+                        <question.icon className="h-4 w-4" />
+                        {question.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="text-center py-4 border-t">
