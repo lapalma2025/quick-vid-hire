@@ -376,7 +376,7 @@ export default function WorkersMap({
         style={{ background: 'hsl(var(--muted))' }}
       />
       
-      <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border z-[1000]">
+      <div className="absolute top-4 right-4 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border z-[1000]">
         <div className="text-sm font-medium">
           {workerCoordsRef.current.size} wykonawców na mapie
         </div>
