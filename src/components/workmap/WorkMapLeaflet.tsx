@@ -134,11 +134,11 @@ export function WorkMapLeaflet({
       maxZoom: 18,
     }).addTo(map);
 
-    // Add minimal attribution (required by OSM license)
+    // Add minimal attribution (required by OSM and CARTO licenses)
     L.control.attribution({
       position: 'bottomright',
       prefix: false,
-    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a>').addTo(map);
+    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
 
     mapRef.current = map;
     setIsLoaded(true);
