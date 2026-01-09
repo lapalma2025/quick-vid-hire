@@ -74,6 +74,8 @@ export default function NewJob() {
 	const [loading, setLoading] = useState(false);
 	const [paymentProcessing, setPaymentProcessing] = useState(false);
 	const [paymentComplete, setPaymentComplete] = useState(false);
+	const [locationError, setLocationError] = useState<string | null>(null);
+	const [checkingLocation, setCheckingLocation] = useState(false);
 
 	const [form, setForm] = useState({
 		title: "",
@@ -170,6 +172,105 @@ export default function NewJob() {
 		if (data) setCategories(data);
 	};
 
+	const WROCLAW_LAT = 51.1079;
+	const WROCLAW_LNG = 17.0385;
+	const MAX_DISTANCE_KM = 50;
+
+	const distanceFromWroclaw = (lat: number, lng: number) =>
+		Math.sqrt(
+			Math.pow((lat - WROCLAW_LAT) * 111, 2) +
+				Math.pow(
+					(lng - WROCLAW_LNG) *
+						111 *
+						Math.cos((WROCLAW_LAT * Math.PI) / 180),
+					2
+				)
+		);
+
+	const checkCityDistance = async (miasto: string, wojewodztwo: string) => {
+		if (!miasto) {
+			setLocationError(null);
+			return;
+		}
+
+		// First check if it's in the known Wrocław area
+		const normalizedMiasto = miasto
+			.trim()
+			.split(" ")
+			.map((word) =>
+				word
+					.split("-")
+					.map((part) =>
+						part
+							? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+							: part
+					)
+					.join("-")
+			)
+			.join(" ");
+
+		if (WROCLAW_AREA_CITIES[normalizedMiasto]) {
+			setLocationError(null);
+			return;
+		}
+
+		// Geocode to check distance
+		setCheckingLocation(true);
+		try {
+			const dLat = MAX_DISTANCE_KM / 111;
+			const dLng = MAX_DISTANCE_KM / (111 * Math.cos((WROCLAW_LAT * Math.PI) / 180));
+			const viewbox = `${WROCLAW_LNG - dLng * 2},${WROCLAW_LAT + dLat * 2},${WROCLAW_LNG + dLng * 2},${WROCLAW_LAT - dLat * 2}`;
+
+			const params = new URLSearchParams({
+				q: `${miasto}, ${wojewodztwo || ""}, Polska`,
+				format: "json",
+				addressdetails: "1",
+				limit: "1",
+				countrycodes: "pl",
+				"accept-language": "pl",
+				viewbox,
+			});
+
+			const res = await fetch(
+				`https://nominatim.openstreetmap.org/search?${params.toString()}`,
+				{ headers: { "User-Agent": "ZlecenieTeraz/1.0" } }
+			);
+
+			if (!res.ok) {
+				setLocationError("Nie udało się sprawdzić lokalizacji. Spróbuj ponownie.");
+				return;
+			}
+
+			const data = await res.json();
+			if (!Array.isArray(data) || data.length === 0) {
+				setLocationError("Nie znaleziono miasta. Sprawdź pisownię lub wybierz inne miasto.");
+				return;
+			}
+
+			const lat = parseFloat(data[0].lat);
+			const lng = parseFloat(data[0].lon);
+
+			if (Number.isNaN(lat) || Number.isNaN(lng)) {
+				setLocationError("Nie udało się określić lokalizacji miasta.");
+				return;
+			}
+
+			const distance = distanceFromWroclaw(lat, lng);
+			if (distance > MAX_DISTANCE_KM) {
+				setLocationError(
+					`Miasto ${miasto} znajduje się ${Math.round(distance)} km od Wrocławia. Zlecenia mogą być dodawane tylko w promieniu 50 km od Wrocławia.`
+				);
+			} else {
+				setLocationError(null);
+			}
+		} catch (err) {
+			console.error("Geocoding error:", err);
+			setLocationError("Wystąpił błąd podczas sprawdzania lokalizacji.");
+		} finally {
+			setCheckingLocation(false);
+		}
+	};
+
 	const updateForm = (field: string, value: any) => {
 		setForm((prev) => {
 			const updated = { ...prev, [field]: value };
@@ -177,6 +278,7 @@ export default function NewJob() {
 				updated.miasto = "";
 				updated.district = "";
 				updated.street = "";
+				setLocationError(null);
 			}
 			if (field === "miasto") {
 				updated.district = "";
@@ -191,6 +293,7 @@ export default function NewJob() {
 				updated.country = "";
 				updated.district = "";
 				updated.street = "";
+				setLocationError(null);
 			}
 			return updated;
 		});
@@ -202,9 +305,11 @@ export default function NewJob() {
 		}
 		if (s === 2) {
 			if (form.is_foreign) {
+				// Foreign locations are allowed
 				return form.country !== "" && form.miasto !== "";
 			}
-			return form.wojewodztwo !== "" && form.miasto !== "";
+			// Polish locations must be within 50km of Wrocław
+			return form.wojewodztwo !== "" && form.miasto !== "" && !locationError && !checkingLocation;
 		}
 		return true;
 	};
@@ -812,6 +917,7 @@ export default function NewJob() {
 												value={form.miasto}
 												onChange={(miasto, region) => {
 													updateForm("miasto", miasto);
+													let effectiveWojewodztwo = form.wojewodztwo;
 													if (region) {
 														const normalizedRegion = region.toLowerCase();
 														const matchedWojewodztwo = WOJEWODZTWA.find(
@@ -821,6 +927,7 @@ export default function NewJob() {
 															matchedWojewodztwo &&
 															matchedWojewodztwo !== form.wojewodztwo
 														) {
+															effectiveWojewodztwo = matchedWojewodztwo;
 															setForm((prev) => ({
 																...prev,
 																miasto,
@@ -828,9 +935,17 @@ export default function NewJob() {
 															}));
 														}
 													}
+													// Check distance from Wrocław
+													checkCityDistance(miasto, effectiveWojewodztwo);
 												}}
 												placeholder="Wpisz miasto..."
 											/>
+											{checkingLocation && (
+												<p className="text-xs text-muted-foreground flex items-center gap-1">
+													<Loader2 className="h-3 w-3 animate-spin" />
+													Sprawdzanie lokalizacji...
+												</p>
+											)}
 										</div>
 									</div>
 
@@ -884,12 +999,27 @@ export default function NewJob() {
 										</div>
 									)}
 
-									{/* Warning for cities outside 50km */}
-									{form.miasto && !WROCLAW_AREA_CITIES[form.miasto] && form.wojewodztwo && (
-										<div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
-											<AlertTriangle className="h-4 w-4 text-orange-500" />
+									{/* Error for cities outside 50km - blocks submission */}
+									{locationError && (
+										<div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+											<AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+											<div>
+												<p className="text-sm font-medium text-destructive">
+													Lokalizacja poza zasięgiem
+												</p>
+												<p className="text-sm text-muted-foreground mt-1">
+													{locationError}
+												</p>
+											</div>
+										</div>
+									)}
+
+									{/* Info for cities in Wrocław area but not in predefined list */}
+									{form.miasto && !WROCLAW_AREA_CITIES[form.miasto] && form.wojewodztwo && !locationError && !checkingLocation && (
+										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+											<Sparkles className="h-4 w-4 text-primary" />
 											<p className="text-sm text-muted-foreground">
-												To miasto jest poza zasięgiem Mapy Pracy (50 km od Wrocławia). Oferta będzie widoczna tylko na liście zleceń.
+												Lokalizacja w zasięgu 50 km od Wrocławia - oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span>
 											</p>
 										</div>
 									)}
