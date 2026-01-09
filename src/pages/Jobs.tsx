@@ -41,12 +41,18 @@ interface Job {
 	job_responses: { count: number }[];
 }
 
+interface CategoryWithParent {
+	id: string;
+	parent_id: string | null;
+}
+
 export default function Jobs() {
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 	const [hasMore, setHasMore] = useState(true);
 	const [totalCount, setTotalCount] = useState(0);
+	const [allCategories, setAllCategories] = useState<CategoryWithParent[]>([]);
 	const [filters, setFilters] = useState<Filters>({
 		search: "",
 		locationType: "all",
@@ -65,6 +71,36 @@ export default function Jobs() {
 	const headerRef = useRef<HTMLDivElement>(null);
 	const gridRef = useRef<HTMLDivElement>(null);
 	const loadMoreRef = useRef<HTMLDivElement>(null);
+
+	// Fetch all categories for hierarchy filtering
+	useEffect(() => {
+		const fetchCategories = async () => {
+			const { data } = await supabase
+				.from("categories")
+				.select("id, parent_id");
+			if (data) setAllCategories(data);
+		};
+		fetchCategories();
+	}, []);
+
+	// Get category IDs to filter (includes subcategories if main category selected)
+	const getCategoryIdsToFilter = useCallback((categoryId: string): string[] => {
+		if (!categoryId) return [];
+		
+		const selectedCategory = allCategories.find(c => c.id === categoryId);
+		if (!selectedCategory) return [categoryId];
+		
+		// If it's a main category (no parent), include all its subcategories
+		if (!selectedCategory.parent_id) {
+			const subcategoryIds = allCategories
+				.filter(c => c.parent_id === categoryId)
+				.map(c => c.id);
+			return [categoryId, ...subcategoryIds];
+		}
+		
+		// If it's a subcategory, just return it
+		return [categoryId];
+	}, [allCategories]);
 
 	// Build query with filters
 	const buildQuery = useCallback(() => {
@@ -130,8 +166,14 @@ export default function Jobs() {
 			}
 		}
 
+		// Category filter with hierarchy support
 		if (filters.category_id) {
-			query = query.eq("category_id", filters.category_id);
+			const categoryIds = getCategoryIdsToFilter(filters.category_id);
+			if (categoryIds.length === 1) {
+				query = query.eq("category_id", categoryIds[0]);
+			} else if (categoryIds.length > 1) {
+				query = query.in("category_id", categoryIds);
+			}
 		}
 		if (filters.urgent) {
 			query = query.eq("urgent", true);
@@ -175,7 +217,7 @@ export default function Jobs() {
 		}
 
 		return query;
-	}, [filters]);
+	}, [filters, getCategoryIdsToFilter]);
 
 	// Initial fetch
 	const fetchJobs = useCallback(async () => {

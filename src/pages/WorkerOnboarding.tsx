@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
+import { CategorySubcategorySelect } from "@/components/jobs/CategorySubcategorySelect";
 import { WOJEWODZTWA } from "@/lib/constants";
 
 interface Category {
@@ -718,21 +719,11 @@ export default function WorkerOnboarding() {
               {/* Categories */}
               <div className="space-y-3">
                 <Label>Kategorie usług * (wybierz co najmniej jedną)</Label>
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((cat) => (
-                    <Badge
-                      key={cat.id}
-                      variant={selectedCategories.includes(cat.id) ? "default" : "outline"}
-                      className="cursor-pointer px-3 py-1.5 text-sm transition-all hover:scale-105"
-                      onClick={() => toggleCategory(cat.id)}
-                    >
-                      {selectedCategories.includes(cat.id) && (
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                      )}
-                      {cat.name}
-                    </Badge>
-                  ))}
-                </div>
+                <CategorySubcategorySelect
+                  selectedCategories={selectedCategories}
+                  onCategoriesChange={setSelectedCategories}
+                  mode="multi"
+                />
               </div>
 
               {/* Gallery */}
