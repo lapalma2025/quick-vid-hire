@@ -563,8 +563,16 @@ export function WorkMapLeaflet({
         }
         
         .vehicle-popup {
-          padding: 8px 12px;
+          padding: 12px 16px;
+          padding-right: 28px;
           font-size: 13px;
+          min-width: 120px;
+        }
+        
+        .vehicle-popup strong {
+          display: block;
+          margin-bottom: 4px;
+          color: #1f2937;
         }
         
         /* Fix z-index for Leaflet controls */
