@@ -765,14 +765,16 @@ export default function NewJob() {
 									</p>
 								)}
 								<p className="text-xs text-muted-foreground">
-									Nie znalazłeś odpowiedniej kategorii?{" "}
+									Nie znalazłeś odpowiedniej podkategorii? Możesz wybrać kategorię ogólną (oznaczoną jako "Ogólna").{" "}
+									Jeśli żadna kategoria nie pasuje,{" "}
 									<button
 										type="button"
 										onClick={() => updateForm("category_id", "50ed805a-5705-46d9-8467-be94f43b7590")}
 										className="text-primary hover:underline font-medium"
 									>
-										Wybierz "Inne"
+										wybierz "Inne"
 									</button>
+									.
 								</p>
 							</div>
 
