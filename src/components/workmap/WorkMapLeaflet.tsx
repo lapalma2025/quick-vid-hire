@@ -127,12 +127,18 @@ export function WorkMapLeaflet({
       maxZoom: 18,
       maxBounds: maxBounds,
       maxBoundsViscosity: 0.8,
+      attributionControl: false,
     });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 18,
     }).addTo(map);
+
+    // Add minimal attribution (required by OSM license)
+    L.control.attribution({
+      position: 'bottomright',
+      prefix: false,
+    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a>').addTo(map);
 
     mapRef.current = map;
     setIsLoaded(true);
@@ -579,6 +585,13 @@ export function WorkMapLeaflet({
         .leaflet-pane { z-index: 1 !important; }
         .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
         .leaflet-control { z-index: 10 !important; }
+        
+        /* Hide Leaflet branding and Ukraine flag */
+        .leaflet-control-attribution a[href*="leaflet"],
+        .leaflet-control-attribution img,
+        .leaflet-control-attribution svg {
+          display: none !important;
+        }
       `}</style>
     </div>
   );
