@@ -138,7 +138,7 @@ export function WorkMapLeaflet({
     L.control.attribution({
       position: 'bottomright',
       prefix: false,
-    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
+    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
 
     mapRef.current = map;
     setIsLoaded(true);
