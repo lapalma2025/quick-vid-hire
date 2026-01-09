@@ -39,6 +39,7 @@ import {
 	AlertTriangle,
 } from "lucide-react";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
+import { CategorySelect } from "@/components/jobs/CategorySelect";
 import { ImageUpload } from "@/components/jobs/ImageUpload";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
@@ -752,24 +753,11 @@ export default function NewJob() {
 
 							<div className="space-y-2">
 								<Label>Kategoria *</Label>
-								<Select
+								<CategorySelect
 									value={form.category_id}
-									onValueChange={(v) => updateForm("category_id", v)}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Wybierz kategorię" />
-									</SelectTrigger>
-									<SelectContent>
-										{categories.map((c) => (
-											<SelectItem key={c.id} value={c.id}>
-												<div className="flex items-center gap-2">
-													<CategoryIcon name={c.name} className="h-4 w-4" />
-													{c.name}
-												</div>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+									onChange={(v) => updateForm("category_id", v)}
+									placeholder="Wybierz kategorię"
+								/>
 								{!form.category_id && form.title.length >= 5 && (
 									<p className="text-xs text-destructive flex items-center gap-1">
 										<AlertTriangle className="h-3 w-3" />
