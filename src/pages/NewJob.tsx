@@ -764,6 +764,16 @@ export default function NewJob() {
 										Wybierz kategorię zlecenia
 									</p>
 								)}
+								<p className="text-xs text-muted-foreground">
+									Nie znalazłeś odpowiedniej kategorii?{" "}
+									<button
+										type="button"
+										onClick={() => updateForm("category_id", "50ed805a-5705-46d9-8467-be94f43b7590")}
+										className="text-primary hover:underline font-medium"
+									>
+										Wybierz "Inne"
+									</button>
+								</p>
 							</div>
 
 							<div className="space-y-2">
