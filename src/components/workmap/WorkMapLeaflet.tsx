@@ -40,7 +40,7 @@ interface JobCluster {
 
 // Województwo dolnośląskie bounds
 const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.0, 16.35];
-const DEFAULT_ZOOM = 9;
+const DEFAULT_ZOOM = 10;
 const PRECISE_SPLIT_ZOOM = 15; // Jobs with precise location (street) split off at this zoom
 
 // Custom SVG markers
