@@ -1,6 +1,8 @@
 import { ReactNode, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "./Header";
+import { Breadcrumbs } from "./Breadcrumbs";
+import { SchemaOrg } from "@/components/seo/SchemaOrg";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -8,9 +10,10 @@ gsap.registerPlugin(ScrollTrigger);
 
 interface LayoutProps {
   children: ReactNode;
+  showBreadcrumbs?: boolean;
 }
 
-export const Layout = ({ children }: LayoutProps) => {
+export const Layout = ({ children, showBreadcrumbs = true }: LayoutProps) => {
   const footerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -38,7 +41,9 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SchemaOrg />
       <Header />
+      {showBreadcrumbs && <Breadcrumbs />}
       <main className="flex-1">{children}</main>
       <footer ref={footerRef} className="border-t border-border/50 bg-muted/30 py-12 mt-auto">
         <div className="container">

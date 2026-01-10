@@ -27,6 +27,7 @@ import { WOJEWODZTWA } from "@/lib/constants";
 import WorkersMap from "@/components/workers/WorkersMap";
 import { WorkerListItem } from "@/components/workers/WorkerListItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSEO } from "@/hooks/useSEO";
 
 const PAGE_SIZE = 50;
 
@@ -70,6 +71,12 @@ export default function Workers() {
     minRate: "",
     maxRate: "",
     minRating: "",
+  });
+
+  useSEO({
+    title: "Wykonawcy",
+    description: "Znajdź sprawdzonych wykonawców w swojej okolicy. Przeglądaj profile, opinie i stawki. Fachowcy, pomocnicy, specjaliści od remontów i usług.",
+    keywords: "wykonawcy, fachowcy, specjaliści, usługi, remonty, sprzątanie, transport, Polska",
   });
 
   useEffect(() => {
