@@ -40,8 +40,7 @@ interface JobCluster {
 
 const WROCLAW_CENTER: L.LatLngTuple = [51.1079, 17.0385];
 const DEFAULT_ZOOM = 13;
-const DISTRICT_ZOOM_THRESHOLD = 14; // Show district-level grouping when zoom >= 14
-const INDIVIDUAL_ZOOM_THRESHOLD = 16; // Show individual markers when zoom >= 16
+const PRECISE_SPLIT_ZOOM = 13; // Jobs with precise location (street) split off at this zoom
 
 // Custom SVG markers
 function createHotspotIcon(level: number, rank: number) {
@@ -142,58 +141,41 @@ export function WorkMapLeaflet({
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
 
-  // Group jobs based on zoom level:
-  // - Very zoomed in (>= 16): Show individual markers for jobs with unique coords
-  // - Medium zoom (>= 14): Group by district (Wrocław) or show individual if has precise coords
-  // - Zoomed out (< 14): Group by city
-  const jobClusters = useMemo(() => {
+  // Separate jobs into two groups:
+  // 1. preciseJobs - have street-level geocoded coords, show as individual markers when zoomed
+  // 2. clusteredJobs - no precise location, stay grouped by city forever
+  const { preciseJobs, clustersByCity } = useMemo(() => {
+    const shouldShowPrecise = currentZoom >= PRECISE_SPLIT_ZOOM;
+    
+    const precise: JobMarker[] = [];
     const clusters: Record<string, JobCluster> = {};
-    const showIndividual = currentZoom >= INDIVIDUAL_ZOOM_THRESHOLD;
-    const showDistricts = currentZoom >= DISTRICT_ZOOM_THRESHOLD;
     
     jobs.forEach(job => {
-      const isWroclaw = job.miasto.toLowerCase() === "wrocław";
-      
-      let key: string;
-      let district: string | undefined;
-      
-      if (showIndividual) {
-        // At high zoom, each job with unique coordinates gets its own marker
-        // Use lat/lng as key to detect truly unique positions
-        key = `${job.id}`;
-        district = job.district;
-      } else if (showDistricts) {
-        // At medium zoom: group by district for Wrocław, by city for others
-        if (isWroclaw && job.district) {
-          key = `wrocław-${job.district.toLowerCase()}`;
-          district = job.district;
-        } else {
-          key = job.miasto.toLowerCase();
-        }
+      // Jobs with precise location (street geocoded) split off when zoomed
+      if (job.hasPreciseLocation && shouldShowPrecise) {
+        precise.push(job);
       } else {
-        // Zoomed out: group everything by city
-        key = job.miasto.toLowerCase();
-      }
-      
-      if (!clusters[key]) {
-        clusters[key] = {
-          key,
-          miasto: job.miasto,
-          district,
-          lat: job.lat,
-          lng: job.lng,
-          jobs: [],
-          hasUrgent: false,
-        };
-      }
-      
-      clusters[key].jobs.push(job);
-      if (job.urgent) {
-        clusters[key].hasUrgent = true;
-      }
-      
-      // Calculate average position for cluster (only relevant for multi-job clusters)
-      if (clusters[key].jobs.length > 1) {
+        // Jobs without precise location stay in city cluster
+        const key = job.miasto.toLowerCase();
+        
+        if (!clusters[key]) {
+          clusters[key] = {
+            key,
+            miasto: job.miasto,
+            district: job.district,
+            lat: job.lat,
+            lng: job.lng,
+            jobs: [],
+            hasUrgent: false,
+          };
+        }
+        
+        clusters[key].jobs.push(job);
+        if (job.urgent) {
+          clusters[key].hasUrgent = true;
+        }
+        
+        // Calculate average position for cluster
         const totalLat = clusters[key].jobs.reduce((sum, j) => sum + j.lat, 0);
         const totalLng = clusters[key].jobs.reduce((sum, j) => sum + j.lng, 0);
         clusters[key].lat = totalLat / clusters[key].jobs.length;
@@ -201,7 +183,10 @@ export function WorkMapLeaflet({
       }
     });
     
-    return Object.values(clusters);
+    return { 
+      preciseJobs: precise, 
+      clustersByCity: Object.values(clusters) 
+    };
   }, [jobs, currentZoom]);
 
   // Initialize map with 50km bounds around Wrocław
@@ -311,7 +296,7 @@ export function WorkMapLeaflet({
     }
   }, [filters.showVehicles, vehicles, isLoaded]);
 
-  // Update job markers - always use clusters, with different grouping based on zoom
+  // Update job markers - precise jobs as individual markers, rest as clusters
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
 
@@ -321,12 +306,52 @@ export function WorkMapLeaflet({
     clusterMarkersRef.current.forEach(marker => marker.remove());
     clusterMarkersRef.current = [];
 
-    const showDistricts = currentZoom >= DISTRICT_ZOOM_THRESHOLD;
+    // 1. Add individual markers for precise jobs (when zoomed in)
+    preciseJobs.forEach(job => {
+      const icon = createJobIcon(job.urgent);
+      const marker = L.marker([job.lat, job.lng], { 
+        icon,
+        zIndexOffset: 350, // Higher than clusters
+      });
+      
+      marker.bindPopup(`
+        <div class="job-popup">
+          <div class="job-popup-header">
+            <span class="job-title">${job.title}</span>
+            ${job.urgent ? '<span class="job-urgent-badge">PILNE</span>' : ''}
+          </div>
+          <div class="job-popup-content">
+            <div class="job-popup-row">
+              <span class="label">Lokalizacja:</span>
+              <span class="value">${job.miasto}${job.district ? `, ${job.district}` : ''}</span>
+            </div>
+            ${job.category ? `
+              <div class="job-popup-row">
+                <span class="label">Kategoria:</span>
+                <span class="value">${job.category}</span>
+              </div>
+            ` : ''}
+            ${job.budget ? `
+              <div class="job-popup-row">
+                <span class="label">Budżet:</span>
+                <span class="value">${job.budget} zł</span>
+              </div>
+            ` : ''}
+          </div>
+          <a href="/jobs/${job.id}" class="job-popup-link">Zobacz szczegóły →</a>
+        </div>
+      `, { minWidth: 220, maxWidth: 280 });
+      
+      marker.addTo(mapRef.current!);
+      jobMarkersRef.current.push(marker);
+    });
 
-    // Always show cluster markers, but with different grouping
-    jobClusters.forEach(cluster => {
+    // 2. Add cluster markers for jobs without precise location
+    clustersByCity.forEach(cluster => {
+      if (cluster.jobs.length === 0) return;
+      
       if (cluster.jobs.length === 1) {
-        // Single job - show regular marker
+        // Single job in cluster - show regular marker
         const job = cluster.jobs[0];
         const icon = createJobIcon(job.urgent);
         const marker = L.marker([job.lat, job.lng], { 
@@ -365,7 +390,7 @@ export function WorkMapLeaflet({
         marker.addTo(mapRef.current!);
         clusterMarkersRef.current.push(marker);
       } else {
-        // Multiple jobs - show cluster marker with popup containing ALL jobs in scrollable list
+        // Multiple jobs without precise location - show cluster marker
         const icon = createClusterIcon(cluster.jobs.length, cluster.hasUrgent);
         const marker = L.marker([cluster.lat, cluster.lng], { 
           icon,
@@ -388,33 +413,13 @@ export function WorkMapLeaflet({
             </a>
           `).join('');
         
-        // Header text based on grouping type
-        const isWroclawDistrict = cluster.miasto.toLowerCase() === "wrocław" && cluster.district;
-        const headerText = isWroclawDistrict 
-          ? `${cluster.miasto} - ${cluster.district}`
-          : cluster.miasto;
-        
-        // Hint text depends on zoom level
-        const isWroclaw = cluster.miasto.toLowerCase() === "wrocław";
-        const showIndividual = currentZoom >= INDIVIDUAL_ZOOM_THRESHOLD;
-        let hintText: string;
-        
-        if (showIndividual) {
-          hintText = "Oferty w tej lokalizacji";
-        } else if (showDistricts && isWroclaw) {
-          hintText = "Przybliż mapę, aby zobaczyć dokładne lokalizacje";
-        } else if (showDistricts) {
-          hintText = "Przybliż mapę, aby zobaczyć dokładne lokalizacje";
-        } else {
-          hintText = isWroclaw 
-            ? "Przybliż mapę, aby zobaczyć oferty wg dzielnic"
-            : "Przybliż mapę, aby zobaczyć dokładne lokalizacje";
-        }
+        // Hint: these jobs don't have precise locations
+        const hintText = "Oferty bez podanego adresu (tylko miasto/dzielnica)";
         
         marker.bindPopup(`
           <div class="cluster-popup">
             <div class="cluster-popup-header">
-              <strong>${headerText}</strong>
+              <strong>${cluster.miasto}</strong>
               <span class="cluster-job-count">${cluster.jobs.length} ${cluster.jobs.length === 1 ? 'oferta' : cluster.jobs.length < 5 ? 'oferty' : 'ofert'}</span>
             </div>
             <div class="cluster-job-list">
@@ -430,7 +435,7 @@ export function WorkMapLeaflet({
         clusterMarkersRef.current.push(marker);
       }
     });
-  }, [jobs, jobClusters, currentZoom, isLoaded]);
+  }, [preciseJobs, clustersByCity, currentZoom, isLoaded]);
 
   // Update hotspot markers
   useEffect(() => {
@@ -527,10 +532,10 @@ export function WorkMapLeaflet({
         </div>
       )}
 
-      {/* Zoom hint */}
-      {currentZoom < DISTRICT_ZOOM_THRESHOLD && jobs.length > 0 && (
+      {/* Zoom hint - show when there are precise jobs to reveal */}
+      {currentZoom < PRECISE_SPLIT_ZOOM && jobs.some(j => j.hasPreciseLocation) && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm text-foreground px-4 py-2 rounded-full text-xs font-medium shadow-lg border border-border/50 z-20">
-          Przybliż mapę, aby zobaczyć dokładne lokalizacje ofert
+          Przybliż mapę, aby zobaczyć oferty z dokładnym adresem
         </div>
       )}
 
