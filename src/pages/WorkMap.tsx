@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { WorkMapFilters } from "@/components/workmap/WorkMapFilters";
 import { WorkMapInsights } from "@/components/workmap/WorkMapInsights";
 import { WorkMapLeaflet } from "@/components/workmap/WorkMapLeaflet";
-import { useVehicleData } from "@/hooks/useVehicleData";
+import { useVehicleData, JobMarker } from "@/hooks/useVehicleData";
+import { CategoryBadges } from "@/components/shared/CategoryBadges";
 import { MapPin, Activity, TrendingUp } from "lucide-react";
 
 export interface MapFilters {
@@ -33,8 +34,23 @@ const WorkMap = () => {
     intensity: 50,
     timeInterval: 30,
   });
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const { vehicles, jobs, hotspots, heatmapPoints, isLoading, lastUpdate } = useVehicleData(filters.timeInterval);
+
+  // Filter jobs by selected categories
+  const filteredJobs = useMemo<JobMarker[]>(() => {
+    if (selectedCategories.length === 0) return jobs;
+    return jobs.filter(job => job.category && selectedCategories.includes(job.category));
+  }, [jobs, selectedCategories]);
+
+  const handleCategoryToggle = useCallback((categoryName: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryName) 
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
+    );
+  }, []);
 
   const handleFilterChange = useCallback((key: keyof MapFilters, value: boolean | number) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -91,12 +107,36 @@ const WorkMap = () => {
             </div>
 
             {/* Map */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-4">
+              {/* Category Filter Badges */}
+              <div className="bg-background/95 backdrop-blur-sm rounded-xl border border-border/50 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-foreground">Filtruj po kategorii</h3>
+                  {selectedCategories.length > 0 && (
+                    <button 
+                      onClick={() => setSelectedCategories([])}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Wyczyść ({selectedCategories.length})
+                    </button>
+                  )}
+                </div>
+                <CategoryBadges 
+                  selectedCategories={selectedCategories}
+                  onCategoryToggle={handleCategoryToggle}
+                />
+                {selectedCategories.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Pokazuję {filteredJobs.length} z {jobs.length} ofert
+                  </p>
+                )}
+              </div>
+              
               <div className="card-modern overflow-hidden">
                 <WorkMapLeaflet
                   filters={filters}
                   vehicles={vehicles}
-                  jobs={jobs}
+                  jobs={filteredJobs}
                   hotspots={hotspots}
                   heatmapPoints={heatmapPoints}
                 />

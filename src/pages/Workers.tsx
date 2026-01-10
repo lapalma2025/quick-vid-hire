@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import WorkersMap from "@/components/workers/WorkersMap";
 import { WorkerListItem } from "@/components/workers/WorkerListItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSEO } from "@/hooks/useSEO";
+import { CategoryBadges } from "@/components/shared/CategoryBadges";
 
 const PAGE_SIZE = 50;
 
@@ -65,6 +66,7 @@ export default function Workers() {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [highlightedWorkerId, setHighlightedWorkerId] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -305,6 +307,22 @@ export default function Workers() {
     setHighlightedWorkerId(workerId);
   };
 
+  const handleCategoryToggle = useCallback((categoryName: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryName) 
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
+    );
+  }, []);
+
+  // Filter workers by selected categories for map view
+  const filteredWorkersForMap = useMemo(() => {
+    if (selectedCategories.length === 0) return workers;
+    return workers.filter(worker => 
+      worker.categories.some(cat => selectedCategories.includes(cat.name))
+    );
+  }, [workers, selectedCategories]);
+
   return (
     <Layout>
       {/* Header */}
@@ -460,7 +478,8 @@ export default function Workers() {
           <div className="w-full lg:w-[400px] xl:w-[450px] border-r border-border bg-background overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-border bg-muted/30">
               <p className="text-sm font-medium">
-                {workers.length} wykonawców
+                {filteredWorkersForMap.length} wykonawców
+                {selectedCategories.length > 0 && ` (z ${workers.length})`}
               </p>
             </div>
             
@@ -471,17 +490,26 @@ export default function Workers() {
                   <span className="text-muted-foreground text-sm">Ładowanie...</span>
                 </div>
               </div>
-            ) : workers.length === 0 ? (
+            ) : filteredWorkersForMap.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-4">
                 <div className="text-center">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground">Brak wykonawców</p>
+                  {selectedCategories.length > 0 && (
+                    <Button 
+                      variant="link" 
+                      className="mt-2"
+                      onClick={() => setSelectedCategories([])}
+                    >
+                      Wyczyść filtry
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (
               <ScrollArea className="flex-1">
                 <div ref={listRef} className="p-3 space-y-2">
-                  {workers.map((worker) => (
+                  {filteredWorkersForMap.map((worker) => (
                     <div key={worker.id} className="worker-item">
                       <WorkerListItem
                         worker={worker}
@@ -491,7 +519,7 @@ export default function Workers() {
                     </div>
                   ))}
                   
-                  {hasMore && (
+                  {hasMore && selectedCategories.length === 0 && (
                     <div ref={loadMoreRef} className="py-4 text-center">
                       <Button 
                         variant="outline" 
@@ -514,16 +542,38 @@ export default function Workers() {
             )}
           </div>
           
-          {/* Right: Map */}
-          <div className="flex-1 h-[400px] lg:h-full">
-            <WorkersMap
-              workers={workers.map(w => ({
-                ...w,
-                is_available: true,
-              }))}
-              highlightedWorkerId={highlightedWorkerId}
-              onMarkerHover={handleWorkerHover}
-            />
+          {/* Right: Map with Category Badges */}
+          <div className="flex-1 h-[400px] lg:h-full flex flex-col">
+            {/* Category Filter Badges */}
+            <div className="bg-background/95 backdrop-blur-sm border-b border-border p-3 z-10">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-medium text-muted-foreground">Filtruj po specjalizacji</h3>
+                {selectedCategories.length > 0 && (
+                  <button 
+                    onClick={() => setSelectedCategories([])}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Wyczyść ({selectedCategories.length})
+                  </button>
+                )}
+              </div>
+              <CategoryBadges 
+                selectedCategories={selectedCategories}
+                onCategoryToggle={handleCategoryToggle}
+              />
+            </div>
+            
+            {/* Map */}
+            <div className="flex-1">
+              <WorkersMap
+                workers={filteredWorkersForMap.map(w => ({
+                  ...w,
+                  is_available: true,
+                }))}
+                highlightedWorkerId={highlightedWorkerId}
+                onMarkerHover={handleWorkerHover}
+              />
+            </div>
           </div>
         </div>
       ) : (
