@@ -37,7 +37,7 @@ interface WorkerCluster {
 
 // Województwo dolnośląskie
 const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.0, 16.35];
-const DEFAULT_ZOOM = 9;
+const DEFAULT_ZOOM = 10;
 const PRECISE_SPLIT_ZOOM = 15;
 
 // Get worker coordinates and determine if they have precise location
