@@ -25,6 +25,7 @@ export interface JobMarker {
 	category?: string;
 	budget?: number;
 	urgent?: boolean;
+	hasPreciseLocation: boolean; // true if street/address was geocoded (coords from DB)
 }
 
 export interface ParkingData {
@@ -171,12 +172,13 @@ function generateFallbackVehicles(): Vehicle[] {
 
 // Get coordinates for a job based on miasto/district
 // Only returns coordinates if within 50km of Wrocław
+// Returns hasPreciseLocation: true if coords came from database (street geocoding)
 function getJobCoordinates(
 	miastoInput: string,
 	district?: string | null,
 	lat?: number | null,
 	lng?: number | null
-): { lat: number; lng: number } | null {
+): { lat: number; lng: number; hasPreciseLocation: boolean } | null {
 	const WROCLAW_LAT = 51.1079;
 	const WROCLAW_LNG = 17.0385;
 	const MAX_DISTANCE_KM = 50;
@@ -193,22 +195,28 @@ function getJobCoordinates(
 				)
 		);
 
-	// If coordinates are already provided, check if within range
+	// If coordinates are already provided from DB (geocoded from street), they are precise
 	if (lat != null && lng != null) {
-		return distanceKm(lat, lng) <= MAX_DISTANCE_KM ? { lat, lng } : null;
+		if (distanceKm(lat, lng) <= MAX_DISTANCE_KM) {
+			return { lat, lng, hasPreciseLocation: true };
+		}
+		return null;
 	}
 
+	// Generate approximate coordinates (not precise - no street was specified)
 	if (miastoLower === "wrocław") {
 		if (district && WROCLAW_DISTRICTS[district]) {
 			const coords = WROCLAW_DISTRICTS[district];
 			return {
 				lat: coords.lat + (Math.random() - 0.5) * 0.005,
 				lng: coords.lng + (Math.random() - 0.5) * 0.005,
+				hasPreciseLocation: false, // District center, not street-level
 			};
 		}
 		return {
 			lat: WROCLAW_LAT + (Math.random() - 0.5) * 0.04,
 			lng: WROCLAW_LNG + (Math.random() - 0.5) * 0.06,
+			hasPreciseLocation: false,
 		};
 	}
 
@@ -223,6 +231,7 @@ function getJobCoordinates(
 		return {
 			lat: coords.lat + (Math.random() - 0.5) * 0.005,
 			lng: coords.lng + (Math.random() - 0.5) * 0.005,
+			hasPreciseLocation: false, // City center, not street-level
 		};
 	}
 
@@ -327,10 +336,8 @@ export function useVehicleData(intervalMinutes: number = 30) {
 			const jobMarkers: JobMarker[] = [];
 
 			data?.forEach((job: any) => {
-				let coords: { lat: number; lng: number } | null = null;
-
-				// Use getJobCoordinates which checks 50km limit
-				coords = getJobCoordinates(
+				// Use getJobCoordinates which checks 50km limit and determines precision
+				const coords = getJobCoordinates(
 					job.miasto,
 					job.district,
 					job.location_lat,
@@ -348,6 +355,7 @@ export function useVehicleData(intervalMinutes: number = 30) {
 						category: job.categories?.name,
 						budget: job.budget,
 						urgent: job.urgent,
+						hasPreciseLocation: coords.hasPreciseLocation,
 					});
 				}
 			});
