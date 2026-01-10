@@ -106,7 +106,8 @@ function createJobIcon(urgent: boolean = false) {
 
 function createClusterIcon(count: number, hasUrgent: boolean) {
   const size = Math.min(60, 40 + count * 2);
-  const color = hasUrgent ? "#ef4444" : "#8b5cf6";
+  // Cluster color: blue/navy for clusters, red pulse only if urgent
+  const clusterColor = "#1e40af"; // Navy blue for clusters
   
   return L.divIcon({
     className: "cluster-marker",
@@ -116,7 +117,7 @@ function createClusterIcon(count: number, hasUrgent: boolean) {
     html: `
       <div class="cluster-marker-wrapper" style="width: ${size}px; height: ${size}px;">
         ${hasUrgent ? '<div class="cluster-pulse" style="background: #ef4444;"></div>' : ''}
-        <div class="cluster-core" style="background: linear-gradient(135deg, ${color}, ${color}dd); width: ${size}px; height: ${size}px;">
+        <div class="cluster-core" style="background: linear-gradient(135deg, ${clusterColor}, ${clusterColor}dd); width: ${size}px; height: ${size}px;">
           <span class="cluster-count">${count}</span>
         </div>
       </div>
@@ -402,7 +403,7 @@ export function WorkMapLeaflet({
           .map(job => `
             <a href="/jobs/${job.id}" class="cluster-job-item">
               <div class="cluster-job-title">
-                ${job.urgent ? '<span class="urgent-dot"></span>' : ''}
+                <span class="job-type-dot ${job.urgent ? 'urgent' : 'regular'}"></span>
                 ${job.title}
               </div>
               <div class="cluster-job-meta">
@@ -511,8 +512,8 @@ export function WorkMapLeaflet({
             <span>Pilne oferty</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center text-[10px] text-white font-bold">3</div>
-            <span>Grupa ofert (kliknij)</span>
+            <div className="w-5 h-5 rounded-full bg-blue-900 flex items-center justify-center text-[10px] text-white font-bold">3</div>
+            <span>Klaster ofert (kliknij)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-blue-500"></div>
@@ -751,6 +752,21 @@ export function WorkMapLeaflet({
           font-weight: 500;
           color: #1f2937;
           line-height: 1.3;
+        }
+        
+        .job-type-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+        
+        .job-type-dot.regular {
+          background: #8b5cf6;
+        }
+        
+        .job-type-dot.urgent {
+          background: #ef4444;
         }
         
         .urgent-dot {
