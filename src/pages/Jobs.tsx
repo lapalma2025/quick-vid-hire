@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Search, Sparkles } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useSEO } from "@/hooks/useSEO";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -66,6 +67,12 @@ export default function Jobs() {
 		startDate: "",
 		endDate: "",
 		sortBy: "newest",
+	});
+
+	useSEO({
+		title: "Zlecenia",
+		description: "Przeglądaj dostępne zlecenia w Polsce i za granicą. Znajdź idealne zlecenie dopasowane do Twoich umiejętności. Praca dorywcza, usługi, remonty i wiele więcej.",
+		keywords: "zlecenia, praca dorywcza, usługi, fachowcy, remonty, sprzątanie, transport, Polska",
 	});
 
 	const headerRef = useRef<HTMLDivElement>(null);
