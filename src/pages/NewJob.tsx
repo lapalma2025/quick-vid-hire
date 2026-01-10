@@ -310,7 +310,10 @@ export default function NewJob() {
 				return form.country !== "" && form.miasto !== "";
 			}
 			// Polish locations must be within 50km of Wrocław
-			return form.wojewodztwo !== "" && form.miasto !== "" && !locationError && !checkingLocation;
+			// For Wrocław, district is required
+			const isWroclaw = form.miasto.toLowerCase() === "wrocław";
+			const districtValid = !isWroclaw || form.district !== "";
+			return form.wojewodztwo !== "" && form.miasto !== "" && districtValid && !locationError && !checkingLocation;
 		}
 		return true;
 	};
@@ -949,30 +952,36 @@ export default function NewJob() {
 										</div>
 									</div>
 
-									{/* District selector for Wrocław */}
-									{form.miasto.toLowerCase() === "wrocław" && (
-										<div className="space-y-2 animate-fade-in">
-											<Label>Dzielnica (opcjonalnie)</Label>
-											<Select
-												value={form.district}
-												onValueChange={(v) => updateForm("district", v)}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Wybierz dzielnicę" />
-												</SelectTrigger>
-												<SelectContent>
-													{Object.keys(WROCLAW_DISTRICTS).map((district) => (
-														<SelectItem key={district} value={district}>
-															{district}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<p className="text-xs text-muted-foreground">
-												Pomoże w wyświetlaniu na Mapie Pracy
+								{/* District selector for Wrocław - REQUIRED */}
+								{form.miasto.toLowerCase() === "wrocław" && (
+									<div className="space-y-2 animate-fade-in">
+										<Label>Dzielnica *</Label>
+										<Select
+											value={form.district}
+											onValueChange={(v) => updateForm("district", v)}
+										>
+											<SelectTrigger className={!form.district ? "border-destructive/50" : ""}>
+												<SelectValue placeholder="Wybierz dzielnicę" />
+											</SelectTrigger>
+											<SelectContent>
+												{Object.keys(WROCLAW_DISTRICTS).map((district) => (
+													<SelectItem key={district} value={district}>
+														{district}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										{!form.district && (
+											<p className="text-xs text-destructive flex items-center gap-1">
+												<AlertTriangle className="h-3 w-3" />
+												Dla Wrocławia wybór dzielnicy jest obowiązkowy
 											</p>
-										</div>
-									)}
+										)}
+										<p className="text-xs text-muted-foreground">
+											Dzielnica pozwala na precyzyjne wyświetlanie na Mapie Pracy
+										</p>
+									</div>
+								)}
 
 									{/* Street field for Wrocław and nearby cities */}
 									{form.miasto && WROCLAW_AREA_CITIES[form.miasto] && (
