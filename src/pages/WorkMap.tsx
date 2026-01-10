@@ -74,7 +74,7 @@ const WorkMap = () => {
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-lg max-w-xl">
-                  Odkryj gdzie jest największy popyt na pracę krótkoterminową we Wrocławiu
+                  Odkryj gdzie jest największy popyt na pracę krótkoterminową w województwie dolnośląskim
                 </p>
               </div>
               
