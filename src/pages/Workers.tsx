@@ -38,6 +38,10 @@ interface Worker {
   bio: string | null;
   wojewodztwo: string | null;
   miasto: string | null;
+  district: string | null;
+  street: string | null;
+  location_lat: number | null;
+  location_lng: number | null;
   hourly_rate: number | null;
   rating_avg: number;
   rating_count: number;
@@ -118,7 +122,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
           { count: "exact" }
         )
         .eq("is_available", true)
@@ -197,7 +201,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
         )
         .eq("is_available", true)
         .eq("worker_profile_completed", true);
