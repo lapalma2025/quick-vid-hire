@@ -38,8 +38,9 @@ interface JobCluster {
   hasUrgent: boolean;
 }
 
-const WROCLAW_CENTER: L.LatLngTuple = [51.1079, 17.0385];
-const DEFAULT_ZOOM = 13;
+// Województwo dolnośląskie bounds
+const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.0, 16.35];
+const DEFAULT_ZOOM = 9;
 const PRECISE_SPLIT_ZOOM = 15; // Jobs with precise location (street) split off at this zoom
 
 // Custom SVG markers
@@ -193,22 +194,21 @@ export function WorkMapLeaflet({
     };
   }, [jobs, currentZoom]);
 
-  // Initialize map with 50km bounds around Wrocław
+  // Initialize map with dolnośląskie bounds
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // 50km bounds around Wrocław (approximately 0.45 degrees lat/lng)
-    const BOUNDS_PADDING = 0.45;
+    // Dolnośląskie voivodeship bounds
     const maxBounds = L.latLngBounds(
-      [WROCLAW_CENTER[0] - BOUNDS_PADDING, WROCLAW_CENTER[1] - BOUNDS_PADDING * 1.5], // SW
-      [WROCLAW_CENTER[0] + BOUNDS_PADDING, WROCLAW_CENTER[1] + BOUNDS_PADDING * 1.5]  // NE
+      [50.15, 14.80], // SW corner
+      [51.80, 17.85]  // NE corner
     );
 
     const map = L.map(mapContainerRef.current, {
-      center: WROCLAW_CENTER,
+      center: DOLNOSLASKIE_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: true,
-      minZoom: 9,
+      minZoom: 7,
       maxZoom: 18,
       maxBounds: maxBounds,
       maxBoundsViscosity: 0.8,

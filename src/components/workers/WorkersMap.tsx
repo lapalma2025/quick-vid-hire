@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Loader2 } from 'lucide-react';
-import { WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from '@/lib/constants';
+import { WROCLAW_DISTRICTS, DOLNOSLASKIE_CITIES } from '@/lib/constants';
 
 interface Worker {
   id: string;
@@ -35,8 +35,9 @@ interface WorkerCluster {
   workers: Worker[];
 }
 
-const WROCLAW_CENTER: L.LatLngTuple = [51.1079, 17.0385];
-const DEFAULT_ZOOM = 12;
+// Województwo dolnośląskie
+const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.0, 16.35];
+const DEFAULT_ZOOM = 9;
 const PRECISE_SPLIT_ZOOM = 15;
 
 // Get worker coordinates and determine if they have precise location
@@ -55,18 +56,18 @@ function getWorkerCoordinates(worker: Worker): { lat: number; lng: number; hasPr
     return { lat: coords.lat, lng: coords.lng, hasPreciseLocation: false };
   }
   
-  // For Wrocław without district
+  // For Wrocław without district - use Wrocław center
   if (miastoLower === "wrocław") {
-    return { lat: WROCLAW_CENTER[0], lng: WROCLAW_CENTER[1], hasPreciseLocation: false };
+    return { lat: 51.1079, lng: 17.0385, hasPreciseLocation: false };
   }
   
-  // For nearby cities
-  const cityKey = WROCLAW_AREA_CITIES[miasto]
+  // For cities in dolnośląskie
+  const cityKey = DOLNOSLASKIE_CITIES[miasto]
     ? miasto
-    : Object.keys(WROCLAW_AREA_CITIES).find(k => k.toLowerCase() === miastoLower);
+    : Object.keys(DOLNOSLASKIE_CITIES).find(k => k.toLowerCase() === miastoLower);
   
   if (cityKey) {
-    const coords = WROCLAW_AREA_CITIES[cityKey];
+    const coords = DOLNOSLASKIE_CITIES[cityKey];
     return { lat: coords.lat, lng: coords.lng, hasPreciseLocation: false };
   }
   
@@ -194,21 +195,21 @@ export default function WorkersMap({
     return { preciseWorkers: precise, clustersByLocation: Object.values(clusters) };
   }, [workers, currentZoom]);
 
-  // Initialize map
+  // Initialize map with dolnośląskie bounds
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    const BOUNDS_PADDING = 0.45;
+    // Dolnośląskie voivodeship bounds
     const maxBounds = L.latLngBounds(
-      [WROCLAW_CENTER[0] - BOUNDS_PADDING, WROCLAW_CENTER[1] - BOUNDS_PADDING * 1.5],
-      [WROCLAW_CENTER[0] + BOUNDS_PADDING, WROCLAW_CENTER[1] + BOUNDS_PADDING * 1.5]
+      [50.15, 14.80], // SW corner
+      [51.80, 17.85]  // NE corner
     );
 
     const map = L.map(mapContainerRef.current, {
-      center: WROCLAW_CENTER,
+      center: DOLNOSLASKIE_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: true,
-      minZoom: 9,
+      minZoom: 7,
       maxZoom: 18,
       maxBounds: maxBounds,
       maxBoundsViscosity: 0.8,
