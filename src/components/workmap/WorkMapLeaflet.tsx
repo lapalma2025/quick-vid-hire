@@ -194,73 +194,32 @@ export function WorkMapLeaflet({
     };
   }, [jobs, currentZoom]);
 
-  // Initialize map with dolnośląskie bounds
+  // Initialize map constrained to dolnośląskie only
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Dolnośląskie voivodeship bounds
-    const maxBounds = L.latLngBounds(
-      [50.15, 14.80], // SW corner
-      [51.80, 17.85]  // NE corner
+    // Tight bounds for Dolnośląskie voivodeship only
+    const dolnoslaskieBounds = L.latLngBounds(
+      [50.18, 14.95], // SW corner
+      [51.80, 17.75]  // NE corner
     );
 
     const map = L.map(mapContainerRef.current, {
       center: DOLNOSLASKIE_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: true,
-      minZoom: 7,
+      minZoom: 8,
       maxZoom: 18,
-      maxBounds: maxBounds,
-      maxBoundsViscosity: 0.8,
+      maxBounds: dolnoslaskieBounds,
+      maxBoundsViscosity: 1.0, // Hard boundary - cannot pan outside
       attributionControl: false,
     });
 
-    // CARTO Voyager tiles
+    // Fit to dolnośląskie bounds
+    map.fitBounds(dolnoslaskieBounds, { padding: [10, 10] });
+
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       maxZoom: 18,
-    }).addTo(map);
-
-    // Mask everything outside Dolnośląskie voivodeship
-    const worldBounds: L.LatLngTuple[] = [
-      [-90, -180], [-90, 180], [90, 180], [90, -180], [-90, -180]
-    ];
-    
-    // Simplified polygon of Dolnośląskie voivodeship
-    const dolnoslaskiePolygon: L.LatLngTuple[] = [
-      [51.80, 14.95], [51.80, 15.20], [51.75, 15.45], [51.68, 15.60],
-      [51.58, 15.75], [51.45, 15.85], [51.35, 15.90], [51.25, 15.92],
-      [51.15, 15.88], [51.05, 15.78], [50.95, 15.65], [50.88, 15.55],
-      [50.78, 15.50], [50.68, 15.55], [50.55, 15.65], [50.45, 15.78],
-      [50.35, 15.95], [50.28, 16.10], [50.22, 16.30], [50.18, 16.55],
-      [50.20, 16.80], [50.25, 17.00], [50.32, 17.15], [50.42, 17.28],
-      [50.55, 17.38], [50.68, 17.45], [50.80, 17.50], [50.92, 17.55],
-      [51.05, 17.60], [51.18, 17.65], [51.30, 17.68], [51.42, 17.70],
-      [51.55, 17.72], [51.65, 17.68], [51.72, 17.55], [51.76, 17.38],
-      [51.78, 17.20], [51.79, 17.00], [51.80, 16.75], [51.80, 16.50],
-      [51.78, 16.25], [51.75, 16.00], [51.72, 15.75], [51.70, 15.50],
-      [51.72, 15.30], [51.78, 15.10], [51.80, 14.95]
-    ];
-
-    // Create mask polygon (world with hole for Dolnośląskie)
-    const maskPolygon = L.polygon(
-      [worldBounds, dolnoslaskiePolygon],
-      {
-        color: 'transparent',
-        fillColor: '#f8fafc',
-        fillOpacity: 0.92,
-        interactive: false,
-      }
-    );
-    maskPolygon.addTo(map);
-
-    // Add border around Dolnośląskie
-    L.polygon(dolnoslaskiePolygon, {
-      color: 'hsl(var(--primary))',
-      weight: 2,
-      fillColor: 'transparent',
-      fillOpacity: 0,
-      dashArray: '5, 5',
-      interactive: false,
     }).addTo(map);
 
     // Add minimal attribution (required by OSM and CARTO licenses)
