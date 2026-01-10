@@ -149,28 +149,61 @@ export const WROCLAW_DISTRICTS: Record<string, { lat: number; lng: number }> = {
   "Swojczyce-Strachocin-Wojnów": { lat: 51.095, lng: 17.122 },
 };
 
-// Miasta w okolicy Wrocławia (aglomeracja do 50km) z przybliżonymi współrzędnymi
-export const WROCLAW_AREA_CITIES: Record<string, { lat: number; lng: number }> = {
+// Miasta województwa dolnośląskiego z przybliżonymi współrzędnymi
+export const DOLNOSLASKIE_CITIES: Record<string, { lat: number; lng: number }> = {
+  // Główne miasta
   "Wrocław": { lat: 51.1079, lng: 17.0385 },
-  // Powiat wrocławski i sąsiednie
-  "Oborniki Śląskie": { lat: 51.3050, lng: 16.9200 },
-  "Trzebnica": { lat: 51.3100, lng: 17.0630 },
+  "Wałbrzych": { lat: 50.7714, lng: 16.2844 },
+  "Legnica": { lat: 51.2070, lng: 16.1619 },
+  "Jelenia Góra": { lat: 50.9043, lng: 15.7199 },
+  "Lubin": { lat: 51.4014, lng: 16.2013 },
+  "Głogów": { lat: 51.6634, lng: 16.0851 },
+  "Świdnica": { lat: 50.8441, lng: 16.4833 },
+  "Bolesławiec": { lat: 51.2616, lng: 15.5691 },
   "Oleśnica": { lat: 51.2100, lng: 17.3850 },
-  "Środa Śląska": { lat: 51.1650, lng: 16.5950 },
-  "Wołów": { lat: 51.3400, lng: 16.6400 },
+  "Dzierżoniów": { lat: 50.7267, lng: 16.6517 },
+  "Zgorzelec": { lat: 51.1528, lng: 15.0081 },
+  "Bielawa": { lat: 50.6908, lng: 16.6225 },
+  "Kłodzko": { lat: 50.4347, lng: 16.6617 },
   "Oława": { lat: 50.9450, lng: 17.2900 },
   "Strzelin": { lat: 50.7800, lng: 17.0650 },
+  "Jawor": { lat: 51.0507, lng: 16.1983 },
+  "Polkowice": { lat: 51.5055, lng: 16.0725 },
+  "Nowa Ruda": { lat: 50.5792, lng: 16.4994 },
+  "Ząbkowice Śląskie": { lat: 50.5908, lng: 16.8144 },
+  "Kamienna Góra": { lat: 50.7842, lng: 16.0308 },
+  "Kudowa-Zdrój": { lat: 50.4500, lng: 16.2500 },
+  "Polanica-Zdrój": { lat: 50.4033, lng: 16.5108 },
+  "Złotoryja": { lat: 51.1267, lng: 15.9217 },
+  "Trzebnica": { lat: 51.3100, lng: 17.0630 },
+  "Środa Śląska": { lat: 51.1650, lng: 16.5950 },
+  "Chojnów": { lat: 51.2700, lng: 15.9383 },
+  "Bystrzyca Kłodzka": { lat: 50.2953, lng: 16.6522 },
+  "Strzegom": { lat: 50.9583, lng: 16.3500 },
+  "Lwówek Śląski": { lat: 51.1092, lng: 15.5858 },
+  "Żarów": { lat: 50.9225, lng: 16.5058 },
+  "Milicz": { lat: 51.5444, lng: 17.2864 },
+  "Syców": { lat: 51.3028, lng: 17.7194 },
+  "Wojcieszów": { lat: 50.9625, lng: 15.9175 },
+  "Pieszyce": { lat: 50.6986, lng: 16.5942 },
+  "Szczawno-Zdrój": { lat: 50.7983, lng: 16.2444 },
+  "Piława Górna": { lat: 50.7014, lng: 16.7400 },
+  "Jedlina-Zdrój": { lat: 50.7250, lng: 16.3347 },
+  "Lubań": { lat: 51.1172, lng: 15.2889 },
+  "Boguszów-Gorce": { lat: 50.7456, lng: 16.2033 },
+  "Brzeg Dolny": { lat: 51.2700, lng: 16.7150 },
   "Sobótka": { lat: 50.9300, lng: 16.7400 },
   "Kąty Wrocławskie": { lat: 51.0300, lng: 16.7700 },
   "Jelcz-Laskowice": { lat: 51.0400, lng: 17.3400 },
-  "Brzeg Dolny": { lat: 51.2700, lng: 16.7150 },
   "Siechnice": { lat: 51.0350, lng: 17.1500 },
   "Długołęka": { lat: 51.1800, lng: 17.2000 },
   "Czernica": { lat: 51.0500, lng: 17.2200 },
   "Kobierzyce": { lat: 50.9850, lng: 16.9300 },
   "Żórawina": { lat: 51.0150, lng: 17.0500 },
   "Miękinia": { lat: 51.1550, lng: 16.7500 },
-  // Gminy i miejscowości do 50km
+  "Oborniki Śląskie": { lat: 51.3050, lng: 16.9200 },
+  "Wołów": { lat: 51.3400, lng: 16.6400 },
+  // Gminy i mniejsze miejscowości
   "Wilkszyn": { lat: 51.191944, lng: 16.861667 },
   "Święta Katarzyna": { lat: 51.0680, lng: 17.1350 },
   "Bielany Wrocławskie": { lat: 51.0450, lng: 16.9850 },
@@ -216,6 +249,28 @@ export const WROCLAW_AREA_CITIES: Record<string, { lat: number; lng: number }> =
   "Pęgów": { lat: 51.2050, lng: 16.9950 },
   "Pawłowice": { lat: 51.0800, lng: 17.0900 },
 };
+
+// Aliasy dla kompatybilności wstecznej
+export const WROCLAW_AREA_CITIES = DOLNOSLASKIE_CITIES;
+
+// Granice województwa dolnośląskiego
+export const DOLNOSLASKIE_BOUNDS = {
+  north: 51.80,  // Górna granica
+  south: 50.15,  // Dolna granica  
+  west: 14.80,   // Zachodnia granica
+  east: 17.85,   // Wschodnia granica
+  center: { lat: 51.0, lng: 16.35 } as { lat: number; lng: number },
+};
+
+// Sprawdza czy lokalizacja jest w województwie dolnośląskim
+export function isInDolnoslaskie(lat: number, lng: number): boolean {
+  return (
+    lat >= DOLNOSLASKIE_BOUNDS.south &&
+    lat <= DOLNOSLASKIE_BOUNDS.north &&
+    lng >= DOLNOSLASKIE_BOUNDS.west &&
+    lng <= DOLNOSLASKIE_BOUNDS.east
+  );
+}
 
 export const CATEGORY_ICONS: Record<string, string> = {
   "Prace fizyczne": "Hammer",

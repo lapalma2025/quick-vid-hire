@@ -47,7 +47,7 @@ import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CountrySelect } from "@/components/jobs/CountrySelect";
 import { ForeignCitySelect } from "@/components/jobs/ForeignCitySelect";
 import { LocationTypeToggle } from "@/components/jobs/LocationTypeToggle";
-import { WOJEWODZTWA, WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
+import { WOJEWODZTWA, WROCLAW_DISTRICTS, DOLNOSLASKIE_CITIES, DOLNOSLASKIE_BOUNDS, isInDolnoslaskie } from "@/lib/constants";
 import { PREMIUM_ADDONS } from "@/lib/stripe";
 
 interface Category {
@@ -175,28 +175,20 @@ export default function NewJob() {
 		if (data) setCategories(data);
 	};
 
-	const WROCLAW_LAT = 51.1079;
-	const WROCLAW_LNG = 17.0385;
-	const MAX_DISTANCE_KM = 50;
-
-	const distanceFromWroclaw = (lat: number, lng: number) =>
-		Math.sqrt(
-			Math.pow((lat - WROCLAW_LAT) * 111, 2) +
-				Math.pow(
-					(lng - WROCLAW_LNG) *
-						111 *
-						Math.cos((WROCLAW_LAT * Math.PI) / 180),
-					2
-				)
-		);
-
-	const checkCityDistance = async (miasto: string, wojewodztwo: string) => {
+	// Walidacja lokalizacji - czy jest w dolnośląskim
+	const checkCityInDolnoslaskie = async (miasto: string, wojewodztwo: string) => {
 		if (!miasto) {
 			setLocationError(null);
 			return;
 		}
 
-		// First check if it's in the known Wrocław area
+		// Jeśli wybrano dolnośląskie jako województwo, akceptujemy
+		if (wojewodztwo.toLowerCase() === "dolnośląskie") {
+			setLocationError(null);
+			return;
+		}
+
+		// Sprawdź czy miasto jest w znanej liście miast dolnośląskiego
 		const normalizedMiasto = miasto
 			.trim()
 			.split(" ")
@@ -212,26 +204,21 @@ export default function NewJob() {
 			)
 			.join(" ");
 
-		if (WROCLAW_AREA_CITIES[normalizedMiasto]) {
+		if (DOLNOSLASKIE_CITIES[normalizedMiasto]) {
 			setLocationError(null);
 			return;
 		}
 
-		// Geocode to check distance
+		// Geokodowanie aby sprawdzić czy jest w granicach dolnośląskiego
 		setCheckingLocation(true);
 		try {
-			const dLat = MAX_DISTANCE_KM / 111;
-			const dLng = MAX_DISTANCE_KM / (111 * Math.cos((WROCLAW_LAT * Math.PI) / 180));
-			const viewbox = `${WROCLAW_LNG - dLng * 2},${WROCLAW_LAT + dLat * 2},${WROCLAW_LNG + dLng * 2},${WROCLAW_LAT - dLat * 2}`;
-
 			const params = new URLSearchParams({
-				q: `${miasto}, ${wojewodztwo || ""}, Polska`,
+				q: `${miasto}, ${wojewodztwo || "dolnośląskie"}, Polska`,
 				format: "json",
 				addressdetails: "1",
 				limit: "1",
 				countrycodes: "pl",
 				"accept-language": "pl",
-				viewbox,
 			});
 
 			const res = await fetch(
@@ -258,10 +245,10 @@ export default function NewJob() {
 				return;
 			}
 
-			const distance = distanceFromWroclaw(lat, lng);
-			if (distance > MAX_DISTANCE_KM) {
+			// Sprawdź czy w granicach dolnośląskiego
+			if (!isInDolnoslaskie(lat, lng)) {
 				setLocationError(
-					`Miasto ${miasto} znajduje się ${Math.round(distance)} km od Wrocławia. Zlecenia mogą być dodawane tylko w promieniu 50 km od Wrocławia.`
+					`Miasto ${miasto} znajduje się poza województwem dolnośląskim. Zlecenia mogą być dodawane tylko w województwie dolnośląskim.`
 				);
 			} else {
 				setLocationError(null);
@@ -924,8 +911,8 @@ export default function NewJob() {
 															}));
 														}
 													}
-													// Check distance from Wrocław
-													checkCityDistance(miasto, effectiveWojewodztwo);
+													// Check if in dolnośląskie
+													checkCityInDolnoslaskie(miasto, effectiveWojewodztwo);
 												}}
 												placeholder="Wpisz miasto..."
 											/>
@@ -969,8 +956,8 @@ export default function NewJob() {
 									</div>
 								)}
 
-									{/* Street field for Wrocław and nearby cities */}
-									{form.miasto && WROCLAW_AREA_CITIES[form.miasto] && (
+									{/* Street field for dolnośląskie cities */}
+									{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
 										<div className="space-y-2 animate-fade-in">
 											<Label>Ulica i numer (opcjonalnie)</Label>
 											<Input
@@ -984,12 +971,12 @@ export default function NewJob() {
 										</div>
 									)}
 
-									{/* Info for Wrocław area cities */}
-									{form.miasto && WROCLAW_AREA_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
+									{/* Info for dolnośląskie cities */}
+									{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
 										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
 											<Sparkles className="h-4 w-4 text-primary" />
 											<p className="text-sm text-muted-foreground">
-												Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla aglomeracji wrocławskiej (50 km)
+												Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla województwa dolnośląskiego
 											</p>
 										</div>
 									)}
@@ -1009,12 +996,12 @@ export default function NewJob() {
 										</div>
 									)}
 
-									{/* Info for cities in Wrocław area but not in predefined list */}
-									{form.miasto && !WROCLAW_AREA_CITIES[form.miasto] && form.wojewodztwo && !locationError && !checkingLocation && (
+									{/* Info for cities in dolnośląskie but not in predefined list */}
+									{form.miasto && !DOLNOSLASKIE_CITIES[form.miasto] && form.wojewodztwo && !locationError && !checkingLocation && (
 										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
 											<Sparkles className="h-4 w-4 text-primary" />
 											<p className="text-sm text-muted-foreground">
-												Lokalizacja w zasięgu 50 km od Wrocławia - oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span>
+												Lokalizacja w województwie dolnośląskim - oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span>
 											</p>
 										</div>
 									)}
