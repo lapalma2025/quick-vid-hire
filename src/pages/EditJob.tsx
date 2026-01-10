@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, Users } from 'lucide-react';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
+import { CategorySelect } from '@/components/jobs/CategorySelect';
 import { ImageUpload } from '@/components/jobs/ImageUpload';
 import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
@@ -225,21 +226,11 @@ export default function EditJob() {
 
               <div className="space-y-2">
                 <Label>Kategoria *</Label>
-                <Select value={form.category_id} onValueChange={(v) => updateForm('category_id', v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Wybierz kategorię" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon name={c.name} className="h-4 w-4" />
-                          {c.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategorySelect
+                  value={form.category_id}
+                  onChange={(v) => updateForm('category_id', v)}
+                  placeholder="Wybierz kategorię"
+                />
               </div>
 
               <div className="space-y-2">

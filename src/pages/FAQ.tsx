@@ -5,6 +5,7 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useSEO, generateFAQSchema } from "@/hooks/useSEO";
 
 const FAQ = () => {
 	const faqs = [
@@ -49,15 +50,29 @@ const FAQ = () => {
 		},
 	];
 
+	useSEO({
+		title: "FAQ - Najczęściej zadawane pytania",
+		description: "Odpowiedzi na najczęstsze pytania dotyczące Hop Hop. Dowiedz się jak dodać zlecenie, ile kosztuje publikacja, jak wybrać wykonawcę i więcej.",
+		keywords: "FAQ, pytania, odpowiedzi, pomoc, zlecenia, wykonawcy, Hop Hop",
+	});
+
+	const faqSchema = generateFAQSchema(faqs);
+
 	return (
 		<Layout>
+			{/* JSON-LD FAQ Schema */}
+			<script
+				type="application/ld+json"
+				dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+			/>
+			
 			<div className="container py-12">
 				<div className="max-w-3xl mx-auto">
 					<h1 className="text-4xl font-bold text-center mb-4">
 						Najczęściej zadawane pytania
 					</h1>
 					<p className="text-muted-foreground text-center mb-12 text-lg">
-						Znajdź odpowiedzi na najczęstsze pytania dotyczące ZlecenieTeraz.
+						Znajdź odpowiedzi na najczęstsze pytania dotyczące Hop Hop.
 					</p>
 
 					<Accordion type="single" collapsible className="w-full">

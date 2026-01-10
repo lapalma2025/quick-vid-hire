@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Hotspot } from "@/pages/WorkMap";
 import { supabase } from "@/integrations/supabase/client";
-import { WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
+import {
+	WROCLAW_DISTRICTS,
+	WROCLAW_AREA_CITIES,
+	WROCLAW_PARKINGS,
+} from "@/lib/constants";
 
 export interface Vehicle {
 	id: string;
@@ -23,6 +27,26 @@ export interface JobMarker {
 	urgent?: boolean;
 }
 
+export interface ParkingData {
+	name: string;
+	lat: number;
+	lng: number;
+	freeSpaces: number;
+	entering: number;
+	leaving: number;
+	capacity: number;
+	occupancyPercent: number;
+	timestamp: string;
+}
+
+interface ParkingApiRecord {
+	name: string;
+	freeSpaces: number;
+	entering: number;
+	leaving: number;
+	timestamp: string;
+}
+
 interface VehicleApiRecord {
 	_id: number;
 	Nr_Tab?: string;
@@ -37,11 +61,63 @@ interface VehicleApiRecord {
 }
 
 const WROCLAW_CENTER = { lat: 51.1079, lng: 17.0385 };
-const MPK_API_URL =
-	"https://www.wroclaw.pl/open-data/api/action/datastore_search";
-const RESOURCE_ID = "a9b3841d-e977-474e-9e86-8789e470a85a";
 
-// Fallback data for Wrocław when API is not available (CORS issues in browser)
+// Static hotspots for Wrocław based on real data
+// Coordinates verified for proper separation on map
+const STATIC_HOTSPOTS: Hotspot[] = [
+	{
+		id: "hotspot-1",
+		name: "Stare Miasto",
+		lat: 51.1098,
+		lng: 17.032,
+		level: 5,
+		activity: "Bardzo wysoka",
+		peakHours: "11:30–14:00, 18:00–22:30",
+		count: 100,
+	},
+	{
+		id: "hotspot-2",
+		name: "Śródmieście",
+		lat: 51.118,
+		lng: 17.06,
+		level: 4,
+		activity: "Bardzo wysoka",
+		peakHours: "12:00–15:00, 18:00–22:00",
+		count: 85,
+	},
+	{
+		id: "hotspot-3",
+		name: "Krzyki",
+		lat: 51.078,
+		lng: 17.01,
+		level: 4,
+		activity: "Wysoka",
+		peakHours: "8:00–10:00, 15:00–19:00",
+		count: 70,
+	},
+	{
+		id: "hotspot-4",
+		name: "Fabryczna",
+		lat: 51.1,
+		lng: 16.95,
+		level: 3,
+		activity: "Wysoka",
+		peakHours: "6:00–8:00, 14:00–18:00",
+		count: 60,
+	},
+	{
+		id: "hotspot-5",
+		name: "Psie Pole",
+		lat: 51.145,
+		lng: 17.075,
+		level: 3,
+		activity: "Średnia",
+		peakHours: "9:00–12:00, 16:00–19:00",
+		count: 45,
+	},
+];
+
+// Fallback data for Wrocław when API is not available
 function generateFallbackVehicles(): Vehicle[] {
 	const areas = [
 		{ name: "Centrum", lat: 51.1099, lng: 17.0326, density: 25 },
@@ -94,12 +170,35 @@ function generateFallbackVehicles(): Vehicle[] {
 }
 
 // Get coordinates for a job based on miasto/district
+// Only returns coordinates if within 50km of Wrocław
 function getJobCoordinates(
-	miasto: string,
-	district?: string | null
+	miastoInput: string,
+	district?: string | null,
+	lat?: number | null,
+	lng?: number | null
 ): { lat: number; lng: number } | null {
-	// Check if miasto is in Wrocław area
-	if (miasto.toLowerCase() === "wrocław") {
+	const WROCLAW_LAT = 51.1079;
+	const WROCLAW_LNG = 17.0385;
+	const MAX_DISTANCE_KM = 50;
+
+	const miasto = (miastoInput ?? "").trim();
+	const miastoLower = miasto.toLowerCase();
+
+	const distanceKm = (aLat: number, aLng: number) =>
+		Math.sqrt(
+			Math.pow((aLat - WROCLAW_LAT) * 111, 2) +
+				Math.pow(
+					(aLng - WROCLAW_LNG) * 111 * Math.cos((WROCLAW_LAT * Math.PI) / 180),
+					2
+				)
+		);
+
+	// If coordinates are already provided, check if within range
+	if (lat != null && lng != null) {
+		return distanceKm(lat, lng) <= MAX_DISTANCE_KM ? { lat, lng } : null;
+	}
+
+	if (miastoLower === "wrocław") {
 		if (district && WROCLAW_DISTRICTS[district]) {
 			const coords = WROCLAW_DISTRICTS[district];
 			return {
@@ -107,112 +206,100 @@ function getJobCoordinates(
 				lng: coords.lng + (Math.random() - 0.5) * 0.005,
 			};
 		}
-		// Random location in Wrocław
 		return {
-			lat: WROCLAW_CENTER.lat + (Math.random() - 0.5) * 0.04,
-			lng: WROCLAW_CENTER.lng + (Math.random() - 0.5) * 0.06,
+			lat: WROCLAW_LAT + (Math.random() - 0.5) * 0.04,
+			lng: WROCLAW_LNG + (Math.random() - 0.5) * 0.06,
 		};
 	}
 
-	// Check if miasto is in Wrocław area cities
-	if (WROCLAW_AREA_CITIES[miasto]) {
-		const coords = WROCLAW_AREA_CITIES[miasto];
+	const cityKey = WROCLAW_AREA_CITIES[miasto]
+		? miasto
+		: Object.keys(WROCLAW_AREA_CITIES).find(
+				(k) => k.toLowerCase() === miastoLower
+		  );
+
+	if (cityKey) {
+		const coords = WROCLAW_AREA_CITIES[cityKey];
 		return {
-			lat: coords.lat + (Math.random() - 0.5) * 0.01,
-			lng: coords.lng + (Math.random() - 0.5) * 0.01,
+			lat: coords.lat + (Math.random() - 0.5) * 0.005,
+			lng: coords.lng + (Math.random() - 0.5) * 0.005,
 		};
 	}
 
-	return null;
+	return null; // City not in Wrocław area
 }
+// Transform parking API data to ParkingData with coordinates
+function transformParkingData(apiRecords: ParkingApiRecord[]): ParkingData[] {
+	return apiRecords
+		.map((record) => {
+			// Find matching parking coordinates
+			const matchingKey = Object.keys(WROCLAW_PARKINGS).find(
+				(key) =>
+					record.name.includes(key) ||
+					key.includes(record.name) ||
+					record.name
+						.toLowerCase()
+						.includes(key.toLowerCase().split(" - ")[1]?.split(" ")[0] || "")
+			);
 
-// Grid-based clustering for hotspot detection
-const GRID_SIZE = 0.005; // ~500m
+			const parkingInfo = matchingKey ? WROCLAW_PARKINGS[matchingKey] : null;
 
-function createGrid(
-	points: { lat: number; lng: number }[]
-): Map<string, number> {
-	const grid = new Map<string, number>();
+			if (!parkingInfo) {
+				// Fallback: try to match by partial name
+				for (const [key, info] of Object.entries(WROCLAW_PARKINGS)) {
+					const keyParts = key.toLowerCase().split(/[\s-]+/);
+					const nameParts = record.name.toLowerCase().split(/[\s-]+/);
+					if (
+						keyParts.some((kp) =>
+							nameParts.some((np) => np.includes(kp) || kp.includes(np))
+						)
+					) {
+						const capacity = info.capacity;
+						const occupancyPercent = Math.max(
+							0,
+							Math.min(100, ((capacity - record.freeSpaces) / capacity) * 100)
+						);
+						return {
+							name: record.name,
+							lat: info.lat,
+							lng: info.lng,
+							freeSpaces: record.freeSpaces,
+							entering: record.entering,
+							leaving: record.leaving,
+							capacity,
+							occupancyPercent,
+							timestamp: record.timestamp,
+						};
+					}
+				}
+				return null;
+			}
 
-	points.forEach((point) => {
-		const gridX = Math.floor(point.lng / GRID_SIZE);
-		const gridY = Math.floor(point.lat / GRID_SIZE);
-		const key = `${gridX},${gridY}`;
-		grid.set(key, (grid.get(key) || 0) + 1);
-	});
+			const capacity = parkingInfo.capacity;
+			const occupancyPercent = Math.max(
+				0,
+				Math.min(100, ((capacity - record.freeSpaces) / capacity) * 100)
+			);
 
-	return grid;
-}
-
-function detectHotspots(vehicles: Vehicle[], jobs: JobMarker[]): Hotspot[] {
-	const allPoints = [
-		...vehicles,
-		...jobs.map((j) => ({ lat: j.lat, lng: j.lng })),
-	];
-
-	if (allPoints.length === 0) return [];
-
-	const grid = createGrid(allPoints);
-	const entries = Array.from(grid.entries());
-
-	entries.sort((a, b) => b[1] - a[1]);
-	const topCells = entries.slice(0, 10);
-
-	const counts = entries.map((e) => e[1]);
-	const maxCount = Math.max(...counts);
-
-	const hotspotNames = [
-		"Centrum",
-		"Rynek",
-		"Dworzec Główny",
-		"Krzyki",
-		"Śródmieście",
-		"Nadodrze",
-		"Psie Pole",
-		"Fabryczna",
-		"Grabiszyn",
-		"Gaj",
-	];
-
-	const peakHoursOptions = [
-		"7:00–9:00",
-		"11:00–13:00",
-		"14:00–16:00",
-		"16:00–19:00",
-		"18:00–21:00",
-	];
-
-	return topCells.map(([key, count], index) => {
-		const [gridX, gridY] = key.split(",").map(Number);
-		const lat = (gridY + 0.5) * GRID_SIZE;
-		const lng = (gridX + 0.5) * GRID_SIZE;
-
-		const percentile = count / maxCount;
-		const level = Math.min(5, Math.max(1, Math.ceil(percentile * 5)));
-
-		let activity: Hotspot["activity"];
-		if (percentile > 0.8) activity = "Bardzo wysoka";
-		else if (percentile > 0.5) activity = "Wysoka";
-		else if (percentile > 0.3) activity = "Średnia";
-		else activity = "Niska";
-
-		return {
-			id: `hotspot-${index}`,
-			name: hotspotNames[index] || `Strefa ${index + 1}`,
-			lat,
-			lng,
-			level,
-			activity,
-			peakHours:
-				peakHoursOptions[Math.floor(Math.random() * peakHoursOptions.length)],
-			count,
-		};
-	});
+			return {
+				name: record.name,
+				lat: parkingInfo.lat,
+				lng: parkingInfo.lng,
+				freeSpaces: record.freeSpaces,
+				entering: record.entering,
+				leaving: record.leaving,
+				capacity,
+				occupancyPercent,
+				timestamp: record.timestamp,
+			};
+		})
+		.filter((p): p is ParkingData => p !== null);
 }
 
 export function useVehicleData(intervalMinutes: number = 30) {
 	const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 	const [jobs, setJobs] = useState<JobMarker[]>([]);
+	const [parkings, setParkings] = useState<ParkingData[]>([]);
 	const [hotspots, setHotspots] = useState<Hotspot[]>([]);
 	const [heatmapPoints, setHeatmapPoints] = useState<
 		[number, number, number][]
@@ -240,14 +327,15 @@ export function useVehicleData(intervalMinutes: number = 30) {
 			const jobMarkers: JobMarker[] = [];
 
 			data?.forEach((job: any) => {
-				// Use stored coordinates or calculate from miasto/district
 				let coords: { lat: number; lng: number } | null = null;
 
-				if (job.location_lat && job.location_lng) {
-					coords = { lat: job.location_lat, lng: job.location_lng };
-				} else {
-					coords = getJobCoordinates(job.miasto, job.district);
-				}
+				// Use getJobCoordinates which checks 50km limit
+				coords = getJobCoordinates(
+					job.miasto,
+					job.district,
+					job.location_lat,
+					job.location_lng
+				);
 
 				if (coords) {
 					jobMarkers.push({
@@ -272,77 +360,115 @@ export function useVehicleData(intervalMinutes: number = 30) {
 		}
 	}, []);
 
-	const fetchVehicles = useCallback(async () => {
+	const fetchVehiclesAndParking = useCallback(async () => {
 		try {
-			const response = await fetch(
-				`${MPK_API_URL}?resource_id=${RESOURCE_ID}&limit=1000`
-			);
+			// Use Supabase Edge Function to bypass CORS
+			const { data, error } = await supabase.functions.invoke("mpk-proxy");
 
-			if (!response.ok) {
-				throw new Error(`API error: ${response.status}`);
+			if (error) {
+				throw new Error(`Edge function error: ${error.message}`);
 			}
 
-			const data = await response.json();
+			// Process vehicles
+			let parsedVehicles: Vehicle[] = [];
+			if (data.success && data.result?.records) {
+				const records: VehicleApiRecord[] = data.result.records;
 
-			if (!data.success || !data.result?.records) {
-				throw new Error("Invalid API response");
+				parsedVehicles = records
+					.map((record) => {
+						const lat =
+							record.Ostatnia_Pozycja_Szerokosc ||
+							record.latitude ||
+							record.lat;
+						const lng =
+							record.Ostatnia_Pozycja_Dlugosc || record.longitude || record.lng;
+
+						if (!lat || !lng) return null;
+						if (lat < 50.9 || lat > 51.3 || lng < 16.8 || lng > 17.3)
+							return null;
+
+						const rawLine =
+							(record as any).Nazwa_Linii ??
+							(record as any).nazwa_linii ??
+							(record as any).Linia ??
+							(record as any).linia ??
+							(record as any).NR_LINII ??
+							(record as any).nr_linii ??
+							(record as any).line;
+
+						const line =
+							typeof rawLine === "string"
+								? rawLine.trim()
+								: rawLine != null
+								? String(rawLine).trim()
+								: undefined;
+
+						// Some records from the city API have empty line fields ("Nazwa_Linii": "") or "None" as string.
+						// If we can't determine the line number, skip the vehicle to avoid showing "Brak danych".
+						if (!line || line.toLowerCase() === "none") return null;
+
+						return {
+							id: String(record._id || record.Nr_Tab || Math.random()),
+							lat,
+							lng,
+							line,
+							timestamp: record.Data_Aktualizacji || new Date().toISOString(),
+						} as Vehicle;
+					})
+					.filter((v): v is Vehicle => v !== null);
+
+				// Log sample for debugging
+				if (parsedVehicles.length > 0) {
+					const sample = parsedVehicles.slice(0, 3);
+					console.log(
+						`Sample vehicles:`,
+						sample.map((v) => ({ id: v.id, line: v.line }))
+					);
+				}
+				console.log(`Fetched ${parsedVehicles.length} vehicles from MPK API`);
 			}
 
-			const records: VehicleApiRecord[] = data.result.records;
+			// Process parking data
+			let parkingData: ParkingData[] = [];
+			if (data.parking?.current) {
+				parkingData = transformParkingData(data.parking.current);
+				console.log(`Processed ${parkingData.length} parking locations`);
+			}
 
-			const parsedVehicles: Vehicle[] = records
-				.map((record) => {
-					const lat =
-						record.Ostatnia_Pozycja_Szerokosc || record.latitude || record.lat;
-					const lng =
-						record.Ostatnia_Pozycja_Dlugosc || record.longitude || record.lng;
+			// Parking history not needed for static hotspots
 
-					if (!lat || !lng) return null;
-
-					if (lat < 50.9 || lat > 51.3 || lng < 16.8 || lng > 17.3) return null;
-
-					return {
-						id: String(record._id || record.Nr_Tab || Math.random()),
-						lat,
-						lng,
-						line: record.Linia,
-						timestamp: record.Data_Aktualizacji || new Date().toISOString(),
-					} as Vehicle;
-				})
-				.filter((v): v is Vehicle => v !== null);
-
-			cacheRef.current = parsedVehicles;
-			setVehicles(parsedVehicles);
+			cacheRef.current =
+				parsedVehicles.length > 0 ? parsedVehicles : generateFallbackVehicles();
+			setVehicles(cacheRef.current);
+			setParkings(parkingData);
 			setLastUpdate(new Date());
 			setError(null);
 
-			return parsedVehicles;
+			return { vehicles: cacheRef.current, parkings: parkingData };
 		} catch (err) {
-			console.error("Error fetching vehicle data (using fallback):", err);
+			console.error("Error fetching data (using fallback):", err);
 			setError(null);
 
 			const fallbackVehicles = generateFallbackVehicles();
 			cacheRef.current = fallbackVehicles;
 			setVehicles(fallbackVehicles);
+			setParkings([]);
 			setLastUpdate(new Date());
 
-			return fallbackVehicles;
+			return { vehicles: fallbackVehicles, parkings: [] };
 		}
 	}, []);
 
 	const fetchAllData = useCallback(async () => {
 		setIsLoading(true);
 
-		const [vehicleData, jobData] = await Promise.all([
-			fetchVehicles(),
-			fetchJobs(),
-		]);
+		const [{ vehicles: vehicleData, parkings: parkingData }, jobData] =
+			await Promise.all([fetchVehiclesAndParking(), fetchJobs()]);
 
-		// Generate hotspots from both vehicles and jobs
-		const detectedHotspots = detectHotspots(vehicleData, jobData);
-		setHotspots(detectedHotspots);
+		// Use static hotspots instead of detecting from API
+		setHotspots(STATIC_HOTSPOTS);
 
-		// Generate heatmap points - vehicles get lower intensity, jobs get higher
+		// Generate heatmap points
 		const vehicleHeatPoints: [number, number, number][] = vehicleData.map(
 			(v) => [v.lat, v.lng, 0.3 + Math.random() * 0.3]
 		);
@@ -350,32 +476,44 @@ export function useVehicleData(intervalMinutes: number = 30) {
 		const jobHeatPoints: [number, number, number][] = jobData.map((j) => [
 			j.lat,
 			j.lng,
-			0.7 + Math.random() * 0.3, // Jobs have higher intensity
+			0.7 + Math.random() * 0.3,
 		]);
 
-		setHeatmapPoints([...vehicleHeatPoints, ...jobHeatPoints]);
+		// Add parking heat based on occupancy
+		const parkingHeatPoints: [number, number, number][] = parkingData.map(
+			(p) => [
+				p.lat,
+				p.lng,
+				0.4 + (p.occupancyPercent / 100) * 0.6, // Higher occupancy = higher heat
+			]
+		);
+
+		setHeatmapPoints([
+			...vehicleHeatPoints,
+			...jobHeatPoints,
+			...parkingHeatPoints,
+		]);
 		setIsLoading(false);
-	}, [fetchVehicles, fetchJobs]);
+	}, [fetchVehiclesAndParking, fetchJobs]);
 
 	useEffect(() => {
 		fetchAllData();
 
-		const intervalMs = intervalMinutes * 60 * 1000;
-		intervalRef.current = window.setInterval(
-			fetchAllData,
-			Math.max(30000, intervalMs)
-		);
+		// Refresh every 2 hours (7,200,000 ms) instead of frequently
+		const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+		intervalRef.current = window.setInterval(fetchAllData, TWO_HOURS_MS);
 
 		return () => {
 			if (intervalRef.current) {
 				clearInterval(intervalRef.current);
 			}
 		};
-	}, [fetchAllData, intervalMinutes]);
+	}, [fetchAllData]);
 
 	return {
 		vehicles,
 		jobs,
+		parkings,
 		hotspots,
 		heatmapPoints,
 		isLoading,

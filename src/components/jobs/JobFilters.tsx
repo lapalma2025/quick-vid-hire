@@ -32,6 +32,7 @@ import { WojewodztwoSelect } from "./WojewodztwoSelect";
 import { CityAutocomplete } from "./CityAutocomplete";
 import { CountrySelect } from "./CountrySelect";
 import { ForeignCitySelect } from "./ForeignCitySelect";
+import { CategorySelect } from "./CategorySelect";
 import { DateTimePicker } from "../ui/date-time-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
@@ -241,24 +242,22 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 
 			<div className="space-y-2">
 				<Label className="font-medium">Kategoria</Label>
-				<Select
-					value={filters.category_id || "__all__"}
-					onValueChange={(v) =>
-						updateFilter("category_id", v === "__all__" ? "" : v)
-					}
-				>
-					<SelectTrigger className="h-11 rounded-xl">
-						<SelectValue placeholder="Wszystkie kategorie" />
-					</SelectTrigger>
-					<SelectContent className="bg-popover border border-border shadow-xl rounded-xl">
-						<SelectItem value="__all__">Wszystkie kategorie</SelectItem>
-						{categories.map((c) => (
-							<SelectItem key={c.id} value={c.id}>
-								{c.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<CategorySelect
+					value={filters.category_id}
+					onChange={(v) => updateFilter("category_id", v)}
+					placeholder="Wszystkie kategorie"
+				/>
+				{filters.category_id && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-xs h-6 px-2"
+						onClick={() => updateFilter("category_id", "")}
+					>
+						<X className="h-3 w-3 mr-1" />
+						Wyczyść kategorię
+					</Button>
+				)}
 			</div>
 
 			<div className="flex items-center justify-between py-2">

@@ -25,6 +25,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useSEO } from "@/hooks/useSEO";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -51,6 +52,12 @@ export default function Index() {
 	const featuresRef = useRef<HTMLDivElement>(null);
 	const ctaRef = useRef<HTMLDivElement>(null);
 	const floatingIconsRef = useRef<HTMLDivElement>(null);
+
+	useSEO({
+		title: "Strona główna",
+		description: "Hop Hop to platforma łącząca zleceniodawców z wykonawcami. Dodaj zlecenie lub znajdź pracę w swojej okolicy. Szybko, bezpiecznie i bez pośredników.",
+		keywords: "zlecenia, usługi, wykonawcy, praca dorywcza, fachowcy, remonty, sprzątanie, transport, pomoc domowa, Polska",
+	});
 
 	// Detect screen height
 	useEffect(() => {

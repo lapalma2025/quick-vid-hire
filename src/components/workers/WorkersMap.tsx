@@ -160,17 +160,38 @@ export default function WorkersMap({
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
         });
 
+        // Wrocław center and bounds (same as WorkMapLeaflet)
+        const WROCLAW_CENTER: [number, number] = [51.1079, 17.0385];
+        const BOUNDS_PADDING = 0.45;
+        const maxBounds = L.latLngBounds(
+          [WROCLAW_CENTER[0] - BOUNDS_PADDING, WROCLAW_CENTER[1] - BOUNDS_PADDING * 1.5],
+          [WROCLAW_CENTER[0] + BOUNDS_PADDING, WROCLAW_CENTER[1] + BOUNDS_PADDING * 1.5]
+        );
+
         const map = L.map(mapRef.current, {
-          preferCanvas: true, // Better performance
-        }).setView([52.0693, 19.4803], 6);
+          preferCanvas: true,
+          center: WROCLAW_CENTER,
+          zoom: 12,
+          minZoom: 9,
+          maxZoom: 18,
+          maxBounds: maxBounds,
+          maxBoundsViscosity: 0.8,
+          attributionControl: false,
+        });
         
         mapInstanceRef.current = map;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap',
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          maxZoom: 18,
           updateWhenIdle: true,
           updateWhenZooming: false,
         }).addTo(map);
+
+        // Add minimal attribution (required by OSM and CARTO licenses)
+        L.control.attribution({
+          position: 'bottomright',
+          prefix: false,
+        }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
 
         setIsLoading(false);
         setMapReady(true);
@@ -355,7 +376,7 @@ export default function WorkersMap({
         style={{ background: 'hsl(var(--muted))' }}
       />
       
-      <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border z-[1000]">
+      <div className="absolute top-4 right-4 bg-background/95 backdrop-blur-sm rounded-lg px-3 py-2 shadow-md border border-border z-[1000]">
         <div className="text-sm font-medium">
           {workerCoordsRef.current.size} wykonawców na mapie
         </div>

@@ -32,9 +32,9 @@ const WROCLAW_CENTER: L.LatLngTuple = [51.1079, 17.0385];
 const DEFAULT_ZOOM = 13;
 
 // Custom SVG markers
-function createHotspotIcon(level: number) {
+function createHotspotIcon(level: number, rank: number) {
   const size = 40 + level * 4;
-  const color = level >= 4 ? "#ef4444" : level >= 3 ? "#f97316" : level >= 2 ? "#eab308" : "#22c55e";
+  const color = "#f97316"; // All hotspots are orange
   
   return L.divIcon({
     className: "hotspot-marker",
@@ -50,7 +50,7 @@ function createHotspotIcon(level: number) {
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>
         </div>
-        <div class="hotspot-level">${level}</div>
+        <div class="hotspot-level">${rank}</div>
       </div>
     `,
   });
@@ -108,20 +108,37 @@ export function WorkMapLeaflet({
   const jobMarkersRef = useRef<L.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize map
+  // Initialize map with 50km bounds around Wrocław
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
+
+    // 50km bounds around Wrocław (approximately 0.45 degrees lat/lng)
+    const BOUNDS_PADDING = 0.45;
+    const maxBounds = L.latLngBounds(
+      [WROCLAW_CENTER[0] - BOUNDS_PADDING, WROCLAW_CENTER[1] - BOUNDS_PADDING * 1.5], // SW
+      [WROCLAW_CENTER[0] + BOUNDS_PADDING, WROCLAW_CENTER[1] + BOUNDS_PADDING * 1.5]  // NE
+    );
 
     const map = L.map(mapContainerRef.current, {
       center: WROCLAW_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: true,
+      minZoom: 9,
+      maxZoom: 18,
+      maxBounds: maxBounds,
+      maxBoundsViscosity: 0.8,
+      attributionControl: false,
     });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19,
+      maxZoom: 18,
     }).addTo(map);
+
+    // Add minimal attribution (required by OSM and CARTO licenses)
+    L.control.attribution({
+      position: 'bottomright',
+      prefix: false,
+    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
 
     mapRef.current = map;
     setIsLoaded(true);
@@ -183,7 +200,7 @@ export function WorkMapLeaflet({
         marker.bindPopup(`
           <div class="vehicle-popup">
             <strong>Pojazd MPK</strong>
-            ${vehicle.line ? `<br>Linia: ${vehicle.line}` : ""}
+            <br>Linia: <strong>${vehicle.line || 'Brak danych'}</strong>
           </div>
         `);
         
@@ -210,7 +227,7 @@ export function WorkMapLeaflet({
       marker.bindPopup(`
         <div class="job-popup">
           <div class="job-popup-header">
-            <strong>${job.title}</strong>
+            <span class="job-title">${job.title}</span>
             ${job.urgent ? '<span class="job-urgent-badge">PILNE</span>' : ''}
           </div>
           <div class="job-popup-content">
@@ -233,7 +250,7 @@ export function WorkMapLeaflet({
           </div>
           <a href="/jobs/${job.id}" class="job-popup-link">Zobacz szczegóły →</a>
         </div>
-      `);
+      `, { minWidth: 220, maxWidth: 280 });
       
       marker.addTo(mapRef.current!);
       jobMarkersRef.current.push(marker);
@@ -248,8 +265,9 @@ export function WorkMapLeaflet({
     hotspotMarkersRef.current = [];
 
     if (filters.showHotspots) {
-      hotspots.forEach(hotspot => {
-        const icon = createHotspotIcon(hotspot.level);
+      hotspots.forEach((hotspot, index) => {
+        const rank = index + 1;
+        const icon = createHotspotIcon(hotspot.level, rank);
         const marker = L.marker([hotspot.lat, hotspot.lng], { 
           icon,
           zIndexOffset: 200,
@@ -258,7 +276,7 @@ export function WorkMapLeaflet({
         marker.bindPopup(`
           <div class="hotspot-popup">
             <div class="hotspot-popup-header">
-              <strong>${hotspot.name}</strong>
+              <strong>${rank}. ${hotspot.name}</strong>
               <span class="hotspot-level-badge">${"🔥".repeat(hotspot.level)}</span>
             </div>
             <div class="hotspot-popup-content">
@@ -285,10 +303,10 @@ export function WorkMapLeaflet({
   }, [filters.showHotspots, hotspots, isLoaded]);
 
   return (
-    <div className="relative">
+    <div className="relative z-0">
       <div 
         ref={mapContainerRef} 
-        className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden"
+        className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden z-0"
       />
       
       {!isLoaded && (
@@ -323,9 +341,9 @@ export function WorkMapLeaflet({
         </div>
       </div>
 
-      {/* Job count badge */}
+      {/* Job count badge - positioned to avoid zoom controls */}
       {jobs.length > 0 && (
-        <div className="absolute top-4 left-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg">
+        <div className="absolute top-4 right-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg z-20">
           {jobs.length} {jobs.length === 1 ? 'oferta' : jobs.length < 5 ? 'oferty' : 'ofert'} na mapie
         </div>
       )}
@@ -464,17 +482,23 @@ export function WorkMapLeaflet({
         
         .hotspot-popup-header, .job-popup-header {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
           gap: 8px;
           margin-bottom: 8px;
           padding-bottom: 8px;
           border-bottom: 1px solid #e5e7eb;
+          padding-right: 20px;
         }
         
-        .hotspot-popup-header strong, .job-popup-header strong {
+        .hotspot-popup-header strong, .job-popup-header strong,
+        .job-popup-header .job-title {
           font-size: 14px;
+          font-weight: 600;
           color: #1f2937;
+          flex: 1;
+          word-break: break-word;
+          line-height: 1.3;
         }
         
         .job-urgent-badge {
@@ -484,6 +508,22 @@ export function WorkMapLeaflet({
           border-radius: 4px;
           font-size: 10px;
           font-weight: bold;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        
+        .leaflet-popup-close-button {
+          top: 8px !important;
+          right: 8px !important;
+          width: 20px !important;
+          height: 20px !important;
+          font-size: 18px !important;
+          line-height: 18px !important;
+          color: #6b7280 !important;
+        }
+        
+        .leaflet-popup-close-button:hover {
+          color: #1f2937 !important;
         }
         
         .hotspot-popup-content, .job-popup-content {
@@ -529,8 +569,28 @@ export function WorkMapLeaflet({
         }
         
         .vehicle-popup {
-          padding: 8px 12px;
+          padding: 12px 16px;
+          padding-right: 28px;
           font-size: 13px;
+          min-width: 120px;
+        }
+        
+        .vehicle-popup strong {
+          display: block;
+          margin-bottom: 4px;
+          color: #1f2937;
+        }
+        
+        /* Fix z-index for Leaflet controls */
+        .leaflet-pane { z-index: 1 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
+        .leaflet-control { z-index: 10 !important; }
+        
+        /* Hide Leaflet branding and Ukraine flag */
+        .leaflet-control-attribution a[href*="leaflet"],
+        .leaflet-control-attribution img,
+        .leaflet-control-attribution svg {
+          display: none !important;
         }
       `}</style>
     </div>

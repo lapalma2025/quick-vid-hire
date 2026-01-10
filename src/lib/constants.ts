@@ -114,9 +114,10 @@ export const WROCLAW_DISTRICTS: Record<string, { lat: number; lng: number }> = {
   "Zakrzów": { lat: 51.1550, lng: 17.0850 },
 };
 
-// Miasta w okolicy Wrocławia (aglomeracja) z przybliżonymi współrzędnymi
+// Miasta w okolicy Wrocławia (aglomeracja do 50km) z przybliżonymi współrzędnymi
 export const WROCLAW_AREA_CITIES: Record<string, { lat: number; lng: number }> = {
   "Wrocław": { lat: 51.1079, lng: 17.0385 },
+  // Powiat wrocławski i sąsiednie
   "Oborniki Śląskie": { lat: 51.3050, lng: 16.9200 },
   "Trzebnica": { lat: 51.3100, lng: 17.0630 },
   "Oleśnica": { lat: 51.2100, lng: 17.3850 },
@@ -134,6 +135,51 @@ export const WROCLAW_AREA_CITIES: Record<string, { lat: number; lng: number }> =
   "Kobierzyce": { lat: 50.9850, lng: 16.9300 },
   "Żórawina": { lat: 51.0150, lng: 17.0500 },
   "Miękinia": { lat: 51.1550, lng: 16.7500 },
+  // Gminy i miejscowości do 50km
+  "Wilkszyn": { lat: 51.191944, lng: 16.861667 },
+  "Święta Katarzyna": { lat: 51.0680, lng: 17.1350 },
+  "Bielany Wrocławskie": { lat: 51.0450, lng: 16.9850 },
+  "Smolec": { lat: 51.0550, lng: 16.9100 },
+  "Radwanice": { lat: 51.0650, lng: 16.8650 },
+  "Żerniki Wrocławskie": { lat: 51.0480, lng: 16.9450 },
+  "Domasław": { lat: 51.0100, lng: 16.9150 },
+  "Mokronos Górny": { lat: 51.0200, lng: 16.9600 },
+  "Krzyżanowice": { lat: 51.0950, lng: 16.7400 },
+  "Cesarzowice": { lat: 51.0780, lng: 16.7600 },
+  "Krzeptów": { lat: 51.0700, lng: 16.8100 },
+  "Skała": { lat: 51.0950, lng: 16.7150 },
+  "Zabrodzie": { lat: 51.0450, lng: 16.7850 },
+  "Gniechowice": { lat: 51.0250, lng: 16.8100 },
+  "Sadowice": { lat: 51.0150, lng: 16.7800 },
+  "Pietrzykowice": { lat: 51.0350, lng: 16.8350 },
+  "Pełcznica": { lat: 51.0100, lng: 16.8600 },
+  "Bogdaszowice": { lat: 51.0550, lng: 16.8300 },
+  "Zachowice": { lat: 51.0400, lng: 16.8000 },
+  "Nowa Wieś Wrocławska": { lat: 51.0100, lng: 16.9950 },
+  "Wierzbice": { lat: 50.9650, lng: 16.9550 },
+  "Tyniec Mały": { lat: 51.0650, lng: 16.9550 },
+  "Tyniec nad Ślęzą": { lat: 50.9750, lng: 16.9800 },
+  "Chrząstawa Wielka": { lat: 51.1100, lng: 17.2100 },
+  "Nadolice Wielkie": { lat: 51.1300, lng: 17.1800 },
+  "Kiełczów": { lat: 51.1550, lng: 17.1450 },
+  "Brzezia Łąka": { lat: 51.1700, lng: 17.1650 },
+  "Dobrzykowice": { lat: 51.1400, lng: 17.1950 },
+  "Węgry": { lat: 51.0900, lng: 17.1750 },
+  "Łany": { lat: 51.0750, lng: 17.2050 },
+  "Kamieniec Wrocławski": { lat: 51.0300, lng: 17.1850 },
+  "Żernica": { lat: 51.0600, lng: 17.1650 },
+  "Radwanice (siechnice)": { lat: 51.0150, lng: 17.1150 },
+  "Kotowice": { lat: 51.0050, lng: 17.0850 },
+  "Groblice": { lat: 51.0250, lng: 17.1050 },
+  "Sulimów": { lat: 51.0800, lng: 17.1450 },
+  "Iwiny": { lat: 51.1000, lng: 17.1600 },
+  "Godzieszowa": { lat: 51.1650, lng: 17.2350 },
+  "Pasikurowice": { lat: 51.1850, lng: 17.0900 },
+  "Wilczyce": { lat: 51.1950, lng: 17.0650 },
+  "Ramiszów": { lat: 51.2100, lng: 17.0450 },
+  "Skarszyn": { lat: 51.2250, lng: 17.0800 },
+  "Pęgów": { lat: 51.2050, lng: 16.9950 },
+  "Pawłowice": { lat: 51.0800, lng: 17.0900 },
 };
 
 export const CATEGORY_ICONS: Record<string, string> = {
@@ -159,3 +205,19 @@ export const JOB_STATUSES = {
   archived: { label: "Archiwalne", color: "muted" },
   closed: { label: "Zamknięte", color: "destructive" },
 } as const;
+
+// Parkingi P+R we Wrocławiu ze współrzędnymi
+export const WROCLAW_PARKINGS: Record<string, { lat: number; lng: number; capacity: number }> = {
+  "PR01A - Psie Pole - Stacja PKP parking nr 1": { lat: 51.1413, lng: 17.0615, capacity: 100 },
+  "PR01B - Psie Pole - Stacja PKP parking nr 3": { lat: 51.1403, lng: 17.0625, capacity: 150 },
+  "PR02 - ul. Bystrzycka-Idzikowskiego (Kuźniki)": { lat: 51.0983, lng: 16.9431, capacity: 60 },
+  "PR03A - Grabiszyn południe": { lat: 51.0876, lng: 16.9912, capacity: 80 },
+  "PR03B - Grabiszyn północ": { lat: 51.0898, lng: 16.9895, capacity: 50 },
+  "PR04 - ul. Snycerska-Majchra (Leśnica)": { lat: 51.1132, lng: 16.8893, capacity: 100 },
+  "PR05 - ul. Sołtysowicka (Sołtysowice)": { lat: 51.1380, lng: 17.0180, capacity: 120 },
+  "PR06 - ul. Krakowska (Krzyki)": { lat: 51.0720, lng: 17.0310, capacity: 200 },
+  "PR07 - ul. Wołowska (Popowice)": { lat: 51.1150, lng: 16.9650, capacity: 80 },
+  "PR08 - al. Hallera (Biskupin)": { lat: 51.0980, lng: 17.0850, capacity: 60 },
+  "PR09 - ul. Kleczkowska (Nadodrze)": { lat: 51.1220, lng: 17.0380, capacity: 40 },
+  "PR10 - ul. Bardzka (Jagodno)": { lat: 51.0450, lng: 17.0950, capacity: 100 },
+};

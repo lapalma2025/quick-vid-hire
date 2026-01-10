@@ -1,5 +1,7 @@
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { WOJEWODZTWA } from "@/lib/constants";
+
+// Only dolnośląskie - we support Wrocław and 50km radius only
+const WOJEWODZTWA_LIMITED = ["dolnośląskie"] as const;
 
 interface WojewodztwoSelectProps {
 	value: string;
@@ -14,7 +16,7 @@ export function WojewodztwoSelect({
 }: WojewodztwoSelectProps) {
 	return (
 		<SearchableSelect
-			options={WOJEWODZTWA}
+			options={WOJEWODZTWA_LIMITED}
 			value={value}
 			onChange={onChange}
 			placeholder="Wybierz województwo"

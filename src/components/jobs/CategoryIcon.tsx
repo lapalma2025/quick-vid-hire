@@ -11,6 +11,11 @@ import {
   Package, 
   Laptop, 
   MoreHorizontal,
+  GraduationCap,
+  Sparkles,
+  Scale,
+  Cog,
+  Palette,
   LucideIcon
 } from 'lucide-react';
 
@@ -26,6 +31,12 @@ const iconMap: Record<string, LucideIcon> = {
   'Opieka': Heart,
   'Dostawy': Package,
   'IT i komputery': Laptop,
+  'Edukacja i szkolenia': GraduationCap,
+  'Uroda i zdrowie': Sparkles,
+  'Finanse i prawo': Scale,
+  'Motoryzacja': Car,
+  'Instalacje': Cog,
+  'Sztuka i rzemiosło': Palette,
   'Inne': MoreHorizontal,
 };
 
