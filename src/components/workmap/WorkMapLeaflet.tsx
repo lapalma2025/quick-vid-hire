@@ -199,10 +199,10 @@ export function WorkMapLeaflet({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Tight bounds for Dolnośląskie voivodeship only
+    // Bounds for Dolnośląskie voivodeship with padding
     const dolnoslaskieBounds = L.latLngBounds(
-      [50.18, 14.95], // SW corner
-      [51.80, 17.75]  // NE corner
+      [50.10, 14.80], // SW corner - extended west and south
+      [51.85, 17.95]  // NE corner - extended east and north
     );
 
     const map = L.map(mapContainerRef.current, {
