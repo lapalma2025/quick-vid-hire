@@ -40,7 +40,7 @@ interface JobCluster {
 
 const WROCLAW_CENTER: L.LatLngTuple = [51.1079, 17.0385];
 const DEFAULT_ZOOM = 13;
-const PRECISE_SPLIT_ZOOM = 13; // Jobs with precise location (street) split off at this zoom
+const PRECISE_SPLIT_ZOOM = 15; // Jobs with precise location (street) split off at this zoom
 
 // Custom SVG markers
 function createHotspotIcon(level: number, rank: number) {
@@ -423,7 +423,7 @@ export function WorkMapLeaflet({
         marker.bindPopup(`
           <div class="cluster-popup">
             <div class="cluster-popup-header">
-              <strong>${cluster.miasto}</strong>
+              <strong>${cluster.miasto}${cluster.district ? ` • ${cluster.district}` : ""}</strong>
               <span class="cluster-job-count">${cluster.jobs.length} ${cluster.jobs.length === 1 ? 'oferta' : cluster.jobs.length < 5 ? 'oferty' : 'ofert'}</span>
             </div>
             <div class="cluster-job-list">

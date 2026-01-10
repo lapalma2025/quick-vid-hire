@@ -597,67 +597,22 @@ export default function NewJob() {
 		};
 
 		if (!form.is_foreign) {
-			const isWroclaw = miastoNormalized.toLowerCase() === "wrocław";
-
-			// 1) Street + city (dokładnie przy ulicy)
+			// IMPORTANT: We persist coordinates ONLY when the user provided a street/address.
+			// If the user selected only city/district, we keep location_lat/lng = null so the map
+			// can cluster these offers together and show them as one marker with a list.
 			if (streetNormalized && miastoNormalized) {
 				const query = `${streetNormalized}, ${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
 				const coords = await geocodeInArea(query);
 				if (coords) {
 					locationLat = coords.lat;
 					locationLng = coords.lng;
-				}
-			}
-
-			// 2) Dla Wrocławia: jeśli wybrano dzielnicę i NIE podano ulicy,
-			// to zawsze bierzemy centroid dzielnicy (bez geokodowania "Wrocław" → centrum miasta).
-			if (
-				(locationLat === null || locationLng === null) &&
-				isWroclaw &&
-				!streetNormalized &&
-				form.district &&
-				WROCLAW_DISTRICTS[form.district]
-			) {
-				const coords = WROCLAW_DISTRICTS[form.district];
-				locationLat = coords.lat;
-				locationLng = coords.lng;
-			}
-
-			// 3) Same city (centrum miejscowości) – działa też dla wpisów typu "wilkszyn"
-			// (UWAGA: pomijamy to dla Wrocławia gdy mamy dzielnicę)
-			if (
-				(locationLat === null || locationLng === null) &&
-				miastoNormalized &&
-				!(isWroclaw && form.district)
-			) {
-				const query = `${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
-				const coords = await geocodeInArea(query, miastoNormalized);
-				if (coords) {
-					locationLat = coords.lat;
-					locationLng = coords.lng;
-				}
-			}
-
-			// 4) Fallback: district/city coordinates if geocoding failed
-			if (locationLat === null || locationLng === null) {
-				if (isWroclaw && form.district && WROCLAW_DISTRICTS[form.district]) {
-					const coords = WROCLAW_DISTRICTS[form.district];
-					locationLat = coords.lat;
-					locationLng = coords.lng;
 				} else {
-					const exact = WROCLAW_AREA_CITIES[miastoNormalized];
-					const key =
-						exact
-							? miastoNormalized
-							: Object.keys(WROCLAW_AREA_CITIES).find(
-								(k) => k.toLowerCase() === miastoNormalized.toLowerCase()
-							);
-					if (key) {
-						const coords = WROCLAW_AREA_CITIES[key];
-						locationLat = coords.lat;
-						locationLng = coords.lng;
-					}
+					locationLat = null;
+					locationLng = null;
 				}
+			} else {
+				locationLat = null;
+				locationLng = null;
 			}
 		}
 
