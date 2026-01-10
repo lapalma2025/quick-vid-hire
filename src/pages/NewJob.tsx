@@ -584,6 +584,8 @@ export default function NewJob() {
 		};
 
 		if (!form.is_foreign) {
+			const isWroclaw = miastoNormalized.toLowerCase() === "wrocław";
+
 			// 1) Street + city (dokładnie przy ulicy)
 			if (streetNormalized && miastoNormalized) {
 				const query = `${streetNormalized}, ${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
@@ -594,8 +596,27 @@ export default function NewJob() {
 				}
 			}
 
-			// 2) Same city (centrum miejscowości) – działa też dla wpisów typu "wilkszyn"
-			if ((locationLat === null || locationLng === null) && miastoNormalized) {
+			// 2) Dla Wrocławia: jeśli wybrano dzielnicę i NIE podano ulicy,
+			// to zawsze bierzemy centroid dzielnicy (bez geokodowania "Wrocław" → centrum miasta).
+			if (
+				(locationLat === null || locationLng === null) &&
+				isWroclaw &&
+				!streetNormalized &&
+				form.district &&
+				WROCLAW_DISTRICTS[form.district]
+			) {
+				const coords = WROCLAW_DISTRICTS[form.district];
+				locationLat = coords.lat;
+				locationLng = coords.lng;
+			}
+
+			// 3) Same city (centrum miejscowości) – działa też dla wpisów typu "wilkszyn"
+			// (UWAGA: pomijamy to dla Wrocławia gdy mamy dzielnicę)
+			if (
+				(locationLat === null || locationLng === null) &&
+				miastoNormalized &&
+				!(isWroclaw && form.district)
+			) {
 				const query = `${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
 				const coords = await geocodeInArea(query, miastoNormalized);
 				if (coords) {
@@ -604,16 +625,12 @@ export default function NewJob() {
 				}
 			}
 
-			// 3) Fallback: district/city coordinates if geocoding failed
+			// 4) Fallback: district/city coordinates if geocoding failed
 			if (locationLat === null || locationLng === null) {
-				if (
-					miastoNormalized.toLowerCase() === "wrocław" &&
-					form.district &&
-					WROCLAW_DISTRICTS[form.district]
-				) {
+				if (isWroclaw && form.district && WROCLAW_DISTRICTS[form.district]) {
 					const coords = WROCLAW_DISTRICTS[form.district];
-					locationLat = coords.lat + (Math.random() - 0.5) * 0.003;
-					locationLng = coords.lng + (Math.random() - 0.5) * 0.003;
+					locationLat = coords.lat;
+					locationLng = coords.lng;
 				} else {
 					const exact = WROCLAW_AREA_CITIES[miastoNormalized];
 					const key =
@@ -624,8 +641,8 @@ export default function NewJob() {
 							);
 					if (key) {
 						const coords = WROCLAW_AREA_CITIES[key];
-						locationLat = coords.lat + (Math.random() - 0.5) * 0.005;
-						locationLng = coords.lng + (Math.random() - 0.5) * 0.005;
+						locationLat = coords.lat;
+						locationLng = coords.lng;
 					}
 				}
 			}

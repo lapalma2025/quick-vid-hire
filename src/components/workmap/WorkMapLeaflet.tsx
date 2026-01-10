@@ -156,9 +156,12 @@ export function WorkMapLeaflet({
       if (job.hasPreciseLocation && shouldShowPrecise) {
         precise.push(job);
       } else {
-        // Jobs without precise location stay in city cluster
-        const key = job.miasto.toLowerCase();
-        
+        // Jobs without precise location stay clustered.
+        // For Wrocław we cluster by district to avoid "all Wrocław jobs" collapsing into one marker.
+        const miastoLower = job.miasto.toLowerCase();
+        const districtLower = (job.district ?? "").toLowerCase();
+        const key = miastoLower === "wrocław" ? `${miastoLower}::${districtLower}` : miastoLower;
+
         if (!clusters[key]) {
           clusters[key] = {
             key,
@@ -170,12 +173,12 @@ export function WorkMapLeaflet({
             hasUrgent: false,
           };
         }
-        
+
         clusters[key].jobs.push(job);
         if (job.urgent) {
           clusters[key].hasUrgent = true;
         }
-        
+
         // Calculate average position for cluster
         const totalLat = clusters[key].jobs.reduce((sum, j) => sum + j.lat, 0);
         const totalLng = clusters[key].jobs.reduce((sum, j) => sum + j.lng, 0);

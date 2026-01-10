@@ -208,14 +208,14 @@ function getJobCoordinates(
 		if (district && WROCLAW_DISTRICTS[district]) {
 			const coords = WROCLAW_DISTRICTS[district];
 			return {
-				lat: coords.lat + (Math.random() - 0.5) * 0.005,
-				lng: coords.lng + (Math.random() - 0.5) * 0.005,
-				hasPreciseLocation: false, // District center, not street-level
+				lat: coords.lat,
+				lng: coords.lng,
+				hasPreciseLocation: false, // District centroid, not street-level
 			};
 		}
 		return {
-			lat: WROCLAW_LAT + (Math.random() - 0.5) * 0.04,
-			lng: WROCLAW_LNG + (Math.random() - 0.5) * 0.06,
+			lat: WROCLAW_LAT,
+			lng: WROCLAW_LNG,
 			hasPreciseLocation: false,
 		};
 	}
