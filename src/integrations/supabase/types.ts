@@ -454,11 +454,14 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          district: string | null
           extended_description: string | null
           hourly_rate: number | null
           id: string
           is_available: boolean | null
           is_trusted: boolean | null
+          location_lat: number | null
+          location_lng: number | null
           logo_url: string | null
           miasto: string | null
           name: string | null
@@ -468,6 +471,7 @@ export type Database = {
           remaining_highlights: number | null
           remaining_listings: number | null
           role: Database["public"]["Enums"]["user_role"]
+          street: string | null
           stripe_customer_id: string | null
           subscription_period_end: string | null
           subscription_plan: string | null
@@ -483,11 +487,14 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          district?: string | null
           extended_description?: string | null
           hourly_rate?: number | null
           id?: string
           is_available?: boolean | null
           is_trusted?: boolean | null
+          location_lat?: number | null
+          location_lng?: number | null
           logo_url?: string | null
           miasto?: string | null
           name?: string | null
@@ -497,6 +504,7 @@ export type Database = {
           remaining_highlights?: number | null
           remaining_listings?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          street?: string | null
           stripe_customer_id?: string | null
           subscription_period_end?: string | null
           subscription_plan?: string | null
@@ -512,11 +520,14 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          district?: string | null
           extended_description?: string | null
           hourly_rate?: number | null
           id?: string
           is_available?: boolean | null
           is_trusted?: boolean | null
+          location_lat?: number | null
+          location_lng?: number | null
           logo_url?: string | null
           miasto?: string | null
           name?: string | null
@@ -526,6 +537,7 @@ export type Database = {
           remaining_highlights?: number | null
           remaining_listings?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          street?: string | null
           stripe_customer_id?: string | null
           subscription_period_end?: string | null
           subscription_plan?: string | null

@@ -28,7 +28,14 @@ import {
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { CategorySubcategorySelect } from "@/components/jobs/CategorySubcategorySelect";
-import { WOJEWODZTWA } from "@/lib/constants";
+import { WOJEWODZTWA, WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Category {
   id: string;
@@ -66,6 +73,8 @@ export default function WorkerOnboarding() {
     phone: "",
     wojewodztwo: "",
     miasto: "",
+    district: "",
+    street: "",
     bio: "",
     hourly_rate: "",
   });
@@ -230,6 +239,8 @@ export default function WorkerOnboarding() {
             phone: profile.phone || "",
             wojewodztwo: profile.wojewodztwo || "",
             miasto: profile.miasto || "",
+            district: (profile as any).district || "",
+            street: (profile as any).street || "",
             bio: profile.bio || "",
             hourly_rate: profile.hourly_rate?.toString() || "",
           });
@@ -241,6 +252,8 @@ export default function WorkerOnboarding() {
           phone: profile.phone || "",
           wojewodztwo: profile.wojewodztwo || "",
           miasto: profile.miasto || "",
+          district: (profile as any).district || "",
+          street: (profile as any).street || "",
           bio: profile.bio || "",
           hourly_rate: profile.hourly_rate?.toString() || "",
         });
@@ -319,7 +332,20 @@ export default function WorkerOnboarding() {
   };
 
   const updateForm = (key: string, value: string) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    setForm(prev => {
+      const updated = { ...prev, [key]: value };
+      // Reset dependent fields
+      if (key === "wojewodztwo") {
+        updated.miasto = "";
+        updated.district = "";
+        updated.street = "";
+      }
+      if (key === "miasto") {
+        updated.district = "";
+        updated.street = "";
+      }
+      return updated;
+    });
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -460,6 +486,36 @@ export default function WorkerOnboarding() {
     setLoading(true);
 
     try {
+      // Geocode street if provided to get precise coordinates
+      let locationLat: number | null = null;
+      let locationLng: number | null = null;
+
+      if (form.street.trim() && form.miasto) {
+        try {
+          const query = `${form.street.trim()}, ${form.miasto}, ${form.wojewodztwo || ""}, Polska`;
+          const params = new URLSearchParams({
+            q: query,
+            format: "json",
+            limit: "1",
+            countrycodes: "pl",
+            "accept-language": "pl",
+          });
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+            { headers: { "User-Agent": "ZlecenieTeraz/1.0" } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.length > 0) {
+              locationLat = parseFloat(data[0].lat);
+              locationLng = parseFloat(data[0].lon);
+            }
+          }
+        } catch (e) {
+          console.error("Geocoding error:", e);
+        }
+      }
+
       // Update profile - also set is_available to true so worker appears in listings
       const { error: profileError } = await supabase
         .from("profiles")
@@ -468,13 +524,17 @@ export default function WorkerOnboarding() {
           phone: form.phone,
           wojewodztwo: form.wojewodztwo,
           miasto: form.miasto,
+          district: form.district || null,
+          street: form.street || null,
+          location_lat: locationLat,
+          location_lng: locationLng,
           bio: form.bio,
           hourly_rate: parseFloat(form.hourly_rate),
           avatar_url: avatarUrl,
           worker_profile_completed: true,
           is_available: true, // Important: make worker visible
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq("id", profile.id);
 
       if (profileError) throw profileError;
@@ -688,6 +748,52 @@ export default function WorkerOnboarding() {
                   />
                 </div>
               </div>
+
+              {/* District for Wrocław */}
+              {form.miasto.toLowerCase() === "wrocław" && (
+                <div className="space-y-2 animate-fade-in">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Rejon / Osiedle (opcjonalnie)
+                  </Label>
+                  <Select
+                    value={form.district}
+                    onValueChange={(v) => updateForm("district", v === "__none__" ? "" : v)}
+                  >
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue placeholder="Wybierz rejon..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">-- Nie wybieram --</SelectItem>
+                      {Object.keys(WROCLAW_DISTRICTS).map((d) => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Wybierz rejon, aby być widocznym dla klientów szukających wykonawców w Twojej okolicy
+                  </p>
+                </div>
+              )}
+
+              {/* Street (no house number) for Wrocław area cities */}
+              {form.miasto && (form.miasto.toLowerCase() === "wrocław" || WROCLAW_AREA_CITIES[form.miasto]) && (
+                <div className="space-y-2 animate-fade-in">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Ulica (opcjonalnie, bez numeru domu)
+                  </Label>
+                  <Input
+                    value={form.street}
+                    onChange={(e) => updateForm("street", e.target.value)}
+                    placeholder="np. Świdnicka"
+                    className="h-11 rounded-xl"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Jeśli podasz ulicę, na mapie pojawi się dokładniejsza lokalizacja Twojego profilu
+                  </p>
+                </div>
+              )}
 
               {/* Hourly Rate */}
               <div className="space-y-2">
