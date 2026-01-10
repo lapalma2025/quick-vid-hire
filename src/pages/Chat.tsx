@@ -37,18 +37,24 @@ interface JobResponse {
   worker_id: string;
 }
 
-// Predefiniowane szybkie wiadomości
+// Predefiniowane szybkie wiadomości - rozszerzone
 const QUICK_QUESTIONS = [
   { id: 'today', label: 'Czy dziś?', icon: Clock },
   { id: 'hours', label: 'Ile godzin?', icon: HelpCircle },
   { id: 'clothes', label: 'Czy strój roboczy?', icon: Shirt },
-  { id: 'phone', label: 'Poproszę o numer telefonu', icon: Phone },
+  { id: 'phone', label: 'Poproszę o telefon', icon: Phone },
+  { id: 'tools', label: 'Czy narzędzia?', icon: HelpCircle },
+  { id: 'address', label: 'Jaki adres?', icon: HelpCircle },
+  { id: 'payment', label: 'Forma płatności?', icon: HelpCircle },
+  { id: 'experience', label: 'Jakie doświadczenie?', icon: HelpCircle },
 ];
 
 const QUICK_RESPONSES = [
   { id: 'yes', label: 'Tak', icon: Check, variant: 'default' as const },
   { id: 'no', label: 'Nie', icon: X, variant: 'outline' as const },
   { id: 'call', label: 'Zadzwoń pod:', icon: Phone, variant: 'secondary' as const },
+  { id: 'confirm', label: 'Potwierdzam', icon: Check, variant: 'default' as const },
+  { id: 'later', label: 'Odezwę się później', icon: Clock, variant: 'outline' as const },
 ];
 
 // Mapowanie ID wiadomości na pełny tekst
@@ -57,9 +63,15 @@ const MESSAGE_MAP: Record<string, string> = {
   'hours': '❓ Ile godzin zajmie praca?',
   'clothes': '❓ Czy potrzebuję stroju roboczego?',
   'phone': '📞 Poproszę o numer telefonu, aby ustalić szczegóły.',
+  'tools': '❓ Czy mam przynieść własne narzędzia?',
+  'address': '❓ Jaki jest dokładny adres wykonania zlecenia?',
+  'payment': '❓ Jaka jest preferowana forma płatności?',
+  'experience': '❓ Jakie masz doświadczenie w tego typu pracach?',
   'yes': '✅ Tak',
   'no': '❌ Nie',
   'call': '📱 Zadzwoń pod numer:',
+  'confirm': '✅ Potwierdzam zlecenie',
+  'later': '⏰ Odezwę się później z więcej informacjami',
 };
 
 export default function Chat() {
@@ -274,7 +286,9 @@ export default function Chat() {
   const lastMessage = messages[messages.length - 1];
   const isLastMessageQuestion = lastMessage?.message?.startsWith('❓');
   const isLastMessageFromOther = lastMessage?.sender_id !== profile?.id;
-  const showResponseButtons = isLastMessageQuestion && isLastMessageFromOther;
+  // Tylko zleceniodawca może odpowiadać na pytania
+  const isJobOwner = profile?.id === job?.user_id;
+  const showResponseButtons = isLastMessageQuestion && isLastMessageFromOther && isJobOwner;
 
   if (loading) {
     return (
@@ -331,7 +345,10 @@ export default function Chat() {
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-2">Szybka komunikacja</p>
               <p className="text-sm text-muted-foreground">
-                Wybierz jedno z szybkich pytań poniżej, aby rozpocząć rozmowę
+                Wybierz jedno z szybkich pytań poniżej, aby rozpocząć rozmowę.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Przez czat można wysyłać tylko szybkie wiadomości tekstowe (bez zdjęć i plików)
               </p>
             </div>
           ) : (
@@ -351,9 +368,6 @@ export default function Chat() {
                   <div className={`max-w-[70%] ${isOwn ? 'text-right' : ''}`}>
                     <Card className={`p-3 inline-block ${isOwn ? 'bg-primary text-primary-foreground' : ''}`}>
                       {msg.message && <p className="text-sm whitespace-pre-wrap">{msg.message}</p>}
-                      {msg.image_url && (
-                        <img src={msg.image_url} alt="" className="rounded mt-2 max-w-full" />
-                      )}
                     </Card>
                     <p className="text-xs text-muted-foreground mt-1">
                       {format(new Date(msg.created_at), 'HH:mm', { locale: pl })}
