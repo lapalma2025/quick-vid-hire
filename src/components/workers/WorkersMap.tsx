@@ -35,9 +35,10 @@ interface WorkerCluster {
   workers: Worker[];
 }
 
-// Województwo dolnośląskie
-const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.0, 16.35];
-const DEFAULT_ZOOM = 11;
+// Województwo dolnośląskie - centered on Wrocław area
+const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.1, 17.0];
+const DEFAULT_ZOOM = 9;
+const MIN_ZOOM = 9; // Prevents zooming out to see voivodeship names
 const PRECISE_SPLIT_ZOOM = 15;
 
 // Get worker coordinates and determine if they have precise location
@@ -209,15 +210,12 @@ export default function WorkersMap({
       center: DOLNOSLASKIE_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomControl: true,
-      minZoom: 8,
+      minZoom: MIN_ZOOM,
       maxZoom: 18,
       maxBounds: dolnoslaskieBounds,
       maxBoundsViscosity: 1.0, // Hard boundary - cannot pan outside
       attributionControl: false,
     });
-
-    // Fit to dolnośląskie bounds
-    map.fitBounds(dolnoslaskieBounds, { padding: [10, 10] });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 18,
