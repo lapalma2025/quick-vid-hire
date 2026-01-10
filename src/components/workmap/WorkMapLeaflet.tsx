@@ -106,8 +106,8 @@ function createJobIcon(urgent: boolean = false) {
 
 function createClusterIcon(count: number, hasUrgent: boolean) {
   const size = Math.min(60, 40 + count * 2);
-  // Cluster color: blue/navy for clusters, red pulse only if urgent
-  const clusterColor = "#1e40af"; // Navy blue for clusters
+  // Cluster color: sky blue for clusters, red pulse only if urgent
+  const clusterColor = "#0ea5e9"; // Sky blue for clusters
   
   return L.divIcon({
     className: "cluster-marker",
@@ -512,7 +512,7 @@ export function WorkMapLeaflet({
             <span>Pilne oferty</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-blue-900 flex items-center justify-center text-[10px] text-white font-bold">3</div>
+            <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center text-[10px] text-white font-bold">3</div>
             <span>Klaster ofert (kliknij)</span>
           </div>
           <div className="flex items-center gap-2">
