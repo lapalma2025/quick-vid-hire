@@ -69,6 +69,7 @@ interface JobDetails {
   start_time: string | null;
   duration_hours: number | null;
   budget: number | null;
+  budget_max?: number | null;
   budget_type: string | null;
   urgent: boolean;
   status: string;
@@ -871,9 +872,13 @@ export default function JobDetails() {
                       <Banknote className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Budżet</p>
-                      <p className="font-medium text-primary">
-                        {job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}
+                      <p className="text-sm text-muted-foreground">
+                        Budżet ({job.budget_type === 'hourly' ? 'za godzinę' : 'za całość'})
+                      </p>
+                      <p className="font-medium text-primary text-lg">
+                        {(job as any).budget_max 
+                          ? `${job.budget} - ${(job as any).budget_max} zł`
+                          : `${job.budget} zł`}
                       </p>
                     </div>
                   </div>

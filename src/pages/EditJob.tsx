@@ -56,7 +56,9 @@ export default function EditJob() {
     start_time: '',
     duration_hours: '',
     budget: '',
+    budget_max: '',
     budget_type: 'fixed' as 'fixed' | 'hourly',
+    budget_range_mode: false,
     urgent: false,
     images: [] as string[],
     applicant_limit: 'unlimited' as string,
@@ -100,6 +102,9 @@ export default function EditJob() {
 
     const isForeign = job.is_foreign || false;
 
+    const budgetMaxValue = (job as any).budget_max;
+    const hasBudgetRange = budgetMaxValue !== null && budgetMaxValue !== undefined;
+
     setForm({
       title: job.title || '',
       description: job.description || '',
@@ -111,7 +116,9 @@ export default function EditJob() {
       start_time: job.start_time ? job.start_time.slice(0, 16) : '',
       duration_hours: job.duration_hours?.toString() || '',
       budget: job.budget?.toString() || '',
+      budget_max: budgetMaxValue?.toString() || '',
       budget_type: (job.budget_type as 'fixed' | 'hourly') || 'fixed',
+      budget_range_mode: hasBudgetRange,
       urgent: job.urgent || false,
       images: imgs,
       applicant_limit: job.applicant_limit?.toString() || 'unlimited',
@@ -155,10 +162,11 @@ export default function EditJob() {
         start_time: form.start_time || null,
         duration_hours: form.duration_hours ? parseInt(form.duration_hours) : null,
         budget: form.budget ? parseFloat(form.budget) : null,
+        budget_max: form.budget_range_mode && form.budget_max ? parseFloat(form.budget_max) : null,
         budget_type: form.budget_type,
         urgent: form.urgent,
         applicant_limit: form.applicant_limit && form.applicant_limit !== "unlimited" ? parseInt(form.applicant_limit) : null,
-      })
+      } as any)
       .eq('id', id);
 
     if (error) {
@@ -194,7 +202,10 @@ export default function EditJob() {
     );
   }
 
-  const isValid = form.title && form.category_id && form.miasto && 
+  const isBudgetValid = form.budget && parseFloat(form.budget) > 0 && 
+    (!form.budget_range_mode || (form.budget_max && parseFloat(form.budget_max) > parseFloat(form.budget)));
+  
+  const isValid = form.title && form.category_id && form.miasto && isBudgetValid &&
     (form.is_foreign ? form.country : form.wojewodztwo);
 
   return (
@@ -358,31 +369,92 @@ export default function EditJob() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Budżet</CardTitle>
+              <CardTitle>Budżet *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Typ stawki</Label>
+                <Label>Typ stawki *</Label>
                 <Select value={form.budget_type} onValueChange={(v) => updateForm('budget_type', v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fixed">Kwota całkowita</SelectItem>
-                    <SelectItem value="hourly">Stawka godzinowa</SelectItem>
+                    <SelectItem value="fixed">Za całość zlecenia</SelectItem>
+                    <SelectItem value="hourly">Za godzinę pracy</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Budżet (PLN)</Label>
-                <Input
-                  type="number"
-                  placeholder={form.budget_type === 'hourly' ? 'np. 30 zł/h' : 'np. 200 zł'}
-                  value={form.budget}
-                  onChange={(e) => updateForm('budget', e.target.value)}
+              {/* Range mode toggle */}
+              <div className="flex items-center justify-between border rounded-lg p-3">
+                <div className="space-y-0.5">
+                  <Label>Podaj zakres (od-do)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Zamiast konkretnej kwoty, podaj przedział cenowy
+                  </p>
+                </div>
+                <Switch
+                  checked={form.budget_range_mode}
+                  onCheckedChange={(v) => {
+                    updateForm('budget_range_mode', v);
+                    if (!v) updateForm('budget_max', '');
+                  }}
                 />
               </div>
+
+              {/* Single amount input */}
+              {!form.budget_range_mode && (
+                <div className="space-y-2">
+                  <Label>Kwota (PLN) *</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder={form.budget_type === 'hourly' ? 'np. 30' : 'np. 200'}
+                    value={form.budget}
+                    onChange={(e) => updateForm('budget', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {form.budget_type === 'hourly' ? 'Stawka za godzinę' : 'Kwota za całe zlecenie'}
+                  </p>
+                </div>
+              )}
+
+              {/* Range inputs */}
+              {form.budget_range_mode && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Od (PLN) *</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="np. 100"
+                      value={form.budget}
+                      onChange={(e) => updateForm('budget', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Do (PLN) *</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="np. 200"
+                      value={form.budget_max}
+                      onChange={(e) => updateForm('budget_max', e.target.value)}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground col-span-full">
+                    {form.budget_type === 'hourly' ? 'Zakres stawki godzinowej' : 'Zakres kwoty za całe zlecenie'}
+                  </p>
+                </div>
+              )}
+
+              {/* Validation message */}
+              {form.budget_range_mode && form.budget && form.budget_max && 
+                parseFloat(form.budget_max) <= parseFloat(form.budget) && (
+                <p className="text-sm text-destructive">
+                  Kwota "Do" musi być większa niż "Od"
+                </p>
+              )}
             </CardContent>
           </Card>
 

@@ -221,6 +221,7 @@ export type Database = {
           allows_group: boolean | null
           applicant_limit: number | null
           budget: number | null
+          budget_max: number | null
           budget_type: string | null
           category_id: string | null
           country: string | null
@@ -254,6 +255,7 @@ export type Database = {
           allows_group?: boolean | null
           applicant_limit?: number | null
           budget?: number | null
+          budget_max?: number | null
           budget_type?: string | null
           category_id?: string | null
           country?: string | null
@@ -287,6 +289,7 @@ export type Database = {
           allows_group?: boolean | null
           applicant_limit?: number | null
           budget?: number | null
+          budget_max?: number | null
           budget_type?: string | null
           category_id?: string | null
           country?: string | null

@@ -92,7 +92,9 @@ export default function NewJob() {
 		end_time: "",
 		duration_hours: "",
 		budget: "",
+		budget_max: "", // For range budget (od-do)
 		budget_type: "fixed" as "fixed" | "hourly",
+		budget_range_mode: false, // true = range mode (od-do), false = single value
 		urgent: false,
 		images: [] as string[],
 		allows_group: false,
@@ -314,6 +316,17 @@ export default function NewJob() {
 			const isWroclaw = form.miasto.toLowerCase() === "wrocław";
 			const districtValid = !isWroclaw || form.district !== "";
 			return form.wojewodztwo !== "" && form.miasto !== "" && districtValid && !locationError && !checkingLocation;
+		}
+		if (s === 3) {
+			// Budget is required
+			const hasBudget = form.budget !== "" && parseFloat(form.budget) > 0;
+			// If range mode, budget_max must also be valid and greater than budget
+			if (form.budget_range_mode) {
+				const hasMaxBudget = form.budget_max !== "" && parseFloat(form.budget_max) > 0;
+				const maxGreaterThanMin = parseFloat(form.budget_max) > parseFloat(form.budget);
+				return hasBudget && hasMaxBudget && maxGreaterThanMin;
+			}
+			return hasBudget;
 		}
 		return true;
 	};
@@ -668,6 +681,7 @@ export default function NewJob() {
 					? parseInt(form.duration_hours)
 					: null,
 				budget: form.budget ? parseFloat(form.budget) : null,
+				budget_max: form.budget_range_mode && form.budget_max ? parseFloat(form.budget_max) : null,
 				budget_type: form.budget_type,
 				urgent: form.urgent || addons.urgent,
 				status: "active",
@@ -1109,12 +1123,13 @@ export default function NewJob() {
 				{step === 3 && (
 					<Card>
 						<CardHeader>
-							<CardTitle>Budżet</CardTitle>
+							<CardTitle>Budżet *</CardTitle>
 							<CardDescription>Ile jesteś w stanie zapłacić</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
+							{/* Budget type - required */}
 							<div className="space-y-2">
-								<Label>Typ stawki</Label>
+								<Label>Typ stawki *</Label>
 								<Select
 									value={form.budget_type}
 									onValueChange={(v) => updateForm("budget_type", v)}
@@ -1123,23 +1138,84 @@ export default function NewJob() {
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="fixed">Kwota całkowita</SelectItem>
-										<SelectItem value="hourly">Stawka godzinowa</SelectItem>
+										<SelectItem value="fixed">Za całość zlecenia</SelectItem>
+										<SelectItem value="hourly">Za godzinę pracy</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
 
-							<div className="space-y-2">
-								<Label>Budżet (PLN)</Label>
-								<Input
-									type="number"
-									placeholder={
-										form.budget_type === "hourly" ? "np. 30 zł/h" : "np. 200 zł"
-									}
-									value={form.budget}
-									onChange={(e) => updateForm("budget", e.target.value)}
+							{/* Range mode toggle */}
+							<div className="flex items-center justify-between border rounded-lg p-3">
+								<div className="space-y-0.5">
+									<Label>Podaj zakres (od-do)</Label>
+									<p className="text-xs text-muted-foreground">
+										Zamiast konkretnej kwoty, podaj przedział cenowy
+									</p>
+								</div>
+								<Switch
+									checked={form.budget_range_mode}
+									onCheckedChange={(v) => {
+										updateForm("budget_range_mode", v);
+										if (!v) updateForm("budget_max", "");
+									}}
 								/>
 							</div>
+
+							{/* Single amount input */}
+							{!form.budget_range_mode && (
+								<div className="space-y-2">
+									<Label>Kwota (PLN) *</Label>
+									<Input
+										type="number"
+										min="1"
+										placeholder={
+											form.budget_type === "hourly" ? "np. 30" : "np. 200"
+										}
+										value={form.budget}
+										onChange={(e) => updateForm("budget", e.target.value)}
+									/>
+									<p className="text-xs text-muted-foreground">
+										{form.budget_type === "hourly" ? "Stawka za godzinę" : "Kwota za całe zlecenie"}
+									</p>
+								</div>
+							)}
+
+							{/* Range inputs */}
+							{form.budget_range_mode && (
+								<div className="grid sm:grid-cols-2 gap-4">
+									<div className="space-y-2">
+										<Label>Od (PLN) *</Label>
+										<Input
+											type="number"
+											min="1"
+											placeholder="np. 100"
+											value={form.budget}
+											onChange={(e) => updateForm("budget", e.target.value)}
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label>Do (PLN) *</Label>
+										<Input
+											type="number"
+											min="1"
+											placeholder="np. 200"
+											value={form.budget_max}
+											onChange={(e) => updateForm("budget_max", e.target.value)}
+										/>
+									</div>
+									<p className="text-xs text-muted-foreground col-span-full">
+										{form.budget_type === "hourly" ? "Zakres stawki godzinowej" : "Zakres kwoty za całe zlecenie"}
+									</p>
+								</div>
+							)}
+
+							{/* Validation message */}
+							{form.budget_range_mode && form.budget && form.budget_max && 
+								parseFloat(form.budget_max) <= parseFloat(form.budget) && (
+								<p className="text-sm text-destructive">
+									Kwota "Do" musi być większa niż "Od"
+								</p>
+							)}
 						</CardContent>
 					</Card>
 				)}
@@ -1169,8 +1245,14 @@ export default function NewJob() {
 								</p>
 								{form.budget && (
 									<p className="text-sm">
-										<strong>Budżet:</strong> {form.budget} zł
-										{form.budget_type === "hourly" ? "/h" : ""}
+										<strong>Budżet:</strong>{" "}
+										{form.budget_range_mode && form.budget_max 
+											? `${form.budget} - ${form.budget_max} zł` 
+											: `${form.budget} zł`}
+										{" "}
+										<span className="text-muted-foreground">
+											({form.budget_type === "hourly" ? "za godzinę" : "za całość"})
+										</span>
 									</p>
 								)}
 								{form.images.length > 0 && (
