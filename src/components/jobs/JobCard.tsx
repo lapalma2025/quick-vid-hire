@@ -17,6 +17,7 @@ interface Job {
   start_time: string | null;
   duration_hours: number | null;
   budget: number | null;
+  budget_max?: number | null;
   budget_type: string | null;
   urgent: boolean;
   status: string;
@@ -195,11 +196,16 @@ export const JobCard = ({ job }: JobCardProps) => {
             )}
           </div>
 
-          {/* Budget - COMMENTED OUT premium styling */}
+          {/* Budget display with type indicator */}
           {job.budget && (
-            <div className="flex items-center font-bold text-lg text-primary">
-              <Banknote className="h-5 w-5 mr-1.5" />
-              <span>{job.budget} zł{job.budget_type === 'hourly' ? '/h' : ''}</span>
+            <div className="flex items-center gap-1.5">
+              <Banknote className="h-5 w-5 text-primary" />
+              <span className="font-bold text-lg text-primary">
+                {job.budget_max ? `${job.budget} - ${job.budget_max}` : job.budget} zł
+              </span>
+              <span className="text-xs text-muted-foreground font-medium">
+                {job.budget_type === 'hourly' ? '/ godz.' : '/ całość'}
+              </span>
             </div>
           )}
 
