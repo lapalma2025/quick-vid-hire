@@ -242,56 +242,26 @@ export function WorkMapLeaflet({
     // Always clear markers first (important when filters produce 0 results)
     markersLayerRef.current.clearLayers();
 
+    console.log(`[WorkMap] updateMarkers called: ${jobs.length} jobs total, zoom: ${zoom}`);
+
     if (jobs.length === 0) return;
 
-    // Viewport-dependent clustering
-    const jobsInBounds = jobs.filter((job) => bounds.contains([job.lat, job.lng]));
+    // Use ALL jobs for clustering (not just viewport) to ensure markers are always visible
+    const { clusters, singles } = computeClusters(map, jobs, zoom);
 
-    // Fallback UX: if nothing visible, move to nearest job so user never sees an "empty map"
-    if (jobsInBounds.length === 0) {
-      const center = map.getCenter();
-      let nearest = jobs[0];
-      let best = Number.POSITIVE_INFINITY;
+    console.log(`[WorkMap] Computed: ${clusters.length} clusters, ${singles.length} singles`);
 
-      for (const job of jobs) {
-        const d = Math.pow(job.lat - center.lat, 2) + Math.pow(job.lng - center.lng, 2);
-        if (d < best) {
-          best = d;
-          nearest = job;
-        }
-      }
-
-      map.flyTo([nearest.lat, nearest.lng], zoom, {
-        duration: 0.35,
-        easeLinearity: 0.25,
-      });
-      toast.info("Przesunięto mapę do najbliższych ofert");
-      return;
-    }
-
+    // Cache the results
     const boundsKey = getBoundsKey(bounds);
-    const jobsKey = jobsInBounds.map((j) => j.id).join("|");
+    const jobsKey = jobs.map((j) => j.id).join("|");
 
-    let clusters: Cluster[];
-    let singles: JobMarker[];
-
-    const cache = clusterCacheRef.current;
-    if (cache && cache.zoom === zoom && cache.boundsKey === boundsKey && cache.jobsKey === jobsKey) {
-      clusters = cache.clusters;
-      singles = cache.singles;
-    } else {
-      const computed = computeClusters(map, jobsInBounds, zoom);
-      clusters = computed.clusters;
-      singles = computed.singles;
-
-      clusterCacheRef.current = {
-        zoom,
-        boundsKey,
-        jobsKey,
-        clusters,
-        singles,
-      };
-    }
+    clusterCacheRef.current = {
+      zoom,
+      boundsKey,
+      jobsKey,
+      clusters,
+      singles,
+    };
 
     // Add single markers
     singles.forEach((job) => {

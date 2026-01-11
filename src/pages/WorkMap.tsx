@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { WorkMapFilters } from "@/components/workmap/WorkMapFilters";
 import { WorkMapLeaflet } from "@/components/workmap/WorkMapLeaflet";
 import { WorkMapJobList } from "@/components/workmap/WorkMapJobList";
 import { useVehicleData, JobMarker } from "@/hooks/useVehicleData";
@@ -13,13 +12,12 @@ export interface MapFilters {
 }
 
 const WorkMap = () => {
-  const [filters, setFilters] = useState<MapFilters>({
-    showHeatmap: true,
+  const [filters] = useState<MapFilters>({
+    showHeatmap: false,
     intensity: 50,
     timeInterval: 30,
   });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [clusterSelection, setClusterSelection] = useState<JobMarker[] | null>(null);
 
   const { jobs, heatmapPoints, isLoading } = useVehicleData(filters.timeInterval);
@@ -43,14 +41,6 @@ const WorkMap = () => {
     );
   }, []);
 
-  const handleFilterChange = useCallback(
-    (key: keyof MapFilters, value: boolean | number) => {
-      setClusterSelection(null);
-      setFilters((prev) => ({ ...prev, [key]: value }));
-    },
-    [],
-  );
-
   return (
     <Layout showBreadcrumbs={false} showFooter={false}>
       <div className="h-[calc(100vh-80px)] flex overflow-hidden bg-background">
@@ -70,24 +60,6 @@ const WorkMap = () => {
 
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto">
-            {/* Collapsible Filters */}
-            <div className="border-b border-border/50">
-              <button
-                onClick={() => setFiltersOpen(!filtersOpen)}
-                className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium hover:bg-secondary/50 transition-colors"
-              >
-                <span>Filtry mapy</span>
-                <span className={`transition-transform duration-200 ${filtersOpen ? "rotate-180" : ""}`}>
-                  ▼
-                </span>
-              </button>
-              {filtersOpen && (
-                <div className="px-5 pb-4">
-                  <WorkMapFilters filters={filters} onFilterChange={handleFilterChange} compact />
-                </div>
-              )}
-            </div>
-
             {/* Category Filters */}
             <div className="p-5 border-b border-border/50">
               <div className="flex items-center justify-between mb-3">
