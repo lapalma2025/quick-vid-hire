@@ -144,8 +144,7 @@ export function WorkMapLeaflet({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const heatLayerRef = useRef<L.Layer | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
-  const clusterMarkersRef = useRef<L.Marker[]>([]);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const clusterCacheRef = useRef<ClusterCache | null>(null);
   const updateTimeoutRef = useRef<number | null>(null);
 
@@ -424,10 +423,10 @@ export function WorkMapLeaflet({
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
-      markersRef.current.forEach((m) => m.remove());
-      clusterMarkersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-      clusterMarkersRef.current = [];
+      if (markersLayerRef.current) {
+        markersLayerRef.current.clearLayers();
+        markersLayerRef.current = null;
+      }
       map.remove();
       mapRef.current = null;
     };
