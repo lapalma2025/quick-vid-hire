@@ -794,17 +794,24 @@ export function WorkMapLeaflet({
           gap: 8px;
           width: 100%;
           padding: 12px 16px;
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: #1f2937;
+          background: linear-gradient(135deg, #10b981, #059669) !important;
+          color: #1f2937 !important;
           font-size: 14px;
           font-weight: 600;
-          text-decoration: none;
+          text-decoration: none !important;
           border-radius: 8px;
           transition: all 0.2s ease;
         }
         
+        .job-popup-cta:visited,
+        .job-popup-cta:link,
+        .job-popup-cta:active {
+          color: #1f2937 !important;
+        }
+        
         .job-popup-cta:hover {
-          background: linear-gradient(135deg, #059669, #047857);
+          background: linear-gradient(135deg, #059669, #047857) !important;
+          color: #111827 !important;
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
