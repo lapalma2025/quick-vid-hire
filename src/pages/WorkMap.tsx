@@ -45,7 +45,7 @@ const WorkMap = () => {
     <Layout showBreadcrumbs={false} showFooter={false}>
       <div className="h-[calc(100vh-80px)] flex overflow-hidden bg-background">
         {/* Left Panel - Filters & Job List */}
-        <div className="w-[540px] flex-shrink-0 border-r border-border/50 flex flex-col bg-card/50">
+        <div className="w-[620px] flex-shrink-0 border-r border-border/50 flex flex-col bg-card/50">
           {/* Header */}
           <div className="p-5 border-b border-border/50 bg-background/80 backdrop-blur-sm">
             <h1 className="text-2xl font-bold text-foreground">Mapa Pracy</h1>
