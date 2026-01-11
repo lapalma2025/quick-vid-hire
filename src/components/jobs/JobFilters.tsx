@@ -15,8 +15,6 @@ import {
 	Search,
 	X,
 	SlidersHorizontal,
-	MapPin,
-	Globe,
 	Users,
 	Calendar,
 } from "lucide-react";
@@ -28,15 +26,8 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { WojewodztwoSelect } from "./WojewodztwoSelect";
-import { CityAutocomplete } from "./CityAutocomplete";
-import { CountrySelect } from "./CountrySelect";
-import { ForeignCitySelect } from "./ForeignCitySelect";
 import { CategorySelect } from "./CategorySelect";
-import { DateTimePicker } from "../ui/date-time-picker";
 import { TimePicker } from "@/components/ui/time-picker";
-import { cn } from "@/lib/utils";
-import { WOJEWODZTWA } from "@/lib/constants";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -135,10 +126,6 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 	};
 
 	const hasActiveFilters =
-		filters.locationType !== "all" ||
-		filters.wojewodztwo ||
-		filters.miasto ||
-		filters.country ||
 		filters.category_id ||
 		filters.urgent ||
 		filters.groupOnly ||
@@ -146,100 +133,8 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 		filters.startDate ||
 		filters.endDate;
 
-	const LocationTypeSelector = () => (
-		<div className="grid grid-cols-3 gap-2">
-			{[
-				{ value: "all", label: "Wszystko", icon: null },
-				{ value: "poland", label: "Polska", icon: MapPin },
-				{ value: "foreign", label: "Zagranica", icon: Globe },
-			].map((item) => (
-				<button
-					key={item.value}
-					type="button"
-					onClick={() => updateFilter("locationType", item.value)}
-					className={cn(
-						"flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
-						filters.locationType === item.value
-							? "bg-primary text-primary-foreground shadow-lg"
-							: "bg-muted/50 text-muted-foreground hover:bg-muted"
-					)}
-				>
-					{item.icon && <item.icon className="h-4 w-4 flex-shrink-0" />}
-					<span>{item.label}</span>
-				</button>
-			))}
-		</div>
-	);
-
 	const FilterContent = () => (
 		<div className="space-y-5">
-			{/* Location type */}
-			<div className="space-y-2">
-				<Label className="font-medium">Lokalizacja</Label>
-				<LocationTypeSelector />
-			</div>
-
-			{/* All/Poland location search */}
-			{(filters.locationType === "all" || filters.locationType === "poland") && (
-				<div className="space-y-4">
-					<div className="space-y-2">
-						<Label className="font-medium">Województwo</Label>
-						<WojewodztwoSelect
-							value={filters.wojewodztwo}
-							onChange={(v) => updateFilter("wojewodztwo", v)}
-						/>
-					</div>
-
-					<div className="space-y-2">
-						<Label className="font-medium">Miasto</Label>
-						<CityAutocomplete
-							value={filters.miasto}
-							onChange={(miasto, region) => {
-								// Update both miasto and wojewodztwo in one go
-								const normalizedRegion = region?.toLowerCase();
-								const matchedWojewodztwo = normalizedRegion
-									? WOJEWODZTWA.find((w) => w.toLowerCase() === normalizedRegion)
-									: undefined;
-								
-								const newFilters = {
-									...filters,
-									miasto,
-									...(matchedWojewodztwo && { wojewodztwo: matchedWojewodztwo }),
-								};
-								setFilters(newFilters);
-								onFiltersChange(newFilters);
-							}}
-							placeholder="Wpisz miasto..."
-						/>
-					</div>
-				</div>
-			)}
-
-			{/* Note: Polish filters are now merged with "all" above */}
-
-			{/* Foreign filters */}
-			{filters.locationType === "foreign" && (
-				<div className="space-y-4">
-					<div className="space-y-2">
-						<Label className="font-medium">Kraj</Label>
-						<CountrySelect
-							value={filters.country}
-							onChange={(v) => updateFilter("country", v)}
-						/>
-					</div>
-
-					<div className="space-y-2">
-						<Label className="font-medium">Miasto</Label>
-						<ForeignCitySelect
-							country={filters.country}
-							value={filters.miasto}
-							onChange={(v) => updateFilter("miasto", v)}
-							disabled={!filters.country}
-						/>
-					</div>
-				</div>
-			)}
-
 			<div className="space-y-2">
 				<Label className="font-medium">Kategoria</Label>
 				<CategorySelect
