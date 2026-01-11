@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
 	WROCLAW_DISTRICTS,
-	WROCLAW_AREA_CITIES,
+	DOLNOSLASKIE_CITIES,
 	WROCLAW_PARKINGS,
+	isInDolnoslaskie,
 } from "@/lib/constants";
 
 export interface Vehicle {
@@ -115,101 +116,89 @@ function generateFallbackVehicles(): Vehicle[] {
 }
 
 // Get coordinates for a job based on miasto/district
-// Only returns coordinates if within 50km of Wrocław
+// Only returns coordinates if within Dolnośląskie region
 // Returns hasPreciseLocation: true if coords came from database (street geocoding)
 function getJobCoordinates(
-	miastoInput: string,
-	district?: string | null,
-	lat?: number | null,
-	lng?: number | null
+  miastoInput: string,
+  district?: string | null,
+  lat?: number | null,
+  lng?: number | null
 ): { lat: number; lng: number; hasPreciseLocation: boolean } | null {
-	const WROCLAW_LAT = 51.1079;
-	const WROCLAW_LNG = 17.0385;
-	const MAX_DISTANCE_KM = 50;
+  const WROCLAW_LAT = 51.1079;
+  const WROCLAW_LNG = 17.0385;
 
-	const miasto = (miastoInput ?? "").trim();
-	const miastoLower = miasto.toLowerCase();
+  const miasto = (miastoInput ?? "").trim();
+  const miastoLower = miasto.toLowerCase();
 
-	const distanceKm = (aLat: number, aLng: number) =>
-		Math.sqrt(
-			Math.pow((aLat - WROCLAW_LAT) * 111, 2) +
-				Math.pow(
-					(aLng - WROCLAW_LNG) * 111 * Math.cos((WROCLAW_LAT * Math.PI) / 180),
-					2
-				)
-		);
+  // If coordinates are already provided from DB, check if within Dolnośląskie
+  if (lat != null && lng != null) {
+    if (isInDolnoslaskie(lat, lng)) {
+      const EPS = 1e-5;
+      const approxEqual = (a: number, b: number) => Math.abs(a - b) <= EPS;
 
-	// If coordinates are already provided from DB, they might be either:
-	// - precise (street/address was geocoded)
-	// - coarse (we previously stored a district/city centroid)
-	// We detect the coarse centroid cases to keep clustering behavior correct.
-	if (lat != null && lng != null) {
-		if (distanceKm(lat, lng) <= MAX_DISTANCE_KM) {
-			const EPS = 1e-5;
-			const approxEqual = (a: number, b: number) => Math.abs(a - b) <= EPS;
+      // Wrocław: if coords match the district centroid (or city center), treat as NOT precise.
+      if (miastoLower === "wrocław") {
+        if (district && WROCLAW_DISTRICTS[district]) {
+          const c = WROCLAW_DISTRICTS[district];
+          if (approxEqual(lat, c.lat) && approxEqual(lng, c.lng)) {
+            return { lat, lng, hasPreciseLocation: false };
+          }
+        }
+        if (approxEqual(lat, WROCLAW_LAT) && approxEqual(lng, WROCLAW_LNG)) {
+          return { lat, lng, hasPreciseLocation: false };
+        }
+      }
 
-			// Wrocław: if coords match the district centroid (or city center), treat as NOT precise.
-			if (miastoLower === "wrocław") {
-				if (district && WROCLAW_DISTRICTS[district]) {
-					const c = WROCLAW_DISTRICTS[district];
-					if (approxEqual(lat, c.lat) && approxEqual(lng, c.lng)) {
-						return { lat, lng, hasPreciseLocation: false };
-					}
-				}
-				if (approxEqual(lat, WROCLAW_LAT) && approxEqual(lng, WROCLAW_LNG)) {
-					return { lat, lng, hasPreciseLocation: false };
-				}
-			}
+      // Nearby cities: if coords match the known city point exactly, treat as NOT precise.
+      const cityKey = DOLNOSLASKIE_CITIES[miasto]
+        ? miasto
+        : Object.keys(DOLNOSLASKIE_CITIES).find((k) => k.toLowerCase() === miastoLower);
+      if (cityKey) {
+        const c = DOLNOSLASKIE_CITIES[cityKey];
+        if (approxEqual(lat, c.lat) && approxEqual(lng, c.lng)) {
+          return { lat, lng, hasPreciseLocation: false };
+        }
+      }
 
-			// Nearby cities: if coords match the known city point exactly, treat as NOT precise.
-			const cityKey = WROCLAW_AREA_CITIES[miasto]
-				? miasto
-				: Object.keys(WROCLAW_AREA_CITIES).find((k) => k.toLowerCase() === miastoLower);
-			if (cityKey) {
-				const c = WROCLAW_AREA_CITIES[cityKey];
-				if (approxEqual(lat, c.lat) && approxEqual(lng, c.lng)) {
-					return { lat, lng, hasPreciseLocation: false };
-				}
-			}
+      return { lat, lng, hasPreciseLocation: true };
+    }
+    return null;
+  }
 
-			return { lat, lng, hasPreciseLocation: true };
-		}
-		return null;
-	}
+  // Generate approximate coordinates (not precise - no street was specified)
+  if (miastoLower === "wrocław") {
+    if (district && WROCLAW_DISTRICTS[district]) {
+      const coords = WROCLAW_DISTRICTS[district];
+      return {
+        lat: coords.lat,
+        lng: coords.lng,
+        hasPreciseLocation: false, // District centroid, not street-level
+      };
+    }
+    return {
+      lat: WROCLAW_LAT,
+      lng: WROCLAW_LNG,
+      hasPreciseLocation: false,
+    };
+  }
 
-	// Generate approximate coordinates (not precise - no street was specified)
-	if (miastoLower === "wrocław") {
-		if (district && WROCLAW_DISTRICTS[district]) {
-			const coords = WROCLAW_DISTRICTS[district];
-			return {
-				lat: coords.lat,
-				lng: coords.lng,
-				hasPreciseLocation: false, // District centroid, not street-level
-			};
-		}
-		return {
-			lat: WROCLAW_LAT,
-			lng: WROCLAW_LNG,
-			hasPreciseLocation: false,
-		};
-	}
+  // Check if city is in Dolnośląskie
+  const cityKey = DOLNOSLASKIE_CITIES[miasto]
+    ? miasto
+    : Object.keys(DOLNOSLASKIE_CITIES).find(
+        (k) => k.toLowerCase() === miastoLower
+      );
 
-	const cityKey = WROCLAW_AREA_CITIES[miasto]
-		? miasto
-		: Object.keys(WROCLAW_AREA_CITIES).find(
-				(k) => k.toLowerCase() === miastoLower
-		  );
+  if (cityKey) {
+    const coords = DOLNOSLASKIE_CITIES[cityKey];
+    return {
+      lat: coords.lat + (Math.random() - 0.5) * 0.005,
+      lng: coords.lng + (Math.random() - 0.5) * 0.005,
+      hasPreciseLocation: false, // City center, not street-level
+    };
+  }
 
-	if (cityKey) {
-		const coords = WROCLAW_AREA_CITIES[cityKey];
-		return {
-			lat: coords.lat + (Math.random() - 0.5) * 0.005,
-			lng: coords.lng + (Math.random() - 0.5) * 0.005,
-			hasPreciseLocation: false, // City center, not street-level
-		};
-	}
-
-	return null; // City not in Wrocław area
+  return null; // City not in Dolnośląskie
 }
 // Transform parking API data to ParkingData with coordinates
 function transformParkingData(apiRecords: ParkingApiRecord[]): ParkingData[] {
