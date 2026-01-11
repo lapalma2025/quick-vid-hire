@@ -2,9 +2,9 @@ import { useState, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { WorkMapFilters } from "@/components/workmap/WorkMapFilters";
 import { WorkMapLeaflet } from "@/components/workmap/WorkMapLeaflet";
+import { WorkMapJobList } from "@/components/workmap/WorkMapJobList";
 import { useVehicleData, JobMarker } from "@/hooks/useVehicleData";
 import { CategoryBadges } from "@/components/shared/CategoryBadges";
-import { MapPin, Activity } from "lucide-react";
 
 export interface MapFilters {
   showHeatmap: boolean;
@@ -19,8 +19,9 @@ const WorkMap = () => {
     timeInterval: 30,
   });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const { jobs, heatmapPoints, isLoading, lastUpdate } = useVehicleData(filters.timeInterval);
+  const { jobs, heatmapPoints, isLoading } = useVehicleData(filters.timeInterval);
 
   // Filter jobs by selected categories
   const filteredJobs = useMemo<JobMarker[]>(() => {
@@ -42,89 +43,70 @@ const WorkMap = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-primary-light/30 to-background">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden border-b border-border/50">
-          <div className="absolute inset-0 bg-gradient-glow opacity-30" />
-          <div className="container mx-auto px-4 py-8 md:py-12">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-gradient-accent shadow-lg shadow-primary/20">
-                    <MapPin className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                    Mapa Pracy
-                  </h1>
+      <div className="h-[calc(100vh-64px)] flex overflow-hidden bg-background">
+        {/* Left Panel - Filters & Job List */}
+        <div className="w-[380px] flex-shrink-0 border-r border-border/50 flex flex-col bg-card/50">
+          {/* Header */}
+          <div className="p-4 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+            <h1 className="text-xl font-bold text-foreground">Mapa Pracy</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {isLoading ? "Ładowanie..." : `${filteredJobs.length} ofert w dolnośląskim`}
+            </p>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Collapsible Filters */}
+            <div className="border-b border-border/50">
+              <button
+                onClick={() => setFiltersOpen(!filtersOpen)}
+                className="w-full px-4 py-3 flex items-center justify-between text-sm font-medium hover:bg-secondary/50 transition-colors"
+              >
+                <span>Filtry mapy</span>
+                <span className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`}>▼</span>
+              </button>
+              {filtersOpen && (
+                <div className="px-4 pb-4">
+                  <WorkMapFilters 
+                    filters={filters} 
+                    onFilterChange={handleFilterChange}
+                    compact
+                  />
                 </div>
-                <p className="text-muted-foreground text-lg max-w-xl">
-                  Odkryj gdzie jest największy popyt na pracę krótkoterminową w województwie dolnośląskim
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border/50 shadow-sm">
-                  <Activity className="h-4 w-4 text-primary animate-pulse" />
-                  <span className="text-sm font-medium">
-                    {isLoading ? "Ładowanie..." : `${jobs.length} ofert`}
-                  </span>
-                </div>
-                {lastUpdate && (
-                  <div className="text-sm text-muted-foreground">
-                    Aktualizacja: {lastUpdate.toLocaleTimeString("pl-PL")}
-                  </div>
+              )}
+            </div>
+
+            {/* Category Filters */}
+            <div className="p-4 border-b border-border/50">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-foreground">Kategorie</h3>
+                {selectedCategories.length > 0 && (
+                  <button 
+                    onClick={() => setSelectedCategories([])}
+                    className="text-xs text-primary hover:text-primary/80 transition-colors"
+                  >
+                    Wyczyść ({selectedCategories.length})
+                  </button>
                 )}
               </div>
+              <CategoryBadges 
+                selectedCategories={selectedCategories}
+                onCategoryToggle={handleCategoryToggle}
+              />
             </div>
+
+            {/* Job List */}
+            <WorkMapJobList jobs={filteredJobs} isLoading={isLoading} />
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Filters Panel */}
-            <div className="lg:col-span-1 space-y-4">
-              <WorkMapFilters 
-                filters={filters} 
-                onFilterChange={handleFilterChange} 
-              />
-              
-              {/* Category Filter Badges */}
-              <div className="bg-background/95 backdrop-blur-sm rounded-xl border border-border/50 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-foreground">Filtruj po kategorii</h3>
-                  {selectedCategories.length > 0 && (
-                    <button 
-                      onClick={() => setSelectedCategories([])}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Wyczyść ({selectedCategories.length})
-                    </button>
-                  )}
-                </div>
-                <CategoryBadges 
-                  selectedCategories={selectedCategories}
-                  onCategoryToggle={handleCategoryToggle}
-                />
-                {selectedCategories.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Pokazuję {filteredJobs.length} z {jobs.length} ofert
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Map - Fixed height */}
-            <div className="lg:col-span-3">
-              <div className="card-modern overflow-hidden h-[calc(100vh-280px)] min-h-[500px]">
-                <WorkMapLeaflet
-                  filters={filters}
-                  jobs={filteredJobs}
-                  heatmapPoints={heatmapPoints}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Map - Takes remaining space */}
+        <div className="flex-1 relative">
+          <WorkMapLeaflet
+            filters={filters}
+            jobs={filteredJobs}
+            heatmapPoints={heatmapPoints}
+          />
         </div>
       </div>
     </Layout>

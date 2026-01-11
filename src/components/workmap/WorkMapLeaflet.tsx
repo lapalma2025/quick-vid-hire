@@ -372,14 +372,14 @@ export function WorkMapLeaflet({
 
 
   return (
-    <div className="relative z-0">
+    <div className="relative z-0 h-full w-full">
       <div 
         ref={mapContainerRef} 
-        className="w-full h-[500px] md:h-[600px] rounded-xl overflow-hidden z-0"
+        className="w-full h-full"
       />
       
       {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-card/80 backdrop-blur-sm rounded-xl">
+        <div className="absolute inset-0 flex items-center justify-center bg-card/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="text-sm text-muted-foreground">Ładowanie mapy...</span>
@@ -388,7 +388,7 @@ export function WorkMapLeaflet({
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-border/50 text-xs">
+      <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-border/50 text-xs z-10">
         <div className="font-medium mb-2">Legenda</div>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
@@ -401,15 +401,7 @@ export function WorkMapLeaflet({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[10px] text-white font-bold">3</div>
-            <span>Klaster ofert (kliknij)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-            <span>Pojazdy MPK</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"></div>
-            <span>Hotspoty</span>
+            <span>Klaster ofert</span>
           </div>
         </div>
       </div>
