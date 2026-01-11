@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Hotspot } from "@/pages/WorkMap";
 import { supabase } from "@/integrations/supabase/client";
 import {
 	WROCLAW_DISTRICTS,
@@ -62,61 +61,6 @@ interface VehicleApiRecord {
 }
 
 const WROCLAW_CENTER = { lat: 51.1079, lng: 17.0385 };
-
-// Static hotspots for Wrocław based on real data
-// Coordinates verified for proper separation on map
-const STATIC_HOTSPOTS: Hotspot[] = [
-	{
-		id: "hotspot-1",
-		name: "Stare Miasto",
-		lat: 51.1098,
-		lng: 17.032,
-		level: 5,
-		activity: "Bardzo wysoka",
-		peakHours: "11:30–14:00, 18:00–22:30",
-		count: 100,
-	},
-	{
-		id: "hotspot-2",
-		name: "Śródmieście",
-		lat: 51.118,
-		lng: 17.06,
-		level: 4,
-		activity: "Bardzo wysoka",
-		peakHours: "12:00–15:00, 18:00–22:00",
-		count: 85,
-	},
-	{
-		id: "hotspot-3",
-		name: "Krzyki",
-		lat: 51.078,
-		lng: 17.01,
-		level: 4,
-		activity: "Wysoka",
-		peakHours: "8:00–10:00, 15:00–19:00",
-		count: 70,
-	},
-	{
-		id: "hotspot-4",
-		name: "Fabryczna",
-		lat: 51.1,
-		lng: 16.95,
-		level: 3,
-		activity: "Wysoka",
-		peakHours: "6:00–8:00, 14:00–18:00",
-		count: 60,
-	},
-	{
-		id: "hotspot-5",
-		name: "Psie Pole",
-		lat: 51.145,
-		lng: 17.075,
-		level: 3,
-		activity: "Średnia",
-		peakHours: "9:00–12:00, 16:00–19:00",
-		count: 45,
-	},
-];
 
 // Fallback data for Wrocław when API is not available
 function generateFallbackVehicles(): Vehicle[] {
@@ -339,7 +283,6 @@ export function useVehicleData(intervalMinutes: number = 30) {
 	const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 	const [jobs, setJobs] = useState<JobMarker[]>([]);
 	const [parkings, setParkings] = useState<ParkingData[]>([]);
-	const [hotspots, setHotspots] = useState<Hotspot[]>([]);
 	const [heatmapPoints, setHeatmapPoints] = useState<
 		[number, number, number][]
 	>([]);
@@ -503,9 +446,6 @@ export function useVehicleData(intervalMinutes: number = 30) {
 		const [{ vehicles: vehicleData, parkings: parkingData }, jobData] =
 			await Promise.all([fetchVehiclesAndParking(), fetchJobs()]);
 
-		// Use static hotspots instead of detecting from API
-		setHotspots(STATIC_HOTSPOTS);
-
 		// Generate heatmap points
 		const vehicleHeatPoints: [number, number, number][] = vehicleData.map(
 			(v) => [v.lat, v.lng, 0.3 + Math.random() * 0.3]
@@ -552,7 +492,6 @@ export function useVehicleData(intervalMinutes: number = 30) {
 		vehicles,
 		jobs,
 		parkings,
-		hotspots,
 		heatmapPoints,
 		isLoading,
 		lastUpdate,

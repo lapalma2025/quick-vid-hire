@@ -1,42 +1,26 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { WorkMapFilters } from "@/components/workmap/WorkMapFilters";
-import { WorkMapInsights } from "@/components/workmap/WorkMapInsights";
 import { WorkMapLeaflet } from "@/components/workmap/WorkMapLeaflet";
 import { useVehicleData, JobMarker } from "@/hooks/useVehicleData";
 import { CategoryBadges } from "@/components/shared/CategoryBadges";
-import { MapPin, Activity, TrendingUp } from "lucide-react";
+import { MapPin, Activity } from "lucide-react";
 
 export interface MapFilters {
   showHeatmap: boolean;
-  showVehicles: boolean;
-  showHotspots: boolean;
   intensity: number;
   timeInterval: number;
-}
-
-export interface Hotspot {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  level: number;
-  activity: "Bardzo wysoka" | "Wysoka" | "Średnia" | "Niska";
-  peakHours: string;
-  count: number;
 }
 
 const WorkMap = () => {
   const [filters, setFilters] = useState<MapFilters>({
     showHeatmap: true,
-    showVehicles: false,
-    showHotspots: true,
     intensity: 50,
     timeInterval: 30,
   });
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const { vehicles, jobs, hotspots, heatmapPoints, isLoading, lastUpdate } = useVehicleData(filters.timeInterval);
+  const { jobs, heatmapPoints, isLoading, lastUpdate } = useVehicleData(filters.timeInterval);
 
   // Filter jobs by selected categories
   const filteredJobs = useMemo<JobMarker[]>(() => {
@@ -82,7 +66,7 @@ const WorkMap = () => {
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border/50 shadow-sm">
                   <Activity className="h-4 w-4 text-primary animate-pulse" />
                   <span className="text-sm font-medium">
-                    {isLoading ? "Ładowanie..." : `${vehicles.length} pojazdów`}
+                    {isLoading ? "Ładowanie..." : `${jobs.length} ofert`}
                   </span>
                 </div>
                 {lastUpdate && (
@@ -99,15 +83,12 @@ const WorkMap = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Filters Panel */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-4">
               <WorkMapFilters 
                 filters={filters} 
                 onFilterChange={handleFilterChange} 
               />
-            </div>
-
-            {/* Map */}
-            <div className="lg:col-span-3 space-y-4">
+              
               {/* Category Filter Badges */}
               <div className="bg-background/95 backdrop-blur-sm rounded-xl border border-border/50 p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
@@ -131,21 +112,19 @@ const WorkMap = () => {
                   </p>
                 )}
               </div>
-              
-              <div className="card-modern overflow-hidden">
+            </div>
+
+            {/* Map - Fixed height */}
+            <div className="lg:col-span-3">
+              <div className="card-modern overflow-hidden h-[calc(100vh-280px)] min-h-[500px]">
                 <WorkMapLeaflet
                   filters={filters}
-                  vehicles={vehicles}
                   jobs={filteredJobs}
-                  hotspots={hotspots}
                   heatmapPoints={heatmapPoints}
                 />
               </div>
             </div>
           </div>
-
-          {/* Insights Section */}
-          <WorkMapInsights hotspots={hotspots} />
         </div>
       </div>
     </Layout>
