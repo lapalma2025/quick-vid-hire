@@ -794,7 +794,7 @@ export function WorkMapLeaflet({
           gap: 8px;
           width: 100%;
           padding: 12px 16px;
-          background: #1f2937;
+          background: linear-gradient(135deg, #10b981, #059669);
           color: white;
           font-size: 14px;
           font-weight: 600;
@@ -804,9 +804,9 @@ export function WorkMapLeaflet({
         }
         
         .job-popup-cta:hover {
-          background: #111827;
+          background: linear-gradient(135deg, #059669, #047857);
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
         
         .job-popup-cta svg {

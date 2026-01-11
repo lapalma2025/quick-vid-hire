@@ -58,7 +58,7 @@ export function CategoryBadges({
   className 
 }: CategoryBadgesProps) {
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
       {MAIN_CATEGORIES.map((category) => {
         const isSelected = selectedCategories.includes(category.name);
         const Icon = category.icon;
@@ -68,14 +68,14 @@ export function CategoryBadges({
             key={category.id}
             variant="outline"
             className={cn(
-              "cursor-pointer transition-all duration-200 px-3 py-1.5 text-xs font-medium flex items-center gap-1.5",
+              "cursor-pointer transition-all duration-200 px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap",
               isSelected 
                 ? `${category.color} border-2 shadow-sm` 
-                : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                : "bg-background text-muted-foreground border-border hover:bg-muted/80 hover:border-muted-foreground/30"
             )}
             onClick={() => onCategoryToggle(category.name)}
           >
-            <Icon className="h-3.5 w-3.5" />
+            <Icon className="h-3 w-3" />
             {category.displayName}
           </Badge>
         );
