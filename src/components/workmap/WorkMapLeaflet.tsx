@@ -227,33 +227,10 @@ export function WorkMapLeaflet({
   // Update markers on map
   const updateMarkers = useCallback(() => {
     const map = mapRef.current;
-    if (!map || !isLoaded) return;
+    if (!map || !isLoaded || jobs.length === 0) return;
 
     const zoom = map.getZoom();
     const bounds = map.getBounds();
-    const boundsKey = getBoundsKey(bounds);
-    const jobsKey = jobs.map(j => j.id).join(',');
-
-    // Check cache
-    const cache = clusterCacheRef.current;
-    if (cache && cache.zoom === zoom && cache.boundsKey === boundsKey && cache.jobsKey === jobsKey) {
-      return; // No changes needed
-    }
-
-    // Filter to visible jobs
-    const visible = jobs.filter(job => bounds.contains([job.lat, job.lng]));
-    
-    // Compute new clusters
-    const { clusters, singles } = computeClusters(map, visible, zoom);
-
-    // Update cache
-    clusterCacheRef.current = {
-      zoom,
-      boundsKey,
-      jobsKey,
-      clusters,
-      singles,
-    };
 
     // Clear existing markers
     if (markersLayerRef.current) {
@@ -261,6 +238,11 @@ export function WorkMapLeaflet({
     } else {
       markersLayerRef.current = L.layerGroup().addTo(map);
     }
+
+    // Use ALL jobs (not just visible) for initial load, cluster based on zoom
+    const { clusters, singles } = computeClusters(map, jobs, zoom);
+
+    console.log(`Updating markers: ${jobs.length} jobs, ${singles.length} singles, ${clusters.length} clusters`);
 
     // Add single markers
     singles.forEach(job => {
@@ -271,32 +253,33 @@ export function WorkMapLeaflet({
       });
       
       marker.bindPopup(`
-        <div class="job-popup">
-          <div class="job-popup-header">
-            <span class="job-title">${job.title}</span>
-            ${job.urgent ? '<span class="job-urgent-badge">PILNE</span>' : ''}
+        <div class="job-popup-modern">
+          <div class="job-popup-badge-row">
+            ${job.urgent ? '<span class="badge-urgent">🔥 PILNE</span>' : ''}
+            ${job.category ? `<span class="badge-category">${job.category}</span>` : ''}
           </div>
-          <div class="job-popup-content">
-            <div class="job-popup-row">
-              <span class="label">Lokalizacja:</span>
-              <span class="value">${job.miasto}${job.district ? `, ${job.district}` : ''}</span>
+          <h3 class="job-popup-title">${job.title}</h3>
+          <div class="job-popup-location">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>${job.miasto}${job.district ? `, ${job.district}` : ''}</span>
+          </div>
+          ${job.budget ? `
+            <div class="job-popup-budget">
+              <span class="budget-label">Budżet</span>
+              <span class="budget-value">${job.budget} zł</span>
             </div>
-            ${job.category ? `
-              <div class="job-popup-row">
-                <span class="label">Kategoria:</span>
-                <span class="value">${job.category}</span>
-              </div>
-            ` : ''}
-            ${job.budget ? `
-              <div class="job-popup-row">
-                <span class="label">Budżet:</span>
-                <span class="value">${job.budget} zł</span>
-              </div>
-            ` : ''}
-          </div>
-          <a href="/jobs/${job.id}" class="job-popup-link">Zobacz szczegóły →</a>
+          ` : ''}
+          <a href="/jobs/${job.id}" class="job-popup-cta">
+            Zobacz szczegóły
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
         </div>
-      `, { minWidth: 220, maxWidth: 280 });
+      `, { minWidth: 260, maxWidth: 320, className: 'modern-popup' });
       
       markersLayerRef.current!.addLayer(marker);
     });
@@ -312,21 +295,18 @@ export function WorkMapLeaflet({
       // Click handler - fitBounds to show all jobs in cluster
       marker.on('click', (e) => {
         L.DomEvent.stopPropagation(e);
-        
-        // Expand bounds slightly for padding
-        const expandedBounds = cluster.bounds.pad(0.2);
-        
+        const expandedBounds = cluster.bounds.pad(0.3);
         map.flyToBounds(expandedBounds, {
-          duration: 0.5,
+          duration: 0.4,
           easeLinearity: 0.25,
           maxZoom: NO_CLUSTER_ZOOM,
-          padding: [40, 40],
+          padding: [50, 50],
         });
       });
 
       // Tooltip on hover
       const jobPreview = cluster.jobs.slice(0, 3).map(j => 
-        `<div class="cluster-preview-item">${j.urgent ? '🔴' : '🟣'} ${j.title.substring(0, 30)}${j.title.length > 30 ? '...' : ''}</div>`
+        `<div class="cluster-preview-item">${j.urgent ? '🔴' : '🟣'} ${j.title.substring(0, 35)}${j.title.length > 35 ? '...' : ''}</div>`
       ).join('');
       
       marker.bindTooltip(`
@@ -344,26 +324,6 @@ export function WorkMapLeaflet({
 
       markersLayerRef.current!.addLayer(marker);
     });
-
-    // Fallback: if no visible markers after update, pan to nearest
-    if (visible.length === 0 && jobs.length > 0) {
-      const mapCenter = map.getCenter();
-      let nearestJob = jobs[0];
-      let minDistance = Infinity;
-
-      jobs.forEach(job => {
-        const dist = mapCenter.distanceTo([job.lat, job.lng]);
-        if (dist < minDistance) {
-          minDistance = dist;
-          nearestJob = job;
-        }
-      });
-
-      toast.info("Przesunięto mapę do najbliższych ofert", { duration: 2000 });
-      map.flyTo([nearestJob.lat, nearestJob.lng], DEFAULT_ZOOM + 1, {
-        duration: 0.5,
-      });
-    }
   }, [jobs, isLoaded, computeClusters]);
 
   // Debounced update
@@ -592,39 +552,39 @@ export function WorkMapLeaflet({
         }
         
         .cluster-tooltip {
-          padding: 8px 12px;
-          min-width: 160px;
+          padding: 10px 14px;
+          min-width: 180px;
         }
         
         .cluster-tooltip-header {
-          font-weight: 600;
-          font-size: 13px;
-          margin-bottom: 6px;
+          font-weight: 700;
+          font-size: 14px;
+          margin-bottom: 8px;
           color: #1f2937;
         }
         
         .cluster-preview-item {
-          font-size: 11px;
+          font-size: 12px;
           color: #4b5563;
-          padding: 2px 0;
+          padding: 3px 0;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
         
         .cluster-tooltip-more {
-          font-size: 10px;
+          font-size: 11px;
           color: #9ca3af;
-          margin-top: 4px;
+          margin-top: 6px;
         }
         
         .cluster-tooltip-hint {
-          font-size: 10px;
-          color: #6b7280;
-          margin-top: 6px;
-          padding-top: 6px;
+          font-size: 11px;
+          color: #8b5cf6;
+          margin-top: 8px;
+          padding-top: 8px;
           border-top: 1px solid #e5e7eb;
-          font-style: italic;
+          font-weight: 500;
         }
         
         .job-marker-wrapper {
@@ -666,101 +626,149 @@ export function WorkMapLeaflet({
           transform: rotate(-45deg) scale(1.1);
         }
         
-        .leaflet-popup-content-wrapper {
-          border-radius: 12px;
+        /* Modern Popup Styles */
+        .modern-popup .leaflet-popup-content-wrapper {
+          border-radius: 16px;
           padding: 0;
           overflow: hidden;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+          border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .leaflet-popup-content-wrapper {
+          border-radius: 16px;
+          padding: 0;
+          overflow: hidden;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
         }
         
         .leaflet-popup-content {
           margin: 0;
         }
         
-        .job-popup {
-          padding: 12px 16px;
-          min-width: 200px;
+        .job-popup-modern {
+          padding: 20px;
+          min-width: 260px;
+          font-family: system-ui, -apple-system, sans-serif;
         }
         
-        .job-popup-header {
+        .job-popup-badge-row {
           display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
           gap: 8px;
-          margin-bottom: 8px;
-          padding-bottom: 8px;
-          border-bottom: 1px solid #e5e7eb;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
+        }
+        
+        .badge-urgent {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: white;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+        }
+        
+        .badge-category {
+          background: #f3f4f6;
+          color: #4b5563;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+        }
+        
+        .job-popup-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #111827;
+          line-height: 1.3;
+          margin: 0 0 12px 0;
           padding-right: 20px;
         }
         
-        .job-popup-header .job-title {
-          font-size: 14px;
-          font-weight: 600;
-          color: #1f2937;
-          flex: 1;
-          word-break: break-word;
-          line-height: 1.3;
-        }
-        
-        .job-urgent-badge {
-          background: #ef4444;
-          color: white;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 10px;
-          font-weight: bold;
-          flex-shrink: 0;
-          white-space: nowrap;
-        }
-        
-        .job-popup-content {
+        .job-popup-location {
           display: flex;
-          flex-direction: column;
-          gap: 6px;
+          align-items: center;
+          gap: 8px;
+          color: #6b7280;
+          font-size: 13px;
+          margin-bottom: 16px;
         }
         
-        .job-popup-row {
+        .job-popup-location svg {
+          flex-shrink: 0;
+          color: #9ca3af;
+        }
+        
+        .job-popup-budget {
           display: flex;
           justify-content: space-between;
-          font-size: 12px;
+          align-items: center;
+          padding: 12px 14px;
+          background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+          border-radius: 10px;
+          margin-bottom: 16px;
         }
         
-        .job-popup-row .label {
+        .budget-label {
+          font-size: 12px;
           color: #6b7280;
+          font-weight: 500;
         }
         
-        .job-popup-row .value {
-          font-weight: 500;
-          color: #1f2937;
+        .budget-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #059669;
         }
         
-        .job-popup-link {
-          display: block;
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid #e5e7eb;
-          color: #8b5cf6;
-          font-size: 12px;
-          font-weight: 500;
+        .job-popup-cta {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          padding: 12px 16px;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          color: white;
+          font-size: 14px;
+          font-weight: 600;
           text-decoration: none;
-          transition: color 0.2s;
+          border-radius: 10px;
+          transition: all 0.2s ease;
         }
         
-        .job-popup-link:hover {
-          color: #7c3aed;
+        .job-popup-cta:hover {
+          background: linear-gradient(135deg, #7c3aed, #6d28d9);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .job-popup-cta svg {
+          transition: transform 0.2s ease;
+        }
+        
+        .job-popup-cta:hover svg {
+          transform: translateX(3px);
         }
         
         .leaflet-popup-close-button {
-          top: 8px !important;
-          right: 8px !important;
-          width: 20px !important;
-          height: 20px !important;
-          font-size: 18px !important;
-          line-height: 18px !important;
-          color: #6b7280 !important;
+          top: 12px !important;
+          right: 12px !important;
+          width: 24px !important;
+          height: 24px !important;
+          font-size: 20px !important;
+          line-height: 22px !important;
+          color: #9ca3af !important;
+          background: #f3f4f6 !important;
+          border-radius: 50% !important;
+          text-align: center;
         }
         
         .leaflet-popup-close-button:hover {
           color: #1f2937 !important;
+          background: #e5e7eb !important;
         }
         
         .leaflet-pane { z-index: 1 !important; }

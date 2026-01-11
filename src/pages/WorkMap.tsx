@@ -45,10 +45,10 @@ const WorkMap = () => {
     <Layout>
       <div className="h-[calc(100vh-64px)] flex overflow-hidden bg-background">
         {/* Left Panel - Filters & Job List */}
-        <div className="w-[380px] flex-shrink-0 border-r border-border/50 flex flex-col bg-card/50">
+        <div className="w-[460px] flex-shrink-0 border-r border-border/50 flex flex-col bg-card/50">
           {/* Header */}
-          <div className="p-4 border-b border-border/50 bg-background/80 backdrop-blur-sm">
-            <h1 className="text-xl font-bold text-foreground">Mapa Pracy</h1>
+          <div className="p-5 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+            <h1 className="text-2xl font-bold text-foreground">Mapa Pracy</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {isLoading ? "Ładowanie..." : `${filteredJobs.length} ofert w dolnośląskim`}
             </p>
@@ -60,13 +60,13 @@ const WorkMap = () => {
             <div className="border-b border-border/50">
               <button
                 onClick={() => setFiltersOpen(!filtersOpen)}
-                className="w-full px-4 py-3 flex items-center justify-between text-sm font-medium hover:bg-secondary/50 transition-colors"
+                className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium hover:bg-secondary/50 transition-colors"
               >
                 <span>Filtry mapy</span>
-                <span className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`}>▼</span>
+                <span className={`transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`}>▼</span>
               </button>
               {filtersOpen && (
-                <div className="px-4 pb-4">
+                <div className="px-5 pb-4">
                   <WorkMapFilters 
                     filters={filters} 
                     onFilterChange={handleFilterChange}
@@ -77,13 +77,13 @@ const WorkMap = () => {
             </div>
 
             {/* Category Filters */}
-            <div className="p-4 border-b border-border/50">
+            <div className="p-5 border-b border-border/50">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-foreground">Kategorie</h3>
+                <h3 className="text-sm font-semibold text-foreground">Kategorie</h3>
                 {selectedCategories.length > 0 && (
                   <button 
                     onClick={() => setSelectedCategories([])}
-                    className="text-xs text-primary hover:text-primary/80 transition-colors"
+                    className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
                   >
                     Wyczyść ({selectedCategories.length})
                   </button>
@@ -101,7 +101,7 @@ const WorkMap = () => {
         </div>
 
         {/* Map - Takes remaining space */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0">
           <WorkMapLeaflet
             filters={filters}
             jobs={filteredJobs}
