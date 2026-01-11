@@ -788,13 +788,20 @@ export function WorkMapLeaflet({
         }
         
         .leaflet-popup-close-button:hover {
-          color: #1f2937 !important;
-          background: #e5e7eb !important;
-        }
-        
-        .leaflet-pane { z-index: 1 !important; }
-        .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
-        .leaflet-control { z-index: 10 !important; }
+           color: #1f2937 !important;
+           background: #e5e7eb !important;
+         }
+
+         /* Fix z-index stacking so markers are always visible above tiles */
+         .leaflet-pane.leaflet-tile-pane { z-index: 200 !important; }
+         .leaflet-pane.leaflet-overlay-pane { z-index: 400 !important; }
+         .leaflet-pane.leaflet-shadow-pane { z-index: 500 !important; }
+         .leaflet-pane.leaflet-marker-pane { z-index: 600 !important; }
+         .leaflet-pane.leaflet-tooltip-pane { z-index: 650 !important; }
+         .leaflet-pane.leaflet-popup-pane { z-index: 700 !important; }
+
+         .leaflet-top, .leaflet-bottom { z-index: 800 !important; }
+         .leaflet-control { z-index: 800 !important; }
         
         .leaflet-control-attribution a[href*="leaflet"],
         .leaflet-control-attribution img,
