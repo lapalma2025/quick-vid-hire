@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
-import { MapFilters, Hotspot } from "@/pages/WorkMap";
-import { Vehicle, JobMarker } from "@/hooks/useVehicleData";
+import { MapFilters } from "@/pages/WorkMap";
+import { JobMarker } from "@/hooks/useVehicleData";
 import { Loader2 } from "lucide-react";
 
 declare module "leaflet" {
@@ -22,9 +22,7 @@ declare module "leaflet" {
 
 interface WorkMapLeafletProps {
   filters: MapFilters;
-  vehicles: Vehicle[];
   jobs: JobMarker[];
-  hotspots: Hotspot[];
   heatmapPoints: [number, number, number][];
 }
 
@@ -45,44 +43,6 @@ const MIN_ZOOM = 9; // Prevents zooming out to see voivodeship names
 const PRECISE_SPLIT_ZOOM = 15;
 
 // Custom SVG markers
-function createHotspotIcon(level: number, rank: number) {
-  const size = 40 + level * 4;
-  const color = "#f97316"; // All hotspots are orange
-  
-  return L.divIcon({
-    className: "hotspot-marker",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
-    html: `
-      <div class="hotspot-marker-wrapper" style="width: ${size}px; height: ${size}px;">
-        <div class="hotspot-pulse" style="background: ${color}; animation-delay: 0s;"></div>
-        <div class="hotspot-pulse" style="background: ${color}; animation-delay: 0.5s;"></div>
-        <div class="hotspot-core" style="background: linear-gradient(135deg, ${color}, ${color}dd); width: ${size * 0.6}px; height: ${size * 0.6}px;">
-          <svg viewBox="0 0 24 24" fill="white" width="${size * 0.35}" height="${size * 0.35}">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-        </div>
-        <div class="hotspot-level">${rank}</div>
-      </div>
-    `,
-  });
-}
-
-function createVehicleIcon() {
-  return L.divIcon({
-    className: "vehicle-marker",
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    html: `
-      <div class="vehicle-marker-wrapper">
-        <svg viewBox="0 0 24 24" fill="hsl(210, 80%, 50%)" width="20" height="20">
-          <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
-        </svg>
-      </div>
-    `,
-  });
-}
 
 function createJobIcon(urgent: boolean = false) {
   const color = urgent ? "#ef4444" : "#8b5cf6";
@@ -129,16 +89,12 @@ function createClusterIcon(count: number, hasUrgent: boolean) {
 
 export function WorkMapLeaflet({ 
   filters, 
-  vehicles,
   jobs,
-  hotspots, 
   heatmapPoints 
 }: WorkMapLeafletProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const heatLayerRef = useRef<L.Layer | null>(null);
-  const vehicleMarkersRef = useRef<L.Marker[]>([]);
-  const hotspotMarkersRef = useRef<L.Marker[]>([]);
   const jobMarkersRef = useRef<L.Marker[]>([]);
   const clusterMarkersRef = useRef<L.Marker[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -272,34 +228,6 @@ export function WorkMapLeaflet({
     }
   }, [filters.showHeatmap, filters.intensity, heatmapPoints, isLoaded]);
 
-  // Update vehicle markers
-  useEffect(() => {
-    if (!mapRef.current || !isLoaded) return;
-
-    vehicleMarkersRef.current.forEach(marker => marker.remove());
-    vehicleMarkersRef.current = [];
-
-    if (filters.showVehicles) {
-      const vehicleIcon = createVehicleIcon();
-      
-      vehicles.forEach(vehicle => {
-        const marker = L.marker([vehicle.lat, vehicle.lng], { 
-          icon: vehicleIcon,
-          zIndexOffset: 100,
-        });
-        
-        marker.bindPopup(`
-          <div class="vehicle-popup">
-            <strong>Pojazd MPK</strong>
-            <br>Linia: <strong>${vehicle.line || 'Brak danych'}</strong>
-          </div>
-        `);
-        
-        marker.addTo(mapRef.current!);
-        vehicleMarkersRef.current.push(marker);
-      });
-    }
-  }, [filters.showVehicles, vehicles, isLoaded]);
 
   // Update job markers - precise jobs as individual markers, rest as clusters
   useEffect(() => {
@@ -442,50 +370,6 @@ export function WorkMapLeaflet({
     });
   }, [preciseJobs, clustersByCity, currentZoom, isLoaded]);
 
-  // Update hotspot markers
-  useEffect(() => {
-    if (!mapRef.current || !isLoaded) return;
-
-    hotspotMarkersRef.current.forEach(marker => marker.remove());
-    hotspotMarkersRef.current = [];
-
-    if (filters.showHotspots) {
-      hotspots.forEach((hotspot, index) => {
-        const rank = index + 1;
-        const icon = createHotspotIcon(hotspot.level, rank);
-        const marker = L.marker([hotspot.lat, hotspot.lng], { 
-          icon,
-          zIndexOffset: 200,
-        });
-        
-        marker.bindPopup(`
-          <div class="hotspot-popup">
-            <div class="hotspot-popup-header">
-              <strong>${rank}. ${hotspot.name}</strong>
-              <span class="hotspot-level-badge">${"🔥".repeat(hotspot.level)}</span>
-            </div>
-            <div class="hotspot-popup-content">
-              <div class="hotspot-popup-row">
-                <span class="label">Aktywność:</span>
-                <span class="value ${hotspot.activity.toLowerCase().replace(" ", "-")}">${hotspot.activity}</span>
-              </div>
-              <div class="hotspot-popup-row">
-                <span class="label">Peak hours:</span>
-                <span class="value">${hotspot.peakHours}</span>
-              </div>
-              <div class="hotspot-popup-row">
-                <span class="label">Punkty:</span>
-                <span class="value">${hotspot.count}</span>
-              </div>
-            </div>
-          </div>
-        `);
-        
-        marker.addTo(mapRef.current!);
-        hotspotMarkersRef.current.push(marker);
-      });
-    }
-  }, [filters.showHotspots, hotspots, isLoaded]);
 
   return (
     <div className="relative z-0">
