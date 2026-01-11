@@ -323,28 +323,34 @@ export function WorkMapLeaflet({
         onClusterSelect?.(cluster.jobs);
       });
 
+      // Generate beautiful job preview cards for tooltip
       const jobPreview = cluster.jobs
-        .slice(0, 3)
+        .slice(0, 4)
         .map(
-          (j) =>
-            `<div class="cluster-preview-item">${j.urgent ? "🔴" : "🟣"} ${j.title.substring(0, 35)}${j.title.length > 35 ? "..." : ""}</div>`,
+          (j) => `
+            <div class="cluster-job-item">
+              <div class="cluster-job-icon">${j.category ? j.category.charAt(0).toUpperCase() : "?"}</div>
+              <div class="cluster-job-content">
+                <div class="cluster-job-title">${j.title.substring(0, 28)}${j.title.length > 28 ? "..." : ""}</div>
+                ${j.budget ? `<div class="cluster-job-price">${j.budget} zł</div>` : ""}
+              </div>
+            </div>
+          `,
         )
         .join("");
 
-      marker.bindTooltip(
+      marker.bindPopup(
         `
-        <div class="cluster-tooltip">
-          <div class="cluster-tooltip-header">${cluster.jobs.length} ofert</div>
-          ${jobPreview}
-          ${cluster.jobs.length > 3 ? `<div class="cluster-tooltip-more">+${cluster.jobs.length - 3} więcej</div>` : ""}
-          <div class="cluster-tooltip-hint">Kliknij, aby pokazać listę</div>
+        <div class="cluster-popup">
+          <div class="cluster-popup-header">${cluster.jobs.length} ofert w tym miejscu</div>
+          <div class="cluster-popup-list">
+            ${jobPreview}
+          </div>
+          ${cluster.jobs.length > 4 ? `<div class="cluster-popup-more">+${cluster.jobs.length - 4} więcej ofert</div>` : ""}
+          <div class="cluster-popup-hint">Kliknij ofertę lub przejdź do listy</div>
         </div>
       `,
-        {
-          direction: "top",
-          offset: [0, -20],
-          className: "cluster-tooltip-wrapper",
-        },
+        { minWidth: 240, maxWidth: 280, className: "cluster-popup-wrapper" },
       );
 
       markersLayerRef.current!.addLayer(marker);
@@ -807,6 +813,106 @@ export function WorkMapLeaflet({
            color: #1f2937 !important;
            background: #e5e7eb !important;
          }
+
+        /* Cluster popup styles */
+        .cluster-popup-wrapper .leaflet-popup-content-wrapper {
+          border-radius: 12px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+          padding: 0;
+        }
+        
+        .cluster-popup-wrapper .leaflet-popup-content {
+          margin: 0;
+        }
+        
+        .cluster-popup {
+          padding: 16px;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .cluster-popup-header {
+          font-size: 13px;
+          font-weight: 600;
+          color: #6b7280;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .cluster-popup-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .cluster-job-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 10px;
+          background: #f9fafb;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.15s ease;
+        }
+        
+        .cluster-job-item:hover {
+          background: #f3f4f6;
+        }
+        
+        .cluster-job-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          color: white;
+          font-size: 13px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        
+        .cluster-job-content {
+          flex: 1;
+          min-width: 0;
+        }
+        
+        .cluster-job-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1f2937;
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .cluster-job-price {
+          font-size: 12px;
+          font-weight: 700;
+          color: #059669;
+          margin-top: 2px;
+        }
+        
+        .cluster-popup-more {
+          font-size: 12px;
+          color: #8b5cf6;
+          font-weight: 500;
+          text-align: center;
+          padding: 8px 0 4px;
+        }
+        
+        .cluster-popup-hint {
+          font-size: 11px;
+          color: #9ca3af;
+          text-align: center;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #e5e7eb;
+        }
+
         /* Keep our job markers above tiles */
         .leaflet-job-markers-pane { z-index: 650 !important; }
 
