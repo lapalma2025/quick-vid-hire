@@ -440,53 +440,71 @@ export function useVehicleData(intervalMinutes: number = 30) {
 		}
 	}, []);
 
-	const fetchAllData = useCallback(async () => {
+	// Fast initial load - just jobs
+	const fetchJobsOnly = useCallback(async () => {
 		setIsLoading(true);
-
-		const [{ vehicles: vehicleData, parkings: parkingData }, jobData] =
-			await Promise.all([fetchVehiclesAndParking(), fetchJobs()]);
-
-		// Generate heatmap points
-		const vehicleHeatPoints: [number, number, number][] = vehicleData.map(
-			(v) => [v.lat, v.lng, 0.3 + Math.random() * 0.3]
-		);
-
+		const jobData = await fetchJobs();
+		
+		// Generate heatmap from jobs only initially
 		const jobHeatPoints: [number, number, number][] = jobData.map((j) => [
 			j.lat,
 			j.lng,
 			0.7 + Math.random() * 0.3,
 		]);
-
-		// Add parking heat based on occupancy
-		const parkingHeatPoints: [number, number, number][] = parkingData.map(
-			(p) => [
-				p.lat,
-				p.lng,
-				0.4 + (p.occupancyPercent / 100) * 0.6, // Higher occupancy = higher heat
-			]
-		);
-
-		setHeatmapPoints([
-			...vehicleHeatPoints,
-			...jobHeatPoints,
-			...parkingHeatPoints,
-		]);
+		
+		setHeatmapPoints(jobHeatPoints);
 		setIsLoading(false);
-	}, [fetchVehiclesAndParking, fetchJobs]);
+		setLastUpdate(new Date());
+		
+		return jobData;
+	}, [fetchJobs]);
+
+	// Background load - vehicles and parking (slower, optional)
+	const fetchBackgroundData = useCallback(async () => {
+		try {
+			const { vehicles: vehicleData, parkings: parkingData } = await fetchVehiclesAndParking();
+			
+			// Update heatmap with additional data
+			setHeatmapPoints(prev => {
+				const vehicleHeatPoints: [number, number, number][] = vehicleData.map(
+					(v) => [v.lat, v.lng, 0.3 + Math.random() * 0.3]
+				);
+				
+				const parkingHeatPoints: [number, number, number][] = parkingData.map(
+					(p) => [
+						p.lat,
+						p.lng,
+						0.4 + (p.occupancyPercent / 100) * 0.6,
+					]
+				);
+				
+				return [...prev, ...vehicleHeatPoints, ...parkingHeatPoints];
+			});
+		} catch (err) {
+			// Background data is optional, don't show error
+			console.log("Background data fetch skipped:", err);
+		}
+	}, [fetchVehiclesAndParking]);
 
 	useEffect(() => {
-		fetchAllData();
+		// Fast initial load
+		fetchJobsOnly().then(() => {
+			// Load background data after initial render
+			setTimeout(() => {
+				fetchBackgroundData();
+			}, 1000);
+		});
 
-		// Refresh every 2 hours (7,200,000 ms) instead of frequently
-		const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-		intervalRef.current = window.setInterval(fetchAllData, TWO_HOURS_MS);
+		// Refresh jobs every 30 minutes
+		const THIRTY_MIN_MS = 30 * 60 * 1000;
+		intervalRef.current = window.setInterval(fetchJobsOnly, THIRTY_MIN_MS);
 
 		return () => {
 			if (intervalRef.current) {
 				clearInterval(intervalRef.current);
 			}
 		};
-	}, [fetchAllData]);
+	}, [fetchJobsOnly, fetchBackgroundData]);
 
 	return {
 		vehicles,
@@ -496,6 +514,6 @@ export function useVehicleData(intervalMinutes: number = 30) {
 		isLoading,
 		lastUpdate,
 		error,
-		refetch: fetchAllData,
+		refetch: fetchJobsOnly,
 	};
 }
