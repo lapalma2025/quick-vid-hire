@@ -795,7 +795,7 @@ export function WorkMapLeaflet({
           width: 100%;
           padding: 12px 16px;
           background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
+          color: #1f2937;
           font-size: 14px;
           font-weight: 600;
           text-decoration: none;
