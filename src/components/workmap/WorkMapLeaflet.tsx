@@ -343,9 +343,8 @@ export function WorkMapLeaflet({
         zIndexOffset: 500,
       });
 
-      // Generate beautiful job preview cards for popup
+      // Generate ALL job preview cards for popup (with scroll)
       const jobPreview = cluster.jobs
-        .slice(0, 4)
         .map(
           (j) => `
             <a href="/jobs/${j.id}" class="cluster-job-item">
@@ -366,23 +365,10 @@ export function WorkMapLeaflet({
           <div class="cluster-popup-list">
             ${jobPreview}
           </div>
-          ${cluster.jobs.length > 4 ? `<button class="cluster-popup-more" onclick="window.__clusterSelect && window.__clusterSelect()">Zobacz wszystkie ${cluster.jobs.length} ofert →</button>` : ""}
         </div>
       `,
-        { minWidth: 260, maxWidth: 300, className: "cluster-popup-wrapper" },
+        { minWidth: 280, maxWidth: 320, className: "cluster-popup-wrapper" },
       );
-
-      // Store cluster jobs for "see all" button
-      marker.on("popupopen", () => {
-        (window as any).__clusterSelect = () => {
-          marker.closePopup();
-          onClusterSelect?.(cluster.jobs);
-        };
-      });
-
-      marker.on("popupclose", () => {
-        delete (window as any).__clusterSelect;
-      });
 
       markersLayerRef.current!.addLayer(marker);
     });
@@ -441,16 +427,28 @@ export function WorkMapLeaflet({
       prefix: false,
     }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
 
-    // Event handlers with debouncing
-    const handleViewChange = () => {
-      setCurrentZoom(map.getZoom());
+    // Event handlers - only update on zoom change, not on pan
+    let lastZoom = map.getZoom();
+    
+    const handleZoomEnd = () => {
+      const newZoom = map.getZoom();
+      setCurrentZoom(newZoom);
       setViewportBounds(map.getBounds());
-      scheduleUpdate();
+      // Only recalculate clusters when zoom changes
+      if (newZoom !== lastZoom) {
+        lastZoom = newZoom;
+        scheduleUpdate();
+      }
     };
 
-    map.on('zoomend', handleViewChange);
-    map.on('moveend', handleViewChange);
-    map.on('resize', handleViewChange);
+    const handleMoveEnd = () => {
+      setViewportBounds(map.getBounds());
+      // Don't recalculate on pan - markers are already placed at correct coordinates
+    };
+
+    map.on('zoomend', handleZoomEnd);
+    map.on('moveend', handleMoveEnd);
+    map.on('resize', handleZoomEnd);
 
     mapRef.current = map;
     setViewportBounds(map.getBounds());
@@ -866,6 +864,27 @@ export function WorkMapLeaflet({
           display: flex;
           flex-direction: column;
           gap: 8px;
+          max-height: 300px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+        
+        .cluster-popup-list::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .cluster-popup-list::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 3px;
+        }
+        
+        .cluster-popup-list::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        
+        .cluster-popup-list::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
         }
         
         .cluster-job-item {
@@ -882,8 +901,8 @@ export function WorkMapLeaflet({
         }
         
         .cluster-job-item:hover {
-          background: #f9fafb;
-          border-color: #d1d5db;
+          background: #f0fdf4;
+          border-color: #86efac;
           transform: translateX(2px);
         }
         
@@ -891,7 +910,7 @@ export function WorkMapLeaflet({
           width: 36px;
           height: 36px;
           border-radius: 8px;
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          background: linear-gradient(135deg, #10b981, #059669);
           color: white;
           display: flex;
           align-items: center;
