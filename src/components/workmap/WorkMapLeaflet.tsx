@@ -25,6 +25,7 @@ interface WorkMapLeafletProps {
   filters: MapFilters;
   jobs: JobMarker[];
   heatmapPoints: [number, number, number][];
+  onClusterSelect?: (jobs: JobMarker[]) => void;
 }
 
 interface Cluster {
@@ -131,10 +132,11 @@ function createClusterIcon(count: number, hasUrgent: boolean) {
   });
 }
 
-export function WorkMapLeaflet({ 
-  filters, 
+export function WorkMapLeaflet({
+  filters,
   jobs,
-  heatmapPoints 
+  heatmapPoints,
+  onClusterSelect,
 }: WorkMapLeafletProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -227,32 +229,80 @@ export function WorkMapLeaflet({
   // Update markers on map
   const updateMarkers = useCallback(() => {
     const map = mapRef.current;
-    if (!map || !isLoaded || jobs.length === 0) return;
+    if (!map || !isLoaded) return;
 
     const zoom = map.getZoom();
     const bounds = map.getBounds();
 
-    // Clear existing markers
-    if (markersLayerRef.current) {
-      markersLayerRef.current.clearLayers();
-    } else {
+    // Ensure layer exists
+    if (!markersLayerRef.current) {
       markersLayerRef.current = L.layerGroup().addTo(map);
     }
 
-    // Use ALL jobs (not just visible) for initial load, cluster based on zoom
-    const { clusters, singles } = computeClusters(map, jobs, zoom);
+    // Always clear markers first (important when filters produce 0 results)
+    markersLayerRef.current.clearLayers();
 
-    console.log(`Updating markers: ${jobs.length} jobs, ${singles.length} singles, ${clusters.length} clusters`);
+    if (jobs.length === 0) return;
+
+    // Viewport-dependent clustering
+    const jobsInBounds = jobs.filter((job) => bounds.contains([job.lat, job.lng]));
+
+    // Fallback UX: if nothing visible, move to nearest job so user never sees an "empty map"
+    if (jobsInBounds.length === 0) {
+      const center = map.getCenter();
+      let nearest = jobs[0];
+      let best = Number.POSITIVE_INFINITY;
+
+      for (const job of jobs) {
+        const d = Math.pow(job.lat - center.lat, 2) + Math.pow(job.lng - center.lng, 2);
+        if (d < best) {
+          best = d;
+          nearest = job;
+        }
+      }
+
+      map.flyTo([nearest.lat, nearest.lng], zoom, {
+        duration: 0.35,
+        easeLinearity: 0.25,
+      });
+      toast.info("Przesunięto mapę do najbliższych ofert");
+      return;
+    }
+
+    const boundsKey = getBoundsKey(bounds);
+    const jobsKey = jobsInBounds.map((j) => j.id).join("|");
+
+    let clusters: Cluster[];
+    let singles: JobMarker[];
+
+    const cache = clusterCacheRef.current;
+    if (cache && cache.zoom === zoom && cache.boundsKey === boundsKey && cache.jobsKey === jobsKey) {
+      clusters = cache.clusters;
+      singles = cache.singles;
+    } else {
+      const computed = computeClusters(map, jobsInBounds, zoom);
+      clusters = computed.clusters;
+      singles = computed.singles;
+
+      clusterCacheRef.current = {
+        zoom,
+        boundsKey,
+        jobsKey,
+        clusters,
+        singles,
+      };
+    }
 
     // Add single markers
-    singles.forEach(job => {
+    singles.forEach((job) => {
       const icon = createJobIcon(job.urgent, true);
-      const marker = L.marker([job.lat, job.lng], { 
+      const marker = L.marker([job.lat, job.lng], {
         icon,
         zIndexOffset: job.urgent ? 400 : 300,
       });
-      
-      marker.bindPopup(`
+
+      marker.bindPopup(
+        `
         <div class="job-popup-modern">
           <div class="job-popup-badge-row">
             ${job.urgent ? '<span class="badge-urgent">🔥 PILNE</span>' : ''}
@@ -279,52 +329,53 @@ export function WorkMapLeaflet({
             </svg>
           </a>
         </div>
-      `, { minWidth: 260, maxWidth: 320, className: 'modern-popup' });
-      
+      `,
+        { minWidth: 260, maxWidth: 320, className: "modern-popup" },
+      );
+
       markersLayerRef.current!.addLayer(marker);
     });
 
     // Add cluster markers
-    clusters.forEach(cluster => {
+    clusters.forEach((cluster) => {
       const icon = createClusterIcon(cluster.jobs.length, cluster.hasUrgent);
-      const marker = L.marker([cluster.lat, cluster.lng], { 
+      const marker = L.marker([cluster.lat, cluster.lng], {
         icon,
         zIndexOffset: 500,
       });
 
-      // Click handler - fitBounds to show all jobs in cluster
-      marker.on('click', (e) => {
+      marker.on("click", (e) => {
         L.DomEvent.stopPropagation(e);
-        const expandedBounds = cluster.bounds.pad(0.3);
-        map.flyToBounds(expandedBounds, {
-          duration: 0.4,
-          easeLinearity: 0.25,
-          maxZoom: NO_CLUSTER_ZOOM,
-          padding: [50, 50],
-        });
+        onClusterSelect?.(cluster.jobs);
       });
 
-      // Tooltip on hover
-      const jobPreview = cluster.jobs.slice(0, 3).map(j => 
-        `<div class="cluster-preview-item">${j.urgent ? '🔴' : '🟣'} ${j.title.substring(0, 35)}${j.title.length > 35 ? '...' : ''}</div>`
-      ).join('');
-      
-      marker.bindTooltip(`
+      const jobPreview = cluster.jobs
+        .slice(0, 3)
+        .map(
+          (j) =>
+            `<div class="cluster-preview-item">${j.urgent ? "🔴" : "🟣"} ${j.title.substring(0, 35)}${j.title.length > 35 ? "..." : ""}</div>`,
+        )
+        .join("");
+
+      marker.bindTooltip(
+        `
         <div class="cluster-tooltip">
           <div class="cluster-tooltip-header">${cluster.jobs.length} ofert</div>
           ${jobPreview}
-          ${cluster.jobs.length > 3 ? `<div class="cluster-tooltip-more">+${cluster.jobs.length - 3} więcej</div>` : ''}
-          <div class="cluster-tooltip-hint">Kliknij aby przybliżyć</div>
+          ${cluster.jobs.length > 3 ? `<div class="cluster-tooltip-more">+${cluster.jobs.length - 3} więcej</div>` : ""}
+          <div class="cluster-tooltip-hint">Kliknij, aby pokazać listę</div>
         </div>
-      `, { 
-        direction: 'top',
-        offset: [0, -20],
-        className: 'cluster-tooltip-wrapper'
-      });
+      `,
+        {
+          direction: "top",
+          offset: [0, -20],
+          className: "cluster-tooltip-wrapper",
+        },
+      );
 
       markersLayerRef.current!.addLayer(marker);
     });
-  }, [jobs, isLoaded, computeClusters]);
+  }, [jobs, isLoaded, computeClusters, onClusterSelect]);
 
   // Debounced update
   const scheduleUpdate = useCallback(() => {
