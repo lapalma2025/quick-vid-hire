@@ -144,10 +144,11 @@ export function WorkMapLeaflet({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const heatLayerRef = useRef<L.Layer | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+  const clusterMarkersRef = useRef<L.Marker[]>([]);
   const clusterCacheRef = useRef<ClusterCache | null>(null);
   const updateTimeoutRef = useRef<number | null>(null);
-  
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
   const [viewportBounds, setViewportBounds] = useState<L.LatLngBounds | null>(null);
@@ -236,10 +237,9 @@ export function WorkMapLeaflet({
 
     const zoom = map.getZoom();
     const bounds = map.getBounds();
-
-    // Ensure layer exists
+    // Ensure layer exists (use dedicated pane so markers always render above tiles)
     if (!markersLayerRef.current) {
-      markersLayerRef.current = L.layerGroup().addTo(map);
+      markersLayerRef.current = L.layerGroup([], { pane: JOB_MARKERS_PANE }).addTo(map);
     }
 
     // Always clear markers first (important when filters produce 0 results)
@@ -271,6 +271,7 @@ export function WorkMapLeaflet({
       const icon = createJobIcon(job.urgent, true);
       const marker = L.marker([job.lat, job.lng], {
         icon,
+        pane: JOB_MARKERS_PANE,
         zIndexOffset: job.urgent ? 400 : 300,
       });
 
@@ -314,6 +315,7 @@ export function WorkMapLeaflet({
       const icon = createClusterIcon(cluster.jobs.length, cluster.hasUrgent);
       const marker = L.marker([cluster.lat, cluster.lng], {
         icon,
+        pane: JOB_MARKERS_PANE,
         zIndexOffset: 500,
       });
 
@@ -383,6 +385,14 @@ export function WorkMapLeaflet({
       markerZoomAnimation: true,
     });
 
+    // Dedicated pane for job markers (keeps them above tiles/overlays)
+    map.createPane(JOB_MARKERS_PANE);
+    const jobPane = map.getPane(JOB_MARKERS_PANE);
+    if (jobPane) {
+      jobPane.style.zIndex = "650";
+      jobPane.style.pointerEvents = "auto";
+    }
+
     // Use a faster tile layer
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       maxZoom: MAX_ZOOM,
@@ -414,6 +424,10 @@ export function WorkMapLeaflet({
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
+      markersRef.current.forEach((m) => m.remove());
+      clusterMarkersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+      clusterMarkersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -794,18 +808,12 @@ export function WorkMapLeaflet({
            color: #1f2937 !important;
            background: #e5e7eb !important;
          }
+        /* Keep our job markers above tiles */
+        .leaflet-job-markers-pane { z-index: 650 !important; }
 
-         /* Fix z-index stacking so markers are always visible above tiles */
-         .leaflet-pane.leaflet-tile-pane { z-index: 200 !important; }
-         .leaflet-pane.leaflet-overlay-pane { z-index: 400 !important; }
-         .leaflet-pane.leaflet-shadow-pane { z-index: 500 !important; }
-         .leaflet-pane.leaflet-marker-pane { z-index: 600 !important; }
-         .leaflet-pane.leaflet-tooltip-pane { z-index: 650 !important; }
-         .leaflet-pane.leaflet-popup-pane { z-index: 700 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 800 !important; }
+        .leaflet-control { z-index: 800 !important; }
 
-         .leaflet-top, .leaflet-bottom { z-index: 800 !important; }
-         .leaflet-control { z-index: 800 !important; }
-        
         .leaflet-control-attribution a[href*="leaflet"],
         .leaflet-control-attribution img,
         .leaflet-control-attribution svg {
