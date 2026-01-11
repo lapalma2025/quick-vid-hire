@@ -461,7 +461,7 @@ export function WorkMapLeaflet({
     <div className="relative z-0 h-full w-full">
       <div 
         ref={mapContainerRef} 
-        className="w-full h-full"
+        className="w-full h-full relative z-0"
       />
       
       {!isLoaded && (
