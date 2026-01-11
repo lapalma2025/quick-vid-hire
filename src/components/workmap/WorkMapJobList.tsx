@@ -2,6 +2,7 @@ import { JobMarker } from "@/hooks/useVehicleData";
 import { Link } from "react-router-dom";
 import { MapPin, Zap, Bookmark, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 
 interface WorkMapJobListProps {
   jobs: JobMarker[];
@@ -48,11 +49,12 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
           to={`/jobs/${job.id}`}
           className="flex items-start gap-4 p-4 hover:bg-secondary/40 transition-colors group"
         >
-          {/* Category Icon / Logo Placeholder */}
+          {/* Category Icon */}
           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-primary/70">
-              {job.category ? job.category.charAt(0).toUpperCase() : "?"}
-            </span>
+            <CategoryIcon 
+              name={job.category || "Inne"} 
+              className="h-5 w-5 text-primary"
+            />
           </div>
 
           {/* Content */}
@@ -108,7 +110,6 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Bookmark functionality placeholder
               }}
             >
               <Bookmark className="h-4 w-4" />
