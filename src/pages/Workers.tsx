@@ -12,21 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Loader2,
-  Users,
-  Filter,
-  X,
-  Map,
-  List,
-} from "lucide-react";
+import { Loader2, Users, Filter, X, Map, List, ChevronDown } from "lucide-react";
 import gsap from "gsap";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { WOJEWODZTWA } from "@/lib/constants";
 import WorkersMap from "@/components/workers/WorkersMap";
 import { WorkerListItem } from "@/components/workers/WorkerListItem";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSEO } from "@/hooks/useSEO";
 import { CategoryBadges } from "@/components/shared/CategoryBadges";
 
@@ -64,7 +56,7 @@ export default function Workers() {
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<"list" | "map">("map");
   const [highlightedWorkerId, setHighlightedWorkerId] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
@@ -81,7 +73,8 @@ export default function Workers() {
 
   useSEO({
     title: "Wykonawcy",
-    description: "Znajdź sprawdzonych wykonawców w swojej okolicy. Przeglądaj profile, opinie i stawki. Fachowcy, pomocnicy, specjaliści od remontów i usług.",
+    description:
+      "Znajdź sprawdzonych wykonawców w swojej okolicy. Przeglądaj profile, opinie i stawki. Fachowcy, pomocnicy, specjaliści od remontów i usług.",
     keywords: "wykonawcy, fachowcy, specjaliści, usługi, remonty, sprzątanie, transport, Polska",
   });
 
@@ -89,7 +82,6 @@ export default function Workers() {
     fetchCategories();
   }, []);
 
-  // Initial fetch with category filtering
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
     setWorkers([]);
@@ -125,7 +117,7 @@ export default function Workers() {
         .from("profiles")
         .select(
           `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
-          { count: "exact" }
+          { count: "exact" },
         )
         .eq("is_available", true)
         .eq("worker_profile_completed", true);
@@ -141,27 +133,18 @@ export default function Workers() {
         query = query.in("id", workerIdsWithCategory);
       }
 
-      if (filters.wojewodztwo)
-        query = query.eq("wojewodztwo", filters.wojewodztwo);
+      if (filters.wojewodztwo) query = query.eq("wojewodztwo", filters.wojewodztwo);
       if (filters.miasto) query = query.eq("miasto", filters.miasto);
-      if (filters.minRate)
-        query = query.gte("hourly_rate", parseFloat(filters.minRate));
-      if (filters.maxRate)
-        query = query.lte("hourly_rate", parseFloat(filters.maxRate));
-      if (filters.minRating)
-        query = query.gte("rating_avg", parseFloat(filters.minRating));
+      if (filters.minRate) query = query.gte("hourly_rate", parseFloat(filters.minRate));
+      if (filters.maxRate) query = query.lte("hourly_rate", parseFloat(filters.maxRate));
+      if (filters.minRating) query = query.gte("rating_avg", parseFloat(filters.minRating));
 
-      const { data, error, count } = await query
-        .order("rating_avg", { ascending: false })
-        .range(0, PAGE_SIZE - 1);
+      const { data, error, count } = await query.order("rating_avg", { ascending: false }).range(0, PAGE_SIZE - 1);
 
       if (data && !error) {
-        let workersData = data.map((w: any) => ({
+        const workersData = data.map((w: any) => ({
           ...w,
-          categories:
-            w.worker_categories
-              ?.map((wc: any) => wc.category)
-              .filter(Boolean) || [],
+          categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
         }));
 
         setWorkers(workersData);
@@ -174,7 +157,6 @@ export default function Workers() {
     setLoading(false);
   }, [filters]);
 
-  // Load more
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
 
@@ -203,7 +185,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
         )
         .eq("is_available", true)
         .eq("worker_profile_completed", true);
@@ -217,27 +199,20 @@ export default function Workers() {
         query = query.in("id", workerIdsWithCategory);
       }
 
-      if (filters.wojewodztwo)
-        query = query.eq("wojewodztwo", filters.wojewodztwo);
+      if (filters.wojewodztwo) query = query.eq("wojewodztwo", filters.wojewodztwo);
       if (filters.miasto) query = query.eq("miasto", filters.miasto);
-      if (filters.minRate)
-        query = query.gte("hourly_rate", parseFloat(filters.minRate));
-      if (filters.maxRate)
-        query = query.lte("hourly_rate", parseFloat(filters.maxRate));
-      if (filters.minRating)
-        query = query.gte("rating_avg", parseFloat(filters.minRating));
+      if (filters.minRate) query = query.gte("hourly_rate", parseFloat(filters.minRate));
+      if (filters.maxRate) query = query.lte("hourly_rate", parseFloat(filters.maxRate));
+      if (filters.minRating) query = query.gte("rating_avg", parseFloat(filters.minRating));
 
       const { data, error } = await query
         .order("rating_avg", { ascending: false })
         .range(workers.length, workers.length + PAGE_SIZE - 1);
 
       if (!error && data) {
-        let newWorkersData = data.map((w: any) => ({
+        const newWorkersData = data.map((w: any) => ({
           ...w,
-          categories:
-            w.worker_categories
-              ?.map((wc: any) => wc.category)
-              .filter(Boolean) || [],
+          categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
         }));
 
         setWorkers((prev) => [...prev, ...newWorkersData]);
@@ -265,20 +240,15 @@ export default function Workers() {
           stagger: 0.05,
           ease: "power2.out",
           onComplete: function () {
-            this.targets().forEach((el: Element) =>
-              el.classList.add("animated")
-            );
+            this.targets().forEach((el: Element) => el.classList.add("animated"));
           },
-        }
+        },
       );
     }
   }, [loading, workers]);
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from("categories")
-      .select("id, name")
-      .order("name");
+    const { data } = await supabase.from("categories").select("id, name").order("name");
     if (data) setCategories(data);
   };
 
@@ -308,207 +278,186 @@ export default function Workers() {
   };
 
   const handleCategoryToggle = useCallback((categoryName: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryName) 
-        ? prev.filter(c => c !== categoryName)
-        : [...prev, categoryName]
+    setSelectedCategories((prev) =>
+      prev.includes(categoryName) ? prev.filter((c) => c !== categoryName) : [...prev, categoryName],
     );
   }, []);
 
-  // Filter workers by selected categories for map view
   const filteredWorkersForMap = useMemo(() => {
     if (selectedCategories.length === 0) return workers;
-    return workers.filter(worker => 
-      worker.categories.some(cat => selectedCategories.includes(cat.name))
-    );
+    return workers.filter((worker) => worker.categories.some((cat) => selectedCategories.includes(cat.name)));
   }, [workers, selectedCategories]);
 
-  return (
-    <Layout>
-      {/* Header */}
-      <div className="border-b border-border bg-background">
-        <div className="container py-4 px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold">Wykonawcy</h1>
-                <p className="text-sm text-muted-foreground">
-                  {totalCount} dostępnych wykonawców
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {/* View Toggle */}
-              <div className="flex bg-muted rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'map' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('map')}
-                  size="sm"
-                  className="gap-2 h-8"
-                >
-                  <Map className="h-4 w-4" />
-                  <span className="hidden sm:inline">Mapa</span>
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  onClick={() => setViewMode('list')}
-                  size="sm"
-                  className="gap-2 h-8"
-                >
-                  <List className="h-4 w-4" />
-                  <span className="hidden sm:inline">Lista</span>
-                </Button>
-              </div>
-              
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                size="sm"
-                className="gap-2 h-8"
-              >
-                <Filter className="h-4 w-4" />
-                Filtry
-                {hasActiveFilters && (
-                  <Badge className="bg-primary text-white h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    !
-                  </Badge>
-                )}
-              </Button>
-            </div>
-          </div>
-          
-          {/* Filters */}
-          {showFilters && (
-            <Card className="mt-4">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Województwo</Label>
-                    <WojewodztwoSelect
-                      value={filters.wojewodztwo}
-                      onChange={(v) => updateFilter("wojewodztwo", v)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Miasto</Label>
-                    <CityAutocomplete
-                      value={filters.miasto}
-                      onChange={(miasto, region) => {
-                        const newFilters = { ...filters, miasto };
-                        if (region) {
-                          const normalizedRegion = region.toLowerCase();
-                          const matchedWojewodztwo = WOJEWODZTWA.find(
-                            (w) => w.toLowerCase() === normalizedRegion
-                          );
-                          if (matchedWojewodztwo) {
-                            newFilters.wojewodztwo = matchedWojewodztwo;
-                          }
-                        }
-                        setFilters(newFilters);
-                      }}
-                      placeholder="Wpisz miasto..."
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Kategoria</Label>
-                    <Select
-                      value={filters.category || "__all__"}
-                      onValueChange={(v) =>
-                        updateFilter("category", v === "__all__" ? "" : v)
-                      }
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Wszystkie" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">Wszystkie</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.name}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Min. ocena</Label>
-                    <Select
-                      value={filters.minRating || "__all__"}
-                      onValueChange={(v) =>
-                        updateFilter("minRating", v === "__all__" ? "" : v)
-                      }
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Dowolna" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">Dowolna</SelectItem>
-                        <SelectItem value="3">3+ ⭐</SelectItem>
-                        <SelectItem value="4">4+ ⭐</SelectItem>
-                        <SelectItem value="4.5">4.5+ ⭐</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="mt-3 gap-2 text-xs"
-                  >
-                    <X className="h-3 w-3" />
-                    Wyczyść filtry
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+  const isMapView = viewMode === "map";
 
-      {/* Main Content */}
-      {viewMode === 'map' ? (
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)]">
-          {/* Left: Worker List */}
-          <div className="w-full lg:w-[400px] xl:w-[450px] border-r border-border bg-background overflow-hidden flex flex-col">
-            <div className="px-4 py-3 border-b border-border bg-muted/30">
-              <p className="text-sm font-medium">
-                {filteredWorkersForMap.length} wykonawców
-                {selectedCategories.length > 0 && ` (z ${workers.length})`}
-              </p>
-            </div>
-            
-            {loading ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="text-muted-foreground text-sm">Ładowanie...</span>
+  // MAP VIEW - unified design with WorkMap
+  if (isMapView) {
+    return (
+      <Layout showBreadcrumbs={false} showFooter={false}>
+        <div className="h-[calc(100vh-80px)] flex overflow-hidden bg-background">
+          {/* Left Panel */}
+          <div className="w-[540px] flex-shrink-0 border-r border-border/50 flex flex-col bg-card/50">
+            {/* Header */}
+            <div className="p-5 border-b border-border/50 bg-background/80 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-foreground">Wykonawcy</h1>
+                    <p className="text-sm text-muted-foreground">
+                      {loading ? "Ładowanie..." : `${filteredWorkersForMap.length} wykonawców w dolnośląskim`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex bg-muted rounded-lg p-1">
+                  <Button variant="default" onClick={() => setViewMode("map")} size="sm" className="gap-2 h-8">
+                    <Map className="h-4 w-4" />
+                    Mapa
+                  </Button>
+                  <Button variant="ghost" onClick={() => setViewMode("list")} size="sm" className="gap-2 h-8">
+                    <List className="h-4 w-4" />
+                    Lista
+                  </Button>
                 </div>
               </div>
-            ) : filteredWorkersForMap.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center p-4">
-                <div className="text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Brak wykonawców</p>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Collapsible Filters */}
+              <div className="border-b border-border/50">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="w-full px-5 py-3 flex items-center justify-between text-sm font-medium hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Filtry</span>
+                    {hasActiveFilters && (
+                      <Badge className="bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        !
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {showFilters && (
+                  <div className="px-5 pb-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Województwo</Label>
+                        <WojewodztwoSelect value={filters.wojewodztwo} onChange={(v) => updateFilter("wojewodztwo", v)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Miasto</Label>
+                        <CityAutocomplete
+                          value={filters.miasto}
+                          onChange={(miasto, region) => {
+                            const newFilters = { ...filters, miasto };
+                            if (region) {
+                              const normalizedRegion = region.toLowerCase();
+                              const matchedWojewodztwo = WOJEWODZTWA.find((w) => w.toLowerCase() === normalizedRegion);
+                              if (matchedWojewodztwo) {
+                                newFilters.wojewodztwo = matchedWojewodztwo;
+                              }
+                            }
+                            setFilters(newFilters);
+                          }}
+                          placeholder="Wpisz miasto..."
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Kategoria</Label>
+                        <Select
+                          value={filters.category || "__all__"}
+                          onValueChange={(v) => updateFilter("category", v === "__all__" ? "" : v)}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Wszystkie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__all__">Wszystkie</SelectItem>
+                            {categories.map((c) => (
+                              <SelectItem key={c.id} value={c.name}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Min. ocena</Label>
+                        <Select
+                          value={filters.minRating || "__all__"}
+                          onValueChange={(v) => updateFilter("minRating", v === "__all__" ? "" : v)}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Dowolna" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__all__">Dowolna</SelectItem>
+                            <SelectItem value="3">3+ ⭐</SelectItem>
+                            <SelectItem value="4">4+ ⭐</SelectItem>
+                            <SelectItem value="4.5">4.5+ ⭐</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {hasActiveFilters && (
+                      <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-2 text-xs">
+                        <X className="h-3 w-3" />
+                        Wyczyść filtry
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Category Badges */}
+              <div className="p-5 border-b border-border/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">Specjalizacje</h3>
                   {selectedCategories.length > 0 && (
-                    <Button 
-                      variant="link" 
-                      className="mt-2"
+                    <button
                       onClick={() => setSelectedCategories([])}
+                      className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
                     >
-                      Wyczyść filtry
+                      Wyczyść ({selectedCategories.length})
+                    </button>
+                  )}
+                </div>
+                <CategoryBadges selectedCategories={selectedCategories} onCategoryToggle={handleCategoryToggle} />
+              </div>
+
+              {/* Worker List */}
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="text-muted-foreground text-sm">Ładowanie...</span>
+                  </div>
+                </div>
+              ) : filteredWorkersForMap.length === 0 ? (
+                <div className="p-10 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
+                    <Users className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">Brak wykonawców</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">Zmień filtry, aby zobaczyć więcej</p>
+                  {selectedCategories.length > 0 && (
+                    <Button variant="link" className="mt-2" onClick={() => setSelectedCategories([])}>
+                      Wyczyść filtry kategorii
                     </Button>
                   )}
                 </div>
-              </div>
-            ) : (
-              <ScrollArea className="flex-1">
-                <div ref={listRef} className="p-3 space-y-2">
+              ) : (
+                <div ref={listRef} className="p-4 space-y-3">
                   {filteredWorkersForMap.map((worker) => (
                     <div key={worker.id} className="worker-item">
                       <WorkerListItem
@@ -518,107 +467,199 @@ export default function Workers() {
                       />
                     </div>
                   ))}
-                  
+
                   {hasMore && selectedCategories.length === 0 && (
                     <div ref={loadMoreRef} className="py-4 text-center">
-                      <Button 
-                        variant="outline" 
-                        onClick={loadMore}
-                        disabled={loadingMore}
-                      >
+                      <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
                         {loadingMore ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             Ładowanie...
                           </>
                         ) : (
-                          'Załaduj więcej'
+                          "Załaduj więcej"
                         )}
                       </Button>
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              )}
+            </div>
+          </div>
+
+          {/* Map */}
+          <div className="flex-1 relative min-w-0">
+            <WorkersMap
+              workers={filteredWorkersForMap.map((w) => ({
+                ...w,
+                is_available: true,
+              }))}
+              highlightedWorkerId={highlightedWorkerId}
+              onMarkerHover={handleWorkerHover}
+            />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // LIST VIEW
+  return (
+    <Layout showBreadcrumbs={false} showFooter={false}>
+      <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden bg-background">
+        {/* Header */}
+        <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm">
+          <div className="container py-4 px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold">Wykonawcy</h1>
+                  <p className="text-sm text-muted-foreground">{totalCount} dostępnych wykonawców</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="flex bg-muted rounded-lg p-1">
+                  <Button variant="ghost" onClick={() => setViewMode("map")} size="sm" className="gap-2 h-8">
+                    <Map className="h-4 w-4" />
+                    <span className="hidden sm:inline">Mapa</span>
+                  </Button>
+                  <Button variant="default" onClick={() => setViewMode("list")} size="sm" className="gap-2 h-8">
+                    <List className="h-4 w-4" />
+                    <span className="hidden sm:inline">Lista</span>
+                  </Button>
+                </div>
+
+                <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="sm" className="gap-2 h-8">
+                  <Filter className="h-4 w-4" />
+                  Filtry
+                  {hasActiveFilters && (
+                    <Badge className="bg-primary text-white h-5 w-5 p-0 flex items-center justify-center text-xs">!</Badge>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Filters */}
+            {showFilters && (
+              <Card className="mt-4">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Województwo</Label>
+                      <WojewodztwoSelect value={filters.wojewodztwo} onChange={(v) => updateFilter("wojewodztwo", v)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Miasto</Label>
+                      <CityAutocomplete
+                        value={filters.miasto}
+                        onChange={(miasto, region) => {
+                          const newFilters = { ...filters, miasto };
+                          if (region) {
+                            const normalizedRegion = region.toLowerCase();
+                            const matchedWojewodztwo = WOJEWODZTWA.find((w) => w.toLowerCase() === normalizedRegion);
+                            if (matchedWojewodztwo) {
+                              newFilters.wojewodztwo = matchedWojewodztwo;
+                            }
+                          }
+                          setFilters(newFilters);
+                        }}
+                        placeholder="Wpisz miasto..."
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Kategoria</Label>
+                      <Select
+                        value={filters.category || "__all__"}
+                        onValueChange={(v) => updateFilter("category", v === "__all__" ? "" : v)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Wszystkie" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__all__">Wszystkie</SelectItem>
+                          {categories.map((c) => (
+                            <SelectItem key={c.id} value={c.name}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Min. ocena</Label>
+                      <Select
+                        value={filters.minRating || "__all__"}
+                        onValueChange={(v) => updateFilter("minRating", v === "__all__" ? "" : v)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Dowolna" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__all__">Dowolna</SelectItem>
+                          <SelectItem value="3">3+ ⭐</SelectItem>
+                          <SelectItem value="4">4+ ⭐</SelectItem>
+                          <SelectItem value="4.5">4.5+ ⭐</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters} className="mt-3 gap-2 text-xs">
+                      <X className="h-3 w-3" />
+                      Wyczyść filtry
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             )}
           </div>
-          
-          {/* Right: Map with Category Badges */}
-          <div className="flex-1 h-[400px] lg:h-full flex flex-col">
-            {/* Category Filter Badges */}
-            <div className="bg-background/95 backdrop-blur-sm border-b border-border p-3 z-10">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-medium text-muted-foreground">Filtruj po specjalizacji</h3>
-                {selectedCategories.length > 0 && (
-                  <button 
-                    onClick={() => setSelectedCategories([])}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Wyczyść ({selectedCategories.length})
-                  </button>
-                )}
+        </div>
+
+        {/* List Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="container py-6 px-4 sm:px-6">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Ładowanie wykonawców...</p>
               </div>
-              <CategoryBadges 
-                selectedCategories={selectedCategories}
-                onCategoryToggle={handleCategoryToggle}
-              />
-            </div>
-            
-            {/* Map */}
-            <div className="flex-1">
-              <WorkersMap
-                workers={filteredWorkersForMap.map(w => ({
-                  ...w,
-                  is_available: true,
-                }))}
-                highlightedWorkerId={highlightedWorkerId}
-                onMarkerHover={handleWorkerHover}
-              />
-            </div>
+            ) : workers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <Users className="h-16 w-16 text-muted-foreground" />
+                <p className="text-muted-foreground">Brak wykonawców spełniających kryteria</p>
+              </div>
+            ) : (
+              <div ref={listRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {workers.map((worker) => (
+                  <div key={worker.id} className="worker-item">
+                    <WorkerListItem worker={worker} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {hasMore && !loading && (
+              <div className="py-8 text-center">
+                <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Ładowanie...
+                    </>
+                  ) : (
+                    "Załaduj więcej"
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-      ) : (
-        /* List View Only */
-        <div className="container py-6 px-4 sm:px-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">Ładowanie wykonawców...</p>
-            </div>
-          ) : workers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <Users className="h-16 w-16 text-muted-foreground" />
-              <p className="text-muted-foreground">Brak wykonawców spełniających kryteria</p>
-            </div>
-          ) : (
-            <div ref={listRef} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {workers.map((worker) => (
-                <div key={worker.id} className="worker-item">
-                  <WorkerListItem worker={worker} />
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {hasMore && !loading && (
-            <div className="py-8 text-center">
-              <Button 
-                variant="outline" 
-                onClick={loadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Ładowanie...
-                  </>
-                ) : (
-                  'Załaduj więcej'
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+      </div>
     </Layout>
   );
 }
