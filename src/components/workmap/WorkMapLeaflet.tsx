@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
 import { MapFilters } from "@/pages/WorkMap";
 import { JobMarker } from "@/hooks/useVehicleData";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 declare module "leaflet" {
   function heatLayer(
@@ -26,30 +27,74 @@ interface WorkMapLeafletProps {
   heatmapPoints: [number, number, number][];
 }
 
-interface JobCluster {
-  key: string; // miasto or miasto-district for Wrocław
-  miasto: string;
-  district?: string;
+interface Cluster {
+  id: string;
   lat: number;
   lng: number;
   jobs: JobMarker[];
   hasUrgent: boolean;
+  bounds: L.LatLngBounds;
 }
 
-// Województwo dolnośląskie - centered on Wrocław area
+// Constants
 const DOLNOSLASKIE_CENTER: L.LatLngTuple = [51.1, 17.0];
 const DEFAULT_ZOOM = 9;
-const MIN_ZOOM = 9; // Prevents zooming out to see voivodeship names
-const PRECISE_SPLIT_ZOOM = 15;
+const MIN_ZOOM = 9;
+const MAX_ZOOM = 18;
 
-// Custom SVG markers
+// Cluster radius in pixels - jobs within this distance get clustered
+const CLUSTER_RADIUS_PX = 60;
+// Zoom level at which we stop clustering
+const NO_CLUSTER_ZOOM = 14;
 
-function createJobIcon(urgent: boolean = false) {
+// Memoization cache for clustering
+interface ClusterCache {
+  zoom: number;
+  boundsKey: string;
+  jobsKey: string;
+  clusters: Cluster[];
+  singles: JobMarker[];
+}
+
+// Calculate distance between two points in pixels at given zoom
+function getPixelDistance(map: L.Map, lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const p1 = map.latLngToContainerPoint([lat1, lng1]);
+  const p2 = map.latLngToContainerPoint([lat2, lng2]);
+  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+// Calculate weighted centroid (gives more weight to urgent jobs)
+function getWeightedCentroid(jobs: JobMarker[]): { lat: number; lng: number } {
+  let totalWeight = 0;
+  let weightedLat = 0;
+  let weightedLng = 0;
+  
+  jobs.forEach(job => {
+    const weight = job.urgent ? 2 : 1;
+    weightedLat += job.lat * weight;
+    weightedLng += job.lng * weight;
+    totalWeight += weight;
+  });
+  
+  return {
+    lat: weightedLat / totalWeight,
+    lng: weightedLng / totalWeight,
+  };
+}
+
+// Create bounds key for cache invalidation
+function getBoundsKey(bounds: L.LatLngBounds): string {
+  const sw = bounds.getSouthWest();
+  const ne = bounds.getNorthEast();
+  return `${sw.lat.toFixed(4)},${sw.lng.toFixed(4)},${ne.lat.toFixed(4)},${ne.lng.toFixed(4)}`;
+}
+
+function createJobIcon(urgent: boolean = false, animate: boolean = false) {
   const color = urgent ? "#ef4444" : "#8b5cf6";
   const size = urgent ? 36 : 32;
   
   return L.divIcon({
-    className: "job-marker",
+    className: `job-marker ${animate ? 'animate-in' : ''}`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
     popupAnchor: [0, -size],
@@ -67,9 +112,8 @@ function createJobIcon(urgent: boolean = false) {
 }
 
 function createClusterIcon(count: number, hasUrgent: boolean) {
-  const size = Math.min(60, 40 + count * 2);
-  // Cluster color: warm amber for clusters, red pulse only if urgent
-  const clusterColor = "#f59e0b"; // Amber/warm yellow for clusters
+  const size = Math.min(56, 36 + Math.log2(count + 1) * 6);
+  const clusterColor = hasUrgent ? "#dc2626" : "#f59e0b";
   
   return L.divIcon({
     className: "cluster-marker",
@@ -95,156 +139,135 @@ export function WorkMapLeaflet({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const heatLayerRef = useRef<L.Layer | null>(null);
-  const jobMarkersRef = useRef<L.Marker[]>([]);
-  const clusterMarkersRef = useRef<L.Marker[]>([]);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const clusterCacheRef = useRef<ClusterCache | null>(null);
+  const updateTimeoutRef = useRef<number | null>(null);
+  
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
+  const [viewportBounds, setViewportBounds] = useState<L.LatLngBounds | null>(null);
 
-  // Separate jobs into two groups:
-  // 1. preciseJobs - have street-level geocoded coords, show as individual markers when zoomed
-  // 2. clusteredJobs - no precise location, stay grouped by city forever
-  const { preciseJobs, clustersByCity } = useMemo(() => {
-    const shouldShowPrecise = currentZoom >= PRECISE_SPLIT_ZOOM;
+  // Filter jobs to viewport
+  const visibleJobs = useMemo(() => {
+    if (!viewportBounds || jobs.length === 0) return jobs;
     
-    const precise: JobMarker[] = [];
-    const clusters: Record<string, JobCluster> = {};
-    
-    jobs.forEach(job => {
-      // Jobs with precise location (street geocoded) split off when zoomed
-      if (job.hasPreciseLocation && shouldShowPrecise) {
-        precise.push(job);
-      } else {
-        // Jobs without precise location stay clustered.
-        // For Wrocław we cluster by district to avoid "all Wrocław jobs" collapsing into one marker.
-        const miastoLower = job.miasto.toLowerCase();
-        const districtLower = (job.district ?? "").toLowerCase();
-        const key = miastoLower === "wrocław" ? `${miastoLower}::${districtLower}` : miastoLower;
-
-        if (!clusters[key]) {
-          clusters[key] = {
-            key,
-            miasto: job.miasto,
-            district: job.district,
-            lat: job.lat,
-            lng: job.lng,
-            jobs: [],
-            hasUrgent: false,
-          };
-        }
-
-        clusters[key].jobs.push(job);
-        if (job.urgent) {
-          clusters[key].hasUrgent = true;
-        }
-
-        // Calculate average position for cluster
-        const totalLat = clusters[key].jobs.reduce((sum, j) => sum + j.lat, 0);
-        const totalLng = clusters[key].jobs.reduce((sum, j) => sum + j.lng, 0);
-        clusters[key].lat = totalLat / clusters[key].jobs.length;
-        clusters[key].lng = totalLng / clusters[key].jobs.length;
-      }
+    return jobs.filter(job => {
+      return viewportBounds.contains([job.lat, job.lng]);
     });
-    
-    return { 
-      preciseJobs: precise, 
-      clustersByCity: Object.values(clusters) 
-    };
-  }, [jobs, currentZoom]);
+  }, [jobs, viewportBounds]);
 
-  // Initialize map constrained to dolnośląskie only
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
-
-    // Bounds for Dolnośląskie voivodeship with padding
-    const dolnoslaskieBounds = L.latLngBounds(
-      [50.10, 14.80], // SW corner - extended west and south
-      [51.85, 17.95]  // NE corner - extended east and north
-    );
-
-    const map = L.map(mapContainerRef.current, {
-      center: DOLNOSLASKIE_CENTER,
-      zoom: DEFAULT_ZOOM,
-      zoomControl: true,
-      minZoom: MIN_ZOOM,
-      maxZoom: 18,
-      maxBounds: dolnoslaskieBounds,
-      maxBoundsViscosity: 1.0, // Hard boundary - cannot pan outside
-      attributionControl: false,
-    });
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      maxZoom: 18,
-    }).addTo(map);
-
-    // Add minimal attribution (required by OSM and CARTO licenses)
-    L.control.attribution({
-      position: 'bottomright',
-      prefix: false,
-    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
-
-    // Track zoom level changes
-    map.on('zoomend', () => {
-      setCurrentZoom(map.getZoom());
-    });
-
-    mapRef.current = map;
-    setIsLoaded(true);
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  // Update heatmap layer
-  useEffect(() => {
-    if (!mapRef.current || !isLoaded) return;
-
-    if (heatLayerRef.current) {
-      mapRef.current.removeLayer(heatLayerRef.current);
-      heatLayerRef.current = null;
+  // Compute clusters with caching
+  const computeClusters = useCallback((
+    map: L.Map, 
+    jobsToCluster: JobMarker[], 
+    zoom: number
+  ): { clusters: Cluster[]; singles: JobMarker[] } => {
+    // At high zoom, don't cluster
+    if (zoom >= NO_CLUSTER_ZOOM) {
+      return { clusters: [], singles: jobsToCluster };
     }
 
-    if (filters.showHeatmap && heatmapPoints.length > 0) {
-      const radius = 15 + (filters.intensity / 100) * 25;
-      
-      const heatLayer = L.heatLayer(heatmapPoints, {
-        radius,
-        blur: 20,
-        maxZoom: 17,
-        max: 1.0,
-        minOpacity: 0.3,
-        gradient: {
-          0.2: "#3b82f6",
-          0.4: "#22d3ee",
-          0.6: "#fbbf24",
-          0.8: "#f97316",
-          1.0: "#ef4444",
-        },
+    const clusters: Cluster[] = [];
+    const singles: JobMarker[] = [];
+    const processed = new Set<string>();
+
+    // Sort jobs by urgency first (urgent jobs become cluster centers)
+    const sortedJobs = [...jobsToCluster].sort((a, b) => {
+      if (a.urgent && !b.urgent) return -1;
+      if (!a.urgent && b.urgent) return 1;
+      return 0;
+    });
+
+    sortedJobs.forEach(job => {
+      if (processed.has(job.id)) return;
+
+      // Find all jobs within cluster radius
+      const nearbyJobs: JobMarker[] = [job];
+      processed.add(job.id);
+
+      sortedJobs.forEach(otherJob => {
+        if (processed.has(otherJob.id)) return;
+        
+        const distance = getPixelDistance(map, job.lat, job.lng, otherJob.lat, otherJob.lng);
+        if (distance <= CLUSTER_RADIUS_PX) {
+          nearbyJobs.push(otherJob);
+          processed.add(otherJob.id);
+        }
       });
 
-      heatLayer.addTo(mapRef.current);
-      heatLayerRef.current = heatLayer;
+      if (nearbyJobs.length === 1) {
+        singles.push(job);
+      } else {
+        // Create cluster
+        const centroid = getWeightedCentroid(nearbyJobs);
+        const hasUrgent = nearbyJobs.some(j => j.urgent);
+        
+        // Calculate bounds for this cluster
+        const lats = nearbyJobs.map(j => j.lat);
+        const lngs = nearbyJobs.map(j => j.lng);
+        const bounds = L.latLngBounds(
+          [Math.min(...lats), Math.min(...lngs)],
+          [Math.max(...lats), Math.max(...lngs)]
+        );
+
+        clusters.push({
+          id: `cluster-${job.id}`,
+          lat: centroid.lat,
+          lng: centroid.lng,
+          jobs: nearbyJobs,
+          hasUrgent,
+          bounds,
+        });
+      }
+    });
+
+    return { clusters, singles };
+  }, []);
+
+  // Update markers on map
+  const updateMarkers = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !isLoaded) return;
+
+    const zoom = map.getZoom();
+    const bounds = map.getBounds();
+    const boundsKey = getBoundsKey(bounds);
+    const jobsKey = jobs.map(j => j.id).join(',');
+
+    // Check cache
+    const cache = clusterCacheRef.current;
+    if (cache && cache.zoom === zoom && cache.boundsKey === boundsKey && cache.jobsKey === jobsKey) {
+      return; // No changes needed
     }
-  }, [filters.showHeatmap, filters.intensity, heatmapPoints, isLoaded]);
 
+    // Filter to visible jobs
+    const visible = jobs.filter(job => bounds.contains([job.lat, job.lng]));
+    
+    // Compute new clusters
+    const { clusters, singles } = computeClusters(map, visible, zoom);
 
-  // Update job markers - precise jobs as individual markers, rest as clusters
-  useEffect(() => {
-    if (!mapRef.current || !isLoaded) return;
+    // Update cache
+    clusterCacheRef.current = {
+      zoom,
+      boundsKey,
+      jobsKey,
+      clusters,
+      singles,
+    };
 
     // Clear existing markers
-    jobMarkersRef.current.forEach(marker => marker.remove());
-    jobMarkersRef.current = [];
-    clusterMarkersRef.current.forEach(marker => marker.remove());
-    clusterMarkersRef.current = [];
+    if (markersLayerRef.current) {
+      markersLayerRef.current.clearLayers();
+    } else {
+      markersLayerRef.current = L.layerGroup().addTo(map);
+    }
 
-    // 1. Add individual markers for precise jobs (when zoomed in)
-    preciseJobs.forEach(job => {
-      const icon = createJobIcon(job.urgent);
+    // Add single markers
+    singles.forEach(job => {
+      const icon = createJobIcon(job.urgent, true);
       const marker = L.marker([job.lat, job.lng], { 
         icon,
-        zIndexOffset: 350, // Higher than clusters
+        zIndexOffset: job.urgent ? 400 : 300,
       });
       
       marker.bindPopup(`
@@ -275,101 +298,183 @@ export function WorkMapLeaflet({
         </div>
       `, { minWidth: 220, maxWidth: 280 });
       
-      marker.addTo(mapRef.current!);
-      jobMarkersRef.current.push(marker);
+      markersLayerRef.current!.addLayer(marker);
     });
 
-    // 2. Add cluster markers for jobs without precise location
-    clustersByCity.forEach(cluster => {
-      if (cluster.jobs.length === 0) return;
+    // Add cluster markers
+    clusters.forEach(cluster => {
+      const icon = createClusterIcon(cluster.jobs.length, cluster.hasUrgent);
+      const marker = L.marker([cluster.lat, cluster.lng], { 
+        icon,
+        zIndexOffset: 500,
+      });
+
+      // Click handler - fitBounds to show all jobs in cluster
+      marker.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        
+        // Expand bounds slightly for padding
+        const expandedBounds = cluster.bounds.pad(0.2);
+        
+        map.flyToBounds(expandedBounds, {
+          duration: 0.5,
+          easeLinearity: 0.25,
+          maxZoom: NO_CLUSTER_ZOOM,
+          padding: [40, 40],
+        });
+      });
+
+      // Tooltip on hover
+      const jobPreview = cluster.jobs.slice(0, 3).map(j => 
+        `<div class="cluster-preview-item">${j.urgent ? '🔴' : '🟣'} ${j.title.substring(0, 30)}${j.title.length > 30 ? '...' : ''}</div>`
+      ).join('');
       
-      if (cluster.jobs.length === 1) {
-        // Single job in cluster - show regular marker
-        const job = cluster.jobs[0];
-        const icon = createJobIcon(job.urgent);
-        const marker = L.marker([job.lat, job.lng], { 
-          icon,
-          zIndexOffset: 300,
-        });
-        
-        marker.bindPopup(`
-          <div class="job-popup">
-            <div class="job-popup-header">
-              <span class="job-title">${job.title}</span>
-              ${job.urgent ? '<span class="job-urgent-badge">PILNE</span>' : ''}
-            </div>
-            <div class="job-popup-content">
-              <div class="job-popup-row">
-                <span class="label">Lokalizacja:</span>
-                <span class="value">${job.miasto}${job.district ? `, ${job.district}` : ''}</span>
-              </div>
-              ${job.category ? `
-                <div class="job-popup-row">
-                  <span class="label">Kategoria:</span>
-                  <span class="value">${job.category}</span>
-                </div>
-              ` : ''}
-              ${job.budget ? `
-                <div class="job-popup-row">
-                  <span class="label">Budżet:</span>
-                  <span class="value">${job.budget} zł</span>
-                </div>
-              ` : ''}
-            </div>
-            <a href="/jobs/${job.id}" class="job-popup-link">Zobacz szczegóły →</a>
-          </div>
-        `, { minWidth: 220, maxWidth: 280 });
-        
-        marker.addTo(mapRef.current!);
-        clusterMarkersRef.current.push(marker);
-      } else {
-        // Multiple jobs without precise location - show cluster marker
-        const icon = createClusterIcon(cluster.jobs.length, cluster.hasUrgent);
-        const marker = L.marker([cluster.lat, cluster.lng], { 
-          icon,
-          zIndexOffset: 400,
-        });
-        
-        // Show ALL jobs in scrollable list
-        const jobListHtml = cluster.jobs
-          .map(job => `
-            <a href="/jobs/${job.id}" class="cluster-job-item">
-              <div class="cluster-job-title">
-                <span class="job-type-dot ${job.urgent ? 'urgent' : 'regular'}"></span>
-                ${job.title}
-              </div>
-              <div class="cluster-job-meta">
-                ${job.district ? `<span class="cluster-job-district">${job.district}</span>` : ''}
-                ${job.category ? `<span>${job.category}</span>` : ''}
-                ${job.budget ? `<span>${job.budget} zł</span>` : ''}
-              </div>
-            </a>
-          `).join('');
-        
-        // Hint: these jobs don't have precise locations
-        const hintText = "Oferty bez podanego adresu (tylko miasto/dzielnica)";
-        
-        marker.bindPopup(`
-          <div class="cluster-popup">
-            <div class="cluster-popup-header">
-              <strong>${cluster.miasto}${cluster.district ? ` • ${cluster.district}` : ""}</strong>
-              <span class="cluster-job-count">${cluster.jobs.length} ${cluster.jobs.length === 1 ? 'oferta' : cluster.jobs.length < 5 ? 'oferty' : 'ofert'}</span>
-            </div>
-            <div class="cluster-job-list">
-              ${jobListHtml}
-            </div>
-            <div class="cluster-popup-hint">
-              ${hintText}
-            </div>
-          </div>
-        `, { minWidth: 280, maxWidth: 340, maxHeight: 400 });
-        
-        marker.addTo(mapRef.current!);
-        clusterMarkersRef.current.push(marker);
-      }
-    });
-  }, [preciseJobs, clustersByCity, currentZoom, isLoaded]);
+      marker.bindTooltip(`
+        <div class="cluster-tooltip">
+          <div class="cluster-tooltip-header">${cluster.jobs.length} ofert</div>
+          ${jobPreview}
+          ${cluster.jobs.length > 3 ? `<div class="cluster-tooltip-more">+${cluster.jobs.length - 3} więcej</div>` : ''}
+          <div class="cluster-tooltip-hint">Kliknij aby przybliżyć</div>
+        </div>
+      `, { 
+        direction: 'top',
+        offset: [0, -20],
+        className: 'cluster-tooltip-wrapper'
+      });
 
+      markersLayerRef.current!.addLayer(marker);
+    });
+
+    // Fallback: if no visible markers after update, pan to nearest
+    if (visible.length === 0 && jobs.length > 0) {
+      const mapCenter = map.getCenter();
+      let nearestJob = jobs[0];
+      let minDistance = Infinity;
+
+      jobs.forEach(job => {
+        const dist = mapCenter.distanceTo([job.lat, job.lng]);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearestJob = job;
+        }
+      });
+
+      toast.info("Przesunięto mapę do najbliższych ofert", { duration: 2000 });
+      map.flyTo([nearestJob.lat, nearestJob.lng], DEFAULT_ZOOM + 1, {
+        duration: 0.5,
+      });
+    }
+  }, [jobs, isLoaded, computeClusters]);
+
+  // Debounced update
+  const scheduleUpdate = useCallback(() => {
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    updateTimeoutRef.current = window.setTimeout(() => {
+      updateMarkers();
+    }, 100);
+  }, [updateMarkers]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const dolnoslaskieBounds = L.latLngBounds(
+      [50.10, 14.80],
+      [51.85, 17.95]
+    );
+
+    const map = L.map(mapContainerRef.current, {
+      center: DOLNOSLASKIE_CENTER,
+      zoom: DEFAULT_ZOOM,
+      zoomControl: true,
+      minZoom: MIN_ZOOM,
+      maxZoom: MAX_ZOOM,
+      maxBounds: dolnoslaskieBounds,
+      maxBoundsViscosity: 1.0,
+      attributionControl: false,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
+    });
+
+    // Use a faster tile layer
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      maxZoom: MAX_ZOOM,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+    }).addTo(map);
+
+    L.control.attribution({
+      position: 'bottomright',
+      prefix: false,
+    }).addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> | <a href="https://carto.com/attributions">CARTO</a>').addTo(map);
+
+    // Event handlers with debouncing
+    const handleViewChange = () => {
+      setCurrentZoom(map.getZoom());
+      setViewportBounds(map.getBounds());
+      scheduleUpdate();
+    };
+
+    map.on('zoomend', handleViewChange);
+    map.on('moveend', handleViewChange);
+    map.on('resize', handleViewChange);
+
+    mapRef.current = map;
+    setViewportBounds(map.getBounds());
+    setIsLoaded(true);
+
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [scheduleUpdate]);
+
+  // Update markers when jobs or filters change
+  useEffect(() => {
+    if (isLoaded) {
+      // Clear cache to force recalculation
+      clusterCacheRef.current = null;
+      updateMarkers();
+    }
+  }, [jobs, isLoaded, updateMarkers]);
+
+  // Update heatmap
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return;
+
+    if (heatLayerRef.current) {
+      mapRef.current.removeLayer(heatLayerRef.current);
+      heatLayerRef.current = null;
+    }
+
+    if (filters.showHeatmap && heatmapPoints.length > 0) {
+      const radius = 15 + (filters.intensity / 100) * 25;
+      
+      const heatLayer = L.heatLayer(heatmapPoints, {
+        radius,
+        blur: 20,
+        maxZoom: 17,
+        max: 1.0,
+        minOpacity: 0.3,
+        gradient: {
+          0.2: "#3b82f6",
+          0.4: "#22d3ee",
+          0.6: "#fbbf24",
+          0.8: "#f97316",
+          1.0: "#ef4444",
+        },
+      });
+
+      heatLayer.addTo(mapRef.current);
+      heatLayerRef.current = heatLayer;
+    }
+  }, [filters.showHeatmap, filters.intensity, heatmapPoints, isLoaded]);
 
   return (
     <div className="relative z-0 h-full w-full">
@@ -406,30 +511,45 @@ export function WorkMapLeaflet({
         </div>
       </div>
 
-      {/* Job count badge - positioned to avoid zoom controls */}
-      {jobs.length > 0 && (
-        <div className="absolute top-4 right-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg z-20">
-          {jobs.length} {jobs.length === 1 ? 'oferta' : jobs.length < 5 ? 'oferty' : 'ofert'} na mapie
+      {/* Visible jobs count */}
+      {visibleJobs.length > 0 && (
+        <div className="absolute top-4 right-4 bg-violet-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-lg z-20 animate-fade-in">
+          {visibleJobs.length} {visibleJobs.length === 1 ? 'oferta' : visibleJobs.length < 5 ? 'oferty' : 'ofert'} w widoku
         </div>
       )}
 
-      {/* Zoom hint - show when there are precise jobs to reveal */}
-      {currentZoom < PRECISE_SPLIT_ZOOM && jobs.some(j => j.hasPreciseLocation) && (
+      {/* Zoom hint */}
+      {currentZoom < NO_CLUSTER_ZOOM - 2 && visibleJobs.length > 5 && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm text-foreground px-4 py-2 rounded-full text-xs font-medium shadow-lg border border-border/50 z-20">
-          Przybliż mapę, aby zobaczyć oferty z dokładnym adresem
+          Przybliż, aby zobaczyć pojedyncze oferty
         </div>
       )}
 
-      {/* Custom styles for markers */}
       <style>{`
-        .hotspot-marker-wrapper {
+        .job-marker.animate-in .job-pin {
+          animation: marker-pop 0.3s ease-out;
+        }
+        
+        @keyframes marker-pop {
+          0% { transform: rotate(-45deg) scale(0); opacity: 0; }
+          60% { transform: rotate(-45deg) scale(1.1); }
+          100% { transform: rotate(-45deg) scale(1); opacity: 1; }
+        }
+        
+        .cluster-marker-wrapper {
           position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
+          cursor: pointer;
+          transition: transform 0.2s ease;
         }
         
-        .hotspot-pulse {
+        .cluster-marker:hover .cluster-marker-wrapper {
+          transform: scale(1.1);
+        }
+        
+        .cluster-pulse {
           position: absolute;
           width: 100%;
           height: 100%;
@@ -439,63 +559,72 @@ export function WorkMapLeaflet({
         }
         
         @keyframes pulse {
-          0% {
-            transform: scale(0.5);
-            opacity: 0.5;
-          }
-          100% {
-            transform: scale(1.5);
-            opacity: 0;
-          }
+          0% { transform: scale(0.8); opacity: 0.6; }
+          100% { transform: scale(1.6); opacity: 0; }
         }
         
-        .hotspot-core {
-          position: relative;
+        .cluster-core {
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          transition: transform 0.2s ease;
-          z-index: 2;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         
-        .hotspot-marker:hover .hotspot-core {
-          transform: scale(1.1);
+        .cluster-marker:hover .cluster-core {
+          box-shadow: 0 6px 16px rgba(0,0,0,0.35);
         }
         
-        .hotspot-level {
-          position: absolute;
-          top: -4px;
-          right: -4px;
-          width: 20px;
-          height: 20px;
-          background: white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 11px;
+        .cluster-count {
+          color: white;
           font-weight: bold;
+          font-size: 13px;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .cluster-tooltip-wrapper {
+          padding: 0;
+        }
+        
+        .cluster-tooltip-wrapper .leaflet-tooltip-content {
+          margin: 0;
+        }
+        
+        .cluster-tooltip {
+          padding: 8px 12px;
+          min-width: 160px;
+        }
+        
+        .cluster-tooltip-header {
+          font-weight: 600;
+          font-size: 13px;
+          margin-bottom: 6px;
           color: #1f2937;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          z-index: 3;
         }
         
-        .vehicle-marker-wrapper {
-          width: 24px;
-          height: 24px;
-          background: white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          transition: transform 0.2s ease;
+        .cluster-preview-item {
+          font-size: 11px;
+          color: #4b5563;
+          padding: 2px 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         
-        .vehicle-marker:hover .vehicle-marker-wrapper {
-          transform: scale(1.2);
+        .cluster-tooltip-more {
+          font-size: 10px;
+          color: #9ca3af;
+          margin-top: 4px;
+        }
+        
+        .cluster-tooltip-hint {
+          font-size: 10px;
+          color: #6b7280;
+          margin-top: 6px;
+          padding-top: 6px;
+          border-top: 1px solid #e5e7eb;
+          font-style: italic;
         }
         
         .job-marker-wrapper {
@@ -537,151 +666,6 @@ export function WorkMapLeaflet({
           transform: rotate(-45deg) scale(1.1);
         }
         
-        /* Cluster marker styles */
-        .cluster-marker-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .cluster-pulse {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          opacity: 0;
-          animation: pulse 2s ease-out infinite;
-        }
-        
-        .cluster-core {
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          transition: transform 0.2s ease;
-          cursor: pointer;
-        }
-        
-        .cluster-marker:hover .cluster-core {
-          transform: scale(1.1);
-        }
-        
-        .cluster-count {
-          color: white;
-          font-weight: bold;
-          font-size: 14px;
-        }
-        
-        /* Cluster popup styles */
-        .cluster-popup {
-          padding: 0;
-          min-width: 260px;
-        }
-        
-        .cluster-popup-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 12px 16px;
-          padding-right: 30px;
-          border-bottom: 1px solid #e5e7eb;
-          background: #f9fafb;
-        }
-        
-        .cluster-popup-header strong {
-          font-size: 14px;
-          color: #1f2937;
-        }
-        
-        .cluster-job-count {
-          font-size: 12px;
-          color: #6b7280;
-          background: #e5e7eb;
-          padding: 2px 8px;
-          border-radius: 12px;
-        }
-        
-        .cluster-job-list {
-          max-height: 220px;
-          overflow-y: auto;
-        }
-        
-        .cluster-job-item {
-          display: block;
-          padding: 10px 16px;
-          border-bottom: 1px solid #f3f4f6;
-          text-decoration: none;
-          transition: background 0.15s;
-        }
-        
-        .cluster-job-item:hover {
-          background: #f9fafb;
-        }
-        
-        .cluster-job-item:last-child {
-          border-bottom: none;
-        }
-        
-        .cluster-job-title {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 13px;
-          font-weight: 500;
-          color: #1f2937;
-          line-height: 1.3;
-        }
-        
-        .job-type-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        
-        .job-type-dot.regular {
-          background: #8b5cf6;
-        }
-        
-        .job-type-dot.urgent {
-          background: #ef4444;
-        }
-        
-        .urgent-dot {
-          width: 8px;
-          height: 8px;
-          background: #ef4444;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        
-        .cluster-job-meta {
-          display: flex;
-          gap: 8px;
-          margin-top: 4px;
-          font-size: 11px;
-          color: #6b7280;
-        }
-        
-        .cluster-more-jobs {
-          padding: 8px 16px;
-          font-size: 12px;
-          color: #6b7280;
-          text-align: center;
-          background: #f9fafb;
-        }
-        
-        .cluster-popup-hint {
-          padding: 8px 16px;
-          font-size: 11px;
-          color: #9ca3af;
-          text-align: center;
-          border-top: 1px solid #e5e7eb;
-          background: #f9fafb;
-        }
-        
         .leaflet-popup-content-wrapper {
           border-radius: 12px;
           padding: 0;
@@ -692,12 +676,12 @@ export function WorkMapLeaflet({
           margin: 0;
         }
         
-        .hotspot-popup, .job-popup {
+        .job-popup {
           padding: 12px 16px;
           min-width: 200px;
         }
         
-        .hotspot-popup-header, .job-popup-header {
+        .job-popup-header {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
@@ -708,7 +692,6 @@ export function WorkMapLeaflet({
           padding-right: 20px;
         }
         
-        .hotspot-popup-header strong, .job-popup-header strong,
         .job-popup-header .job-title {
           font-size: 14px;
           font-weight: 600;
@@ -729,45 +712,26 @@ export function WorkMapLeaflet({
           white-space: nowrap;
         }
         
-        .leaflet-popup-close-button {
-          top: 8px !important;
-          right: 8px !important;
-          width: 20px !important;
-          height: 20px !important;
-          font-size: 18px !important;
-          line-height: 18px !important;
-          color: #6b7280 !important;
-        }
-        
-        .leaflet-popup-close-button:hover {
-          color: #1f2937 !important;
-        }
-        
-        .hotspot-popup-content, .job-popup-content {
+        .job-popup-content {
           display: flex;
           flex-direction: column;
           gap: 6px;
         }
         
-        .hotspot-popup-row, .job-popup-row {
+        .job-popup-row {
           display: flex;
           justify-content: space-between;
           font-size: 12px;
         }
         
-        .hotspot-popup-row .label, .job-popup-row .label {
+        .job-popup-row .label {
           color: #6b7280;
         }
         
-        .hotspot-popup-row .value, .job-popup-row .value {
+        .job-popup-row .value {
           font-weight: 500;
           color: #1f2937;
         }
-        
-        .hotspot-popup-row .value.bardzo-wysoka { color: #ef4444; }
-        .hotspot-popup-row .value.wysoka { color: #f97316; }
-        .hotspot-popup-row .value.średnia { color: #eab308; }
-        .hotspot-popup-row .value.niska { color: #3b82f6; }
         
         .job-popup-link {
           display: block;
@@ -785,25 +749,24 @@ export function WorkMapLeaflet({
           color: #7c3aed;
         }
         
-        .vehicle-popup {
-          padding: 12px 16px;
-          padding-right: 28px;
-          font-size: 13px;
-          min-width: 120px;
+        .leaflet-popup-close-button {
+          top: 8px !important;
+          right: 8px !important;
+          width: 20px !important;
+          height: 20px !important;
+          font-size: 18px !important;
+          line-height: 18px !important;
+          color: #6b7280 !important;
         }
         
-        .vehicle-popup strong {
-          display: block;
-          margin-bottom: 4px;
-          color: #1f2937;
+        .leaflet-popup-close-button:hover {
+          color: #1f2937 !important;
         }
         
-        /* Fix z-index for Leaflet controls */
         .leaflet-pane { z-index: 1 !important; }
         .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
         .leaflet-control { z-index: 10 !important; }
         
-        /* Hide Leaflet branding and Ukraine flag */
         .leaflet-control-attribution a[href*="leaflet"],
         .leaflet-control-attribution img,
         .leaflet-control-attribution svg {
