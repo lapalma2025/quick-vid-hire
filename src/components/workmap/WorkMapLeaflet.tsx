@@ -43,6 +43,9 @@ const DEFAULT_ZOOM = 9;
 const MIN_ZOOM = 9;
 const MAX_ZOOM = 18;
 
+// Put all job/cluster markers in a dedicated pane so they always render above tiles
+const JOB_MARKERS_PANE = "job-markers";
+
 // Cluster radius in pixels - jobs within this distance get clustered
 const CLUSTER_RADIUS_PX = 60;
 // Zoom level at which we stop clustering
