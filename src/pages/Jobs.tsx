@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { JobCard } from "@/components/jobs/JobCard";
 import {
@@ -341,16 +341,19 @@ export default function Jobs() {
 
 	useEffect(() => {
 		if (gridRef.current && !loading && jobs.length > 0) {
+			const cards = gridRef.current.querySelectorAll(".job-card:not(.animated)");
+			if (cards.length === 0) return;
+			
+			// Use transform only (no scale) to avoid layout shifts
 			gsap.fromTo(
-				gridRef.current.querySelectorAll(".job-card:not(.animated)"),
-				{ opacity: 0, y: 30, scale: 0.95 },
+				cards,
+				{ opacity: 0, y: 20 },
 				{
 					opacity: 1,
 					y: 0,
-					scale: 1,
-					duration: 0.5,
-					stagger: 0.08,
-					ease: "power3.out",
+					duration: 0.4,
+					stagger: 0.05,
+					ease: "power2.out",
 					onComplete: function () {
 						this.targets().forEach((el: Element) =>
 							el.classList.add("animated")
@@ -360,6 +363,11 @@ export default function Jobs() {
 			);
 		}
 	}, [loading, jobs]);
+
+	// Memoize the filter change handler to prevent unnecessary re-renders
+	const handleFiltersChange = useCallback((newFilters: Filters) => {
+		setFilters(newFilters);
+	}, []);
 
 	return (
 		<Layout>
@@ -392,13 +400,13 @@ export default function Jobs() {
 				<div className="grid lg:grid-cols-[320px_1fr] xl:grid-cols-[380px_1fr] gap-6 sm:gap-10">
 					<aside className="hidden lg:block">
 						<div className="sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/40 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary/60 pr-2">
-							<JobFilters onFiltersChange={setFilters} />
+							<JobFilters onFiltersChange={handleFiltersChange} />
 						</div>
 					</aside>
 
 					{/* Mobile filters */}
 					<div className="lg:hidden">
-						<JobFilters onFiltersChange={setFilters} />
+						<JobFilters onFiltersChange={handleFiltersChange} />
 					</div>
 
 					<div>

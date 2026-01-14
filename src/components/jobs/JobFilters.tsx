@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +60,7 @@ export interface JobFilters {
 	sortBy: "newest" | "budget_high" | "start_soon";
 }
 
-export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
+export const JobFilters = memo(function JobFilters({ onFiltersChange }: JobFiltersProps) {
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [filters, setFilters] = useState<JobFilters>({
 		search: "",
@@ -349,4 +349,4 @@ export const JobFilters = ({ onFiltersChange }: JobFiltersProps) => {
 			</div>
 		</div>
 	);
-};
+});
