@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   Loader2,
   Images,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -184,8 +185,8 @@ export default function WorkerProfile() {
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-2xl font-bold">{worker.name || 'Wykonawca'}</h1>
                     {worker.completed_jobs_count === 0 && (
-                      <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0">
-                        <Sparkles className="h-3 w-3 mr-1" />
+                      <Badge className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white border-0">
+                        <Zap className="h-3 w-3 mr-1" />
                         Nowy wykonawca
                       </Badge>
                     )}

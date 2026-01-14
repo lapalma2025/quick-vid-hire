@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
-import { MapPin, Banknote, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { MapPin, Banknote, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -58,8 +58,8 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
               </AvatarFallback>
             </Avatar>
             {isNewWorker && (
-              <div className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full p-0.5">
-                <Sparkles className="h-3 w-3 text-white" />
+              <div className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full p-0.5">
+                <Zap className="h-3 w-3 text-white" />
               </div>
             )}
           </div>
@@ -73,7 +73,7 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                   {worker.name || "Wykonawca"}
                 </h3>
                 {isNewWorker && (
-                  <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] px-1.5 py-0 h-4 shrink-0 border-0">
+                  <Badge className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[10px] px-1.5 py-0 h-4 shrink-0 border-0">
                     Nowy
                   </Badge>
                 )}
