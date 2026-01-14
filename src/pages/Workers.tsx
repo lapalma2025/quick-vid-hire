@@ -41,6 +41,7 @@ interface Worker {
   categories: { name: string }[];
   available_from: string | null;
   available_to: string | null;
+  completed_jobs_count: number;
 }
 
 interface Category {
@@ -116,7 +117,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, completed_jobs_count, worker_categories(category:categories(name))`,
           { count: "exact" },
         )
         .eq("is_available", true)
@@ -185,7 +186,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, worker_categories(category:categories(name))`,
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, completed_jobs_count, worker_categories(category:categories(name))`,
         )
         .eq("is_available", true)
         .eq("worker_profile_completed", true);
