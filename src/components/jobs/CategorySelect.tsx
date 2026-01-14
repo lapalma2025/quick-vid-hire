@@ -43,23 +43,26 @@ export function CategorySelect({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id, name, parent_id, description")
-      .order("name");
+    if (hasFetched) return;
     
-    if (data && !error) {
-      setCategories(data);
-    }
-    setLoading(false);
-  };
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, parent_id, description")
+        .order("name");
+      
+      if (data && !error) {
+        setCategories(data);
+      }
+      setLoading(false);
+      setHasFetched(true);
+    };
+    
+    fetchCategories();
+  }, [hasFetched]);
 
   // Group categories by parent
   const { mainCategories, subcategoriesMap, allSelectableCategories } = useMemo(() => {
