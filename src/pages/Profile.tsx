@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import {
 	Select,
 	SelectContent,
@@ -22,19 +21,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
+
+interface Category {
+	id: string;
+	name: string;
+	icon: string | null;
+}
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -49,12 +41,7 @@ import {
 	X,
 	Crown,
 	Image,
-	Lock,
-	Sparkles,
 	Trash2,
-	AlertTriangle,
-	ChevronsUpDown,
-	Check,
 } from "lucide-react";
 import {
 	AlertDialog,
@@ -68,13 +55,7 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { TimePicker } from "@/components/ui/time-picker";
-import { CategoryIcon } from "@/components/jobs/CategoryIcon";
-
-interface Category {
-	id: string;
-	name: string;
-	icon: string | null;
-}
+import { CategoryMultiSelect } from "@/components/jobs/CategoryMultiSelect";
 
 export default function Profile() {
 	const navigate = useNavigate();
@@ -802,85 +783,11 @@ export default function Profile() {
 									<p className="text-sm text-muted-foreground">
 										Wybierz kategorie, w których oferujesz swoje usługi.
 									</p>
-									
-									{/* Selected categories badges */}
-									{selectedCategories.length > 0 && (
-										<div className="flex flex-wrap gap-2">
-											{selectedCategories.map((catId) => {
-												const category = categories.find((c) => c.id === catId);
-												if (!category) return null;
-												return (
-													<Badge
-														key={catId}
-														variant="secondary"
-														className="gap-1.5 pr-1.5 py-1"
-													>
-														<CategoryIcon
-															name={category.name}
-															className="h-3.5 w-3.5"
-														/>
-														{category.name}
-														<button
-															type="button"
-															onClick={() => toggleCategory(catId)}
-															className="ml-1 hover:bg-muted rounded-full p-0.5"
-														>
-															<X className="h-3 w-3" />
-														</button>
-													</Badge>
-												);
-											})}
-										</div>
-									)}
-									
-									{/* Searchable category combobox */}
-									<Popover>
-										<PopoverTrigger asChild>
-											<Button
-												variant="outline"
-												role="combobox"
-												className="w-full justify-between font-normal"
-											>
-												<span className="text-muted-foreground">
-													Wyszukaj i dodaj kategorię...
-												</span>
-												<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-full p-0 z-50" align="start">
-											<Command>
-												<CommandInput placeholder="Szukaj kategorii..." />
-												<CommandList>
-													<CommandEmpty>Nie znaleziono kategorii.</CommandEmpty>
-													<CommandGroup>
-														{categories
-															.filter((c) => !selectedCategories.includes(c.id))
-															.map((category) => (
-																<CommandItem
-																	key={category.id}
-																	value={category.name}
-																	onSelect={() => {
-																		toggleCategory(category.id);
-																	}}
-																	className="cursor-pointer"
-																>
-																	<CategoryIcon
-																		name={category.name}
-																		className="mr-2 h-4 w-4 text-muted-foreground"
-																	/>
-																	{category.name}
-																</CommandItem>
-															))}
-														{categories.filter((c) => !selectedCategories.includes(c.id)).length === 0 && (
-															<div className="py-2 px-3 text-sm text-muted-foreground text-center">
-																Wszystkie kategorie zostały wybrane
-															</div>
-														)}
-													</CommandGroup>
-												</CommandList>
-											</Command>
-										</PopoverContent>
-									</Popover>
+									<CategoryMultiSelect
+										value={selectedCategories}
+										onChange={setSelectedCategories}
+										placeholder="Wyszukaj i dodaj kategorię..."
+									/>
 								</div>
 
 								<div className="space-y-3">
