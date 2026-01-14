@@ -31,6 +31,7 @@ import Subscription from "./pages/Subscription";
 import Statistics from "./pages/Statistics";
 import WorkerOnboarding from "./pages/WorkerOnboarding";
 import WorkMap from "./pages/WorkMap";
+import SavedJobs from "./pages/SavedJobs";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
 					<Route path="/statistics" element={<Statistics />} />
 					<Route path="/worker-onboarding" element={<WorkerOnboarding />} />
 					<Route path="/work-map" element={<WorkMap />} />
+					<Route path="/saved-jobs" element={<SavedJobs />} />
 					<Route path="/how-it-works" element={<HowItWorks />} />
 					<Route path="/pricing" element={<Pricing />} />
 					<Route path="/faq" element={<FAQ />} />
