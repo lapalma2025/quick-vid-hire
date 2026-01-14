@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
 	Select,
@@ -23,6 +22,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -41,6 +53,8 @@ import {
 	Sparkles,
 	Trash2,
 	AlertTriangle,
+	ChevronsUpDown,
+	Check,
 } from "lucide-react";
 import {
 	AlertDialog,
@@ -819,39 +833,54 @@ export default function Profile() {
 										</div>
 									)}
 									
-									{/* Category dropdown */}
-									<Select
-										value=""
-										onValueChange={(value) => {
-											if (value && !selectedCategories.includes(value)) {
-												toggleCategory(value);
-											}
-										}}
-									>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Dodaj kategorię..." />
-										</SelectTrigger>
-										<SelectContent className="bg-background border z-50 max-h-[300px]">
-											{categories
-												.filter((c) => !selectedCategories.includes(c.id))
-												.map((category) => (
-													<SelectItem key={category.id} value={category.id}>
-														<div className="flex items-center gap-2">
-															<CategoryIcon
-																name={category.name}
-																className="h-4 w-4 text-muted-foreground"
-															/>
-															{category.name}
-														</div>
-													</SelectItem>
-												))}
-											{categories.filter((c) => !selectedCategories.includes(c.id)).length === 0 && (
-												<div className="py-2 px-3 text-sm text-muted-foreground text-center">
-													Wszystkie kategorie zostały wybrane
-												</div>
-											)}
-										</SelectContent>
-									</Select>
+									{/* Searchable category combobox */}
+									<Popover>
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												role="combobox"
+												className="w-full justify-between font-normal"
+											>
+												<span className="text-muted-foreground">
+													Wyszukaj i dodaj kategorię...
+												</span>
+												<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-full p-0 z-50" align="start">
+											<Command>
+												<CommandInput placeholder="Szukaj kategorii..." />
+												<CommandList>
+													<CommandEmpty>Nie znaleziono kategorii.</CommandEmpty>
+													<CommandGroup>
+														{categories
+															.filter((c) => !selectedCategories.includes(c.id))
+															.map((category) => (
+																<CommandItem
+																	key={category.id}
+																	value={category.name}
+																	onSelect={() => {
+																		toggleCategory(category.id);
+																	}}
+																	className="cursor-pointer"
+																>
+																	<CategoryIcon
+																		name={category.name}
+																		className="mr-2 h-4 w-4 text-muted-foreground"
+																	/>
+																	{category.name}
+																</CommandItem>
+															))}
+														{categories.filter((c) => !selectedCategories.includes(c.id)).length === 0 && (
+															<div className="py-2 px-3 text-sm text-muted-foreground text-center">
+																Wszystkie kategorie zostały wybrane
+															</div>
+														)}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
 								</div>
 
 								<div className="space-y-3">
