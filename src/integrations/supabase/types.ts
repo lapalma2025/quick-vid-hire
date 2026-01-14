@@ -125,6 +125,8 @@ export type Database = {
       }
       job_responses: {
         Row: {
+          client_confirmed_done: boolean | null
+          completed_at: string | null
           created_at: string | null
           group_members: string[] | null
           group_size: number | null
@@ -135,9 +137,12 @@ export type Database = {
           offer_price: number | null
           proposed_time: string | null
           status: string | null
+          worker_confirmed_done: boolean | null
           worker_id: string
         }
         Insert: {
+          client_confirmed_done?: boolean | null
+          completed_at?: string | null
           created_at?: string | null
           group_members?: string[] | null
           group_size?: number | null
@@ -148,9 +153,12 @@ export type Database = {
           offer_price?: number | null
           proposed_time?: string | null
           status?: string | null
+          worker_confirmed_done?: boolean | null
           worker_id: string
         }
         Update: {
+          client_confirmed_done?: boolean | null
+          completed_at?: string | null
           created_at?: string | null
           group_members?: string[] | null
           group_size?: number | null
@@ -161,6 +169,7 @@ export type Database = {
           offer_price?: number | null
           proposed_time?: string | null
           status?: string | null
+          worker_confirmed_done?: boolean | null
           worker_id?: string
         }
         Relationships: [
@@ -453,6 +462,7 @@ export type Database = {
           available_to: string | null
           avatar_url: string | null
           bio: string | null
+          completed_jobs_count: number
           created_at: string | null
           district: string | null
           extended_description: string | null
@@ -486,6 +496,7 @@ export type Database = {
           available_to?: string | null
           avatar_url?: string | null
           bio?: string | null
+          completed_jobs_count?: number
           created_at?: string | null
           district?: string | null
           extended_description?: string | null
@@ -519,6 +530,7 @@ export type Database = {
           available_to?: string | null
           avatar_url?: string | null
           bio?: string | null
+          completed_jobs_count?: number
           created_at?: string | null
           district?: string | null
           extended_description?: string | null
