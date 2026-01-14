@@ -788,31 +788,70 @@ export default function Profile() {
 									<p className="text-sm text-muted-foreground">
 										Wybierz kategorie, w których oferujesz swoje usługi.
 									</p>
-									<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-										{categories.map((category) => (
-											<div
-												key={category.id}
-												className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-													selectedCategories.includes(category.id)
-														? "border-primary bg-primary/10"
-														: "border-border hover:bg-muted/50"
-												}`}
-												onClick={() => toggleCategory(category.id)}
-											>
-												<Checkbox
-													checked={selectedCategories.includes(category.id)}
-													onCheckedChange={() => toggleCategory(category.id)}
-												/>
-												<CategoryIcon
-													name={category.name}
-													className="h-4 w-4 text-muted-foreground"
-												/>
-												<span className="text-sm font-medium truncate">
-													{category.name}
-												</span>
-											</div>
-										))}
-									</div>
+									
+									{/* Selected categories badges */}
+									{selectedCategories.length > 0 && (
+										<div className="flex flex-wrap gap-2">
+											{selectedCategories.map((catId) => {
+												const category = categories.find((c) => c.id === catId);
+												if (!category) return null;
+												return (
+													<Badge
+														key={catId}
+														variant="secondary"
+														className="gap-1.5 pr-1.5 py-1"
+													>
+														<CategoryIcon
+															name={category.name}
+															className="h-3.5 w-3.5"
+														/>
+														{category.name}
+														<button
+															type="button"
+															onClick={() => toggleCategory(catId)}
+															className="ml-1 hover:bg-muted rounded-full p-0.5"
+														>
+															<X className="h-3 w-3" />
+														</button>
+													</Badge>
+												);
+											})}
+										</div>
+									)}
+									
+									{/* Category dropdown */}
+									<Select
+										value=""
+										onValueChange={(value) => {
+											if (value && !selectedCategories.includes(value)) {
+												toggleCategory(value);
+											}
+										}}
+									>
+										<SelectTrigger className="w-full">
+											<SelectValue placeholder="Dodaj kategorię..." />
+										</SelectTrigger>
+										<SelectContent className="bg-background border z-50 max-h-[300px]">
+											{categories
+												.filter((c) => !selectedCategories.includes(c.id))
+												.map((category) => (
+													<SelectItem key={category.id} value={category.id}>
+														<div className="flex items-center gap-2">
+															<CategoryIcon
+																name={category.name}
+																className="h-4 w-4 text-muted-foreground"
+															/>
+															{category.name}
+														</div>
+													</SelectItem>
+												))}
+											{categories.filter((c) => !selectedCategories.includes(c.id)).length === 0 && (
+												<div className="py-2 px-3 text-sm text-muted-foreground text-center">
+													Wszystkie kategorie zostały wybrane
+												</div>
+											)}
+										</SelectContent>
+									</Select>
 								</div>
 
 								<div className="space-y-3">
