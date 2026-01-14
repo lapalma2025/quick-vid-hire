@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
-import { MapPin, Banknote, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { MapPin, Banknote, ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -50,19 +50,12 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
       >
         <div className="flex gap-4 flex-1 min-h-0">
           {/* Avatar */}
-          <div className="relative shrink-0">
-            <Avatar className="h-14 w-14 rounded-xl border-2 border-border">
-              <AvatarImage src={worker.avatar_url || undefined} alt={worker.name || "Worker"} />
-              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold rounded-xl">
-                {worker.name?.charAt(0)?.toUpperCase() || "W"}
-              </AvatarFallback>
-            </Avatar>
-            {isNewWorker && (
-              <div className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full p-0.5">
-                <Zap className="h-3 w-3 text-white" />
-              </div>
-            )}
-          </div>
+          <Avatar className="h-14 w-14 rounded-xl border-2 border-border shrink-0">
+            <AvatarImage src={worker.avatar_url || undefined} alt={worker.name || "Worker"} />
+            <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold rounded-xl">
+              {worker.name?.charAt(0)?.toUpperCase() || "W"}
+            </AvatarFallback>
+          </Avatar>
           
           {/* Content */}
           <div className="flex-1 min-w-0 flex flex-col">
