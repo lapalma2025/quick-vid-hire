@@ -720,7 +720,7 @@ export function WorkMapLeaflet({
         
         .job-popup-modern {
           padding: 20px;
-          min-width: 340px;
+          min-width: 420px;
           font-family: system-ui, -apple-system, sans-serif;
         }
         
