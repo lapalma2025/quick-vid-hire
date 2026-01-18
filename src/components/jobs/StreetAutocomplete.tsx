@@ -44,7 +44,7 @@ export function StreetAutocomplete({
   }, [city]);
 
   const fetchSuggestions = async (query: string) => {
-    if (query.length < 2 || !city) {
+    if (query.length < 3 || !city) {
       setSuggestions([]);
       return;
     }
@@ -209,7 +209,7 @@ export function StreetAutocomplete({
           ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => inputValue.length >= 2 && setIsOpen(true)}
+          onFocus={() => inputValue.length >= 3 && setIsOpen(true)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -252,7 +252,7 @@ export function StreetAutocomplete({
       )}
 
       {isOpen &&
-        inputValue.length >= 2 &&
+        inputValue.length >= 3 &&
         !isLoading &&
         suggestions.length === 0 && (
           <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
