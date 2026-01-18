@@ -43,6 +43,7 @@ import { CategorySelect } from "@/components/jobs/CategorySelect";
 import { ImageUpload } from "@/components/jobs/ImageUpload";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
+import { StreetAutocomplete } from "@/components/jobs/StreetAutocomplete";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CountrySelect } from "@/components/jobs/CountrySelect";
 import { ForeignCitySelect } from "@/components/jobs/ForeignCitySelect";
@@ -960,10 +961,11 @@ export default function NewJob() {
 									{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
 										<div className="space-y-2 animate-fade-in">
 											<Label>Ulica i numer (opcjonalnie)</Label>
-											<Input
-												placeholder="np. Świdnicka 12"
+											<StreetAutocomplete
 												value={form.street}
-												onChange={(e) => updateForm("street", e.target.value)}
+												onChange={(street) => updateForm("street", street)}
+												city={form.miasto}
+												placeholder="Wpisz nazwę ulicy..."
 											/>
 											<p className="text-xs text-muted-foreground">
 												Podanie ulicy zwiększy precyzję lokalizacji na Mapie Pracy
