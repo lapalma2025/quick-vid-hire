@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
+import { StreetAutocomplete } from "@/components/jobs/StreetAutocomplete";
 import { CategorySubcategorySelect } from "@/components/jobs/CategorySubcategorySelect";
 import { WOJEWODZTWA, WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
 import {
@@ -767,11 +768,11 @@ export default function WorkerOnboarding() {
                     <MapPin className="h-4 w-4" />
                     Ulica (opcjonalnie, bez numeru domu)
                   </Label>
-                  <Input
+                  <StreetAutocomplete
                     value={form.street}
-                    onChange={(e) => updateForm("street", e.target.value)}
-                    placeholder="np. Świdnicka"
-                    className="h-11 rounded-xl"
+                    onChange={(street) => updateForm("street", street)}
+                    city={form.miasto}
+                    placeholder="Wpisz nazwę ulicy..."
                   />
                   <p className="text-xs text-muted-foreground">
                     Jeśli podasz ulicę, na mapie pojawi się dokładniejsza lokalizacja Twojego profilu
