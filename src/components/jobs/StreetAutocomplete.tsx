@@ -52,81 +52,98 @@ export function StreetAutocomplete({
     setIsLoading(true);
     try {
       // Use Nominatim API - search for streets in the specified city
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?` +
-          new URLSearchParams({
-            q: `${query}, ${city}, Polska`,
-            format: "json",
-            addressdetails: "1",
-            limit: "20",
-            countrycodes: "pl",
-            "accept-language": "pl",
-            dedupe: "1",
-          }),
-        {
-          headers: {
-            "User-Agent": "ZlecenieTeraz/1.0",
-          },
+      // Add "ulica" prefix to help find street results
+      const searchQueries = [
+        `ulica ${query}, ${city}, Polska`,
+        `${query}, ${city}, Polska`,
+      ];
+      
+      const allStreets: StreetSuggestion[] = [];
+      
+      for (const searchQuery of searchQueries) {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?` +
+            new URLSearchParams({
+              q: searchQuery,
+              format: "json",
+              addressdetails: "1",
+              limit: "30",
+              countrycodes: "pl",
+              "accept-language": "pl",
+              dedupe: "1",
+            }),
+          {
+            headers: {
+              "User-Agent": "ZlecenieTeraz/1.0",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Extract street names from results
+          const streets = data
+            .map((item: any) => {
+              // Get street name from address details
+              const streetName = item.address?.road || item.address?.pedestrian || item.address?.footway;
+              
+              if (!streetName) return null;
+
+              // Check if the result is in the correct city
+              const resultCity = (
+                item.address?.city ||
+                item.address?.town ||
+                item.address?.village ||
+                item.address?.municipality ||
+                ""
+              ).toLowerCase();
+
+              // More lenient city matching
+              const cityLower = city.toLowerCase();
+              const matches = resultCity.includes(cityLower) || 
+                             cityLower.includes(resultCity) ||
+                             resultCity.replace(/ó/g, 'o').includes(cityLower.replace(/ó/g, 'o'));
+
+              if (!matches && resultCity !== "") {
+                return null;
+              }
+
+              return {
+                name: streetName,
+                display_name: item.display_name,
+              };
+            })
+            .filter(
+              (item: StreetSuggestion | null): item is StreetSuggestion =>
+                item !== null
+            );
+
+          allStreets.push(...streets);
         }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Extract street names from results
-        const streets = data
-          .map((item: any) => {
-            // Get street name from address details
-            const streetName = item.address?.road || item.address?.pedestrian || item.address?.footway;
-            
-            if (!streetName) return null;
-
-            // Check if the result is in the correct city
-            const resultCity = (
-              item.address?.city ||
-              item.address?.town ||
-              item.address?.village ||
-              item.address?.municipality ||
-              ""
-            ).toLowerCase();
-
-            if (!resultCity.includes(city.toLowerCase()) && !city.toLowerCase().includes(resultCity)) {
-              return null;
-            }
-
-            return {
-              name: streetName,
-              display_name: item.display_name,
-            };
-          })
-          .filter(
-            (item: StreetSuggestion | null): item is StreetSuggestion =>
-              item !== null
-          )
-          // Remove duplicates by street name
-          .filter(
-            (item: StreetSuggestion, index: number, self: StreetSuggestion[]) =>
-              index ===
-              self.findIndex(
-                (t) => t.name.toLowerCase() === item.name.toLowerCase()
-              )
-          )
-          // Filter to show streets that contain the query (case insensitive)
-          .filter((item: StreetSuggestion) =>
-            item.name.toLowerCase().includes(query.toLowerCase())
-          )
-          // Sort: streets starting with query first, then alphabetically
-          .sort((a: StreetSuggestion, b: StreetSuggestion) => {
-            const aStarts = a.name.toLowerCase().startsWith(query.toLowerCase());
-            const bStarts = b.name.toLowerCase().startsWith(query.toLowerCase());
-            if (aStarts && !bStarts) return -1;
-            if (!aStarts && bStarts) return 1;
-            return a.name.localeCompare(b.name, "pl");
-          })
-          .slice(0, 8);
-
-        setSuggestions(streets);
       }
+      
+      // Remove duplicates and filter
+      const uniqueStreets = allStreets
+        .filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.name.toLowerCase() === item.name.toLowerCase())
+        )
+        // Filter to show streets that contain the query (case insensitive)
+        .filter((item) =>
+          item.name.toLowerCase().includes(query.toLowerCase())
+        )
+        // Sort: streets starting with query first, then alphabetically
+        .sort((a, b) => {
+          const aStarts = a.name.toLowerCase().startsWith(query.toLowerCase());
+          const bStarts = b.name.toLowerCase().startsWith(query.toLowerCase());
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          return a.name.localeCompare(b.name, "pl");
+        })
+        .slice(0, 10);
+
+      setSuggestions(uniqueStreets);
     } catch (error) {
       console.error("Error fetching street suggestions:", error);
       setSuggestions([]);
