@@ -493,82 +493,103 @@ export default function NewJob() {
 		let locationLat: number | null = null;
 		let locationLng: number | null = null;
 
-		const WROCLAW_LAT = 51.1079;
-		const WROCLAW_LNG = 17.0385;
-		const MAX_DISTANCE_KM = 50;
-
-		const distanceKm = (lat: number, lng: number) =>
-			Math.sqrt(
-				Math.pow((lat - WROCLAW_LAT) * 111, 2) +
-					Math.pow(
-						(lng - WROCLAW_LNG) *
-							111 *
-							Math.cos((WROCLAW_LAT * Math.PI) / 180),
-						2
-					)
-			);
-
+		// Build viewbox for entire Dolnośląskie region
 		const buildViewbox = () => {
-			const dLat = MAX_DISTANCE_KM / 111;
-			const dLng =
-				MAX_DISTANCE_KM /
-				(111 * Math.cos((WROCLAW_LAT * Math.PI) / 180));
-			const left = WROCLAW_LNG - dLng;
-			const right = WROCLAW_LNG + dLng;
-			const top = WROCLAW_LAT + dLat;
-			const bottom = WROCLAW_LAT - dLat;
-			return `${left},${top},${right},${bottom}`;
+			// Nominatim viewbox format: left,top,right,bottom (lng,lat,lng,lat)
+			return `${DOLNOSLASKIE_BOUNDS.west},${DOLNOSLASKIE_BOUNDS.north},${DOLNOSLASKIE_BOUNDS.east},${DOLNOSLASKIE_BOUNDS.south}`;
 		};
 
-		const geocodeInArea = async (query: string, exactPlaceName?: string) => {
+		const geocodeStreet = async (street: string, city: string) => {
 			try {
-				const params = new URLSearchParams({
-					q: query,
+				// Try structured query first for better precision
+				const structuredParams = new URLSearchParams({
+					street: street,
+					city: city,
+					state: "dolnośląskie",
+					country: "Poland",
 					format: "json",
 					addressdetails: "1",
 					limit: "5",
-					countrycodes: "pl",
 					"accept-language": "pl",
-					dedupe: "1",
-					viewbox: buildViewbox(),
-					bounded: "1",
 				});
 
-				const res = await fetch(
-					`https://nominatim.openstreetmap.org/search?${params.toString()}`,
+				let res = await fetch(
+					`https://nominatim.openstreetmap.org/search?${structuredParams.toString()}`,
 					{
-						headers: {
-							"User-Agent": "ZlecenieTeraz/1.0",
-						},
+						headers: { "User-Agent": "ZlecenieTeraz/1.0" },
 					}
 				);
 
-				if (!res.ok) return null;
-				const data = await res.json();
+				let data = res.ok ? await res.json() : [];
+
+				// If structured search fails, try free-form query with viewbox
+				if (!Array.isArray(data) || data.length === 0) {
+					const freeParams = new URLSearchParams({
+						q: `${street}, ${city}, dolnośląskie, Polska`,
+						format: "json",
+						addressdetails: "1",
+						limit: "5",
+						countrycodes: "pl",
+						"accept-language": "pl",
+						viewbox: buildViewbox(),
+						bounded: "1",
+					});
+
+					res = await fetch(
+						`https://nominatim.openstreetmap.org/search?${freeParams.toString()}`,
+						{
+							headers: { "User-Agent": "ZlecenieTeraz/1.0" },
+						}
+					);
+
+					data = res.ok ? await res.json() : [];
+				}
+
+				// If still no results, try without viewbox restriction
+				if (!Array.isArray(data) || data.length === 0) {
+					const fallbackParams = new URLSearchParams({
+						q: `${street}, ${city}, Polska`,
+						format: "json",
+						addressdetails: "1",
+						limit: "5",
+						countrycodes: "pl",
+						"accept-language": "pl",
+					});
+
+					res = await fetch(
+						`https://nominatim.openstreetmap.org/search?${fallbackParams.toString()}`,
+						{
+							headers: { "User-Agent": "ZlecenieTeraz/1.0" },
+						}
+					);
+
+					data = res.ok ? await res.json() : [];
+				}
+
 				if (!Array.isArray(data) || data.length === 0) return null;
 
-				const best = (() => {
-					if (!exactPlaceName) return data[0];
-					const wanted = exactPlaceName.toLowerCase();
-					return (
-						data.find((it: any) => {
-							const name =
-								it.address?.city ||
-								it.address?.town ||
-								it.address?.village ||
-								it.address?.municipality ||
-								it.name;
-							return (
-								typeof name === "string" && name.toLowerCase() === wanted
-							);
-						}) || data[0]
-					);
-				})();
+				// Find result that matches the city best
+				const cityLower = city.toLowerCase();
+				const best = data.find((it: any) => {
+					const resultCity = (
+						it.address?.city ||
+						it.address?.town ||
+						it.address?.village ||
+						it.address?.municipality ||
+						""
+					).toLowerCase();
+					return resultCity.includes(cityLower) || cityLower.includes(resultCity);
+				}) || data[0];
 
 				const lat = parseFloat(best.lat);
 				const lng = parseFloat(best.lon);
 				if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-				if (distanceKm(lat, lng) > MAX_DISTANCE_KM) return null;
+
+				// Validate it's within dolnośląskie bounds
+				if (!isInDolnoslaskie(lat, lng)) {
+					console.warn("Geocoded location outside dolnośląskie:", lat, lng);
+					return null;
+				}
 
 				return { lat, lng };
 			} catch (err) {
@@ -582,8 +603,7 @@ export default function NewJob() {
 			// If the user selected only city/district, we keep location_lat/lng = null so the map
 			// can cluster these offers together and show them as one marker with a list.
 			if (streetNormalized && miastoNormalized) {
-				const query = `${streetNormalized}, ${miastoNormalized}, ${form.wojewodztwo || ""}, Polska`;
-				const coords = await geocodeInArea(query);
+				const coords = await geocodeStreet(streetNormalized, miastoNormalized);
 				if (coords) {
 					locationLat = coords.lat;
 					locationLng = coords.lng;
