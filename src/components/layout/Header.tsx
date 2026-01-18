@@ -187,8 +187,9 @@ export const Header = () => {
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
-									className="w-60 rounded-xl p-2"
+									className="w-60 rounded-xl p-2 z-[100] bg-popover"
 									align="end"
+									sideOffset={8}
 								>
 									<div className="flex items-center gap-3 p-3 mb-2 bg-muted/50 rounded-lg">
 										<Avatar className="h-10 w-10 rounded-lg">
