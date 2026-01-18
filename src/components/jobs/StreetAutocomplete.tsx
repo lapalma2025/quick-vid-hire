@@ -90,6 +90,7 @@ export function StreetAutocomplete({
   const listRef = useRef<HTMLUListElement>(null);
   const debounceRef = useRef<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const cityNorm = useMemo(() => normalizePl(city || ""), [city]);
 
@@ -99,6 +100,7 @@ export function StreetAutocomplete({
 
   // Clear suggestions when city changes
   useEffect(() => {
+    abortRef.current?.abort();
     setSuggestions([]);
   }, [city]);
 
@@ -121,15 +123,19 @@ export function StreetAutocomplete({
     };
   }, [isOpen, inputValue, suggestions.length]);
 
-  const fetchSuggestions = async (query: string) => {
+  const fetchSuggestions = async (queryRaw: string) => {
+    const query = queryRaw.trim().replace(/\s+/g, " ");
+
     if (query.length < MIN_CHARS || !city) {
       setSuggestions([]);
       return;
     }
 
+    // Cancel previous requests and mark this one as the latest
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    const requestId = ++requestIdRef.current;
 
     setIsLoading(true);
 
@@ -140,14 +146,14 @@ export function StreetAutocomplete({
       const photonParams = new URLSearchParams();
       photonParams.set("q", query);
       photonParams.set("limit", "30");
-      photonParams.set("lang", "pl");
+      // Photon doesn't support "pl"; use default (OSM names are often already localized)
+      photonParams.set("lang", "default");
       if (coords) {
         photonParams.set("lat", String(coords.lat));
         photonParams.set("lon", String(coords.lng));
       }
-      // include both streets and squares/places
+      // Keep it focused on street-like results
       photonParams.append("layer", "street");
-      photonParams.append("layer", "other");
 
       const photonUrl = `https://photon.komoot.io/api/?${photonParams.toString()}`;
 
@@ -162,7 +168,7 @@ export function StreetAutocomplete({
         dedupe: "1",
       });
 
-      // 3) Nominatim structured query (better city binding, often returns 'Plac ...' even when user types only surname)
+      // 3) Nominatim structured query (better city binding)
       const nominatimStructured = new URLSearchParams({
         street: query,
         city,
@@ -178,11 +184,9 @@ export function StreetAutocomplete({
         fetch(photonUrl, { signal: controller.signal }),
         fetch(`https://nominatim.openstreetmap.org/search?${nominatimQ.toString()}`, {
           signal: controller.signal,
-          headers: { "User-Agent": "ZlecenieTeraz/1.0" },
         }),
         fetch(`https://nominatim.openstreetmap.org/search?${nominatimStructured.toString()}`, {
           signal: controller.signal,
-          headers: { "User-Agent": "ZlecenieTeraz/1.0" },
         }),
       ]);
 
@@ -241,8 +245,10 @@ export function StreetAutocomplete({
       if (nom1Res.status === "fulfilled" && nom1Res.value.ok) await consumeNominatim(nom1Res.value);
       if (nom2Res.status === "fulfilled" && nom2Res.value.ok) await consumeNominatim(nom2Res.value);
 
+      // Ignore stale results (user typed something else already)
+      if (requestId !== requestIdRef.current) return;
+
       // Deduplicate + score
-      const queryNorm = normalizePl(query);
       const uniqueByName = new Map<string, StreetSuggestion>();
       for (const c of candidates) {
         const key = normalizePl(c.name);
@@ -251,9 +257,8 @@ export function StreetAutocomplete({
       }
 
       const ranked = Array.from(uniqueByName.values())
-        // keep only somewhat relevant results
-        .map((c) => ({ c, score: scoreCandidate(queryNorm, c.name) }))
-        .filter((x) => x.score >= 350)
+        .map((c) => ({ c, score: scoreCandidate(query, c.name) }))
+        .filter((x) => x.score >= 300)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
         .map((x) => x.c);
@@ -264,9 +269,9 @@ export function StreetAutocomplete({
       if (error?.name !== "AbortError") {
         console.error("Error fetching street suggestions:", error);
       }
-      setSuggestions([]);
+      if (requestId === requestIdRef.current) setSuggestions([]);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   };
 
