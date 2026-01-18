@@ -255,10 +255,18 @@ export default function WorkersMap({
       const icon = createWorkerIcon(worker.id === highlightedWorkerId);
       const marker = L.marker([worker.lat, worker.lng], { icon, zIndexOffset: 350 });
       
-      marker.bindPopup(createWorkerPopup(worker), { minWidth: 220, maxWidth: 280 });
+      marker.bindPopup(createWorkerPopup(worker), { 
+        minWidth: 220, 
+        maxWidth: 280,
+        closeOnClick: false,
+        autoClose: false
+      });
       marker.on('mouseover', () => onMarkerHover?.(worker.id));
       marker.on('mouseout', () => onMarkerHover?.(null));
-      marker.on('click', () => onMarkerClick?.(worker.id));
+      marker.on('click', () => {
+        marker.openPopup();
+        onMarkerClick?.(worker.id);
+      });
       
       marker.addTo(map);
       markersRef.current.push(marker);
@@ -273,10 +281,18 @@ export default function WorkersMap({
         const icon = createWorkerIcon(worker.id === highlightedWorkerId);
         const marker = L.marker([cluster.lat, cluster.lng], { icon, zIndexOffset: 300 });
         
-        marker.bindPopup(createWorkerPopup(worker), { minWidth: 220, maxWidth: 280 });
+        marker.bindPopup(createWorkerPopup(worker), { 
+          minWidth: 220, 
+          maxWidth: 280,
+          closeOnClick: false,
+          autoClose: false
+        });
         marker.on('mouseover', () => onMarkerHover?.(worker.id));
         marker.on('mouseout', () => onMarkerHover?.(null));
-        marker.on('click', () => onMarkerClick?.(worker.id));
+        marker.on('click', () => {
+          marker.openPopup();
+          onMarkerClick?.(worker.id);
+        });
         
         marker.addTo(map);
         clusterMarkersRef.current.push(marker);
@@ -321,7 +337,13 @@ export default function WorkersMap({
               Wykonawcy bez podanego dokładnego adresu
             </div>
           </div>
-        `, { minWidth: 280, maxWidth: 340, maxHeight: 400 });
+        `, { 
+          minWidth: 280, 
+          maxWidth: 340, 
+          maxHeight: 400,
+          closeOnClick: false,
+          autoClose: false
+        });
         
         marker.addTo(map);
         clusterMarkersRef.current.push(marker);
