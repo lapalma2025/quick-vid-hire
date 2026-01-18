@@ -187,7 +187,7 @@ export const Header = () => {
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
-									className="w-60 rounded-xl p-2 z-[100] bg-popover"
+									className="w-60 rounded-xl p-2 z-[2000] bg-popover"
 									align="end"
 									sideOffset={8}
 								>
