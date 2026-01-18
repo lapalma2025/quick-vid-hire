@@ -772,8 +772,9 @@ export function WorkMapLeaflet({
         }
         
         .job-popup-modern {
-          padding: 20px;
-          min-width: 420px;
+          padding: 16px;
+          min-width: 220px;
+          max-width: 280px;
           font-family: system-ui, -apple-system, sans-serif;
         }
         
@@ -804,12 +805,11 @@ export function WorkMapLeaflet({
         }
         
         .job-popup-title {
-          font-size: 18px;
+          font-size: 15px;
           font-weight: 700;
           color: #111827;
           line-height: 1.3;
-          margin: 0 0 12px 0;
-          padding-right: 20px;
+          margin: 0 0 10px 0;
         }
         
         .job-popup-location {
@@ -844,16 +844,17 @@ export function WorkMapLeaflet({
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 6px;
           width: 100%;
-          padding: 12px 16px;
+          padding: 10px 12px;
           background: linear-gradient(135deg, #10b981, #059669) !important;
           color: #ffffff !important;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           text-decoration: none !important;
           border-radius: 8px;
           transition: all 0.2s ease;
+          box-sizing: border-box;
         }
         
         .job-popup-cta:visited,
