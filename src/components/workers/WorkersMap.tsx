@@ -270,14 +270,12 @@ export default function WorkersMap({
       (marker as any).__markerKind = 'worker';
       (marker as any).__workerId = worker.id;
 
-      marker.bindPopup(createWorkerPopup(worker), {
-        minWidth: 220,
-        maxWidth: 280,
-        closeOnClick: false,
-        autoClose: false,
-      });
+      marker.bindPopup(createWorkerPopup(worker), { minWidth: 220, maxWidth: 280 });
       marker.on('mouseover', () => onMarkerHoverRef.current?.(worker.id));
-      marker.on('mouseout', () => onMarkerHoverRef.current?.(null));
+      marker.on('mouseout', () => {
+        if (marker.isPopupOpen()) return;
+        onMarkerHoverRef.current?.(null);
+      });
       marker.on('click', () => {
         marker.openPopup();
         onMarkerClickRef.current?.(worker.id);
@@ -299,14 +297,12 @@ export default function WorkersMap({
         (marker as any).__markerKind = 'worker';
         (marker as any).__workerId = worker.id;
 
-        marker.bindPopup(createWorkerPopup(worker), {
-          minWidth: 220,
-          maxWidth: 280,
-          closeOnClick: false,
-          autoClose: false,
-        });
+        marker.bindPopup(createWorkerPopup(worker), { minWidth: 220, maxWidth: 280 });
         marker.on('mouseover', () => onMarkerHoverRef.current?.(worker.id));
-        marker.on('mouseout', () => onMarkerHoverRef.current?.(null));
+        marker.on('mouseout', () => {
+          if (marker.isPopupOpen()) return;
+          onMarkerHoverRef.current?.(null);
+        });
         marker.on('click', () => {
           marker.openPopup();
           onMarkerClickRef.current?.(worker.id);
@@ -367,8 +363,6 @@ export default function WorkersMap({
             minWidth: 280,
             maxWidth: 340,
             maxHeight: 400,
-            closeOnClick: false,
-            autoClose: false,
           },
         );
 
