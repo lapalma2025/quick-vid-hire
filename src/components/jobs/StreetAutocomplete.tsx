@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Loader2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DOLNOSLASKIE_CITIES } from "@/lib/constants";
 
 interface StreetAutocompleteProps {
   value: string;
@@ -17,55 +19,56 @@ interface StreetSuggestion {
   fullName: string;
 }
 
-// Polish city coordinates for better Photon API results
-const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
-  "wrocław": { lat: 51.1079, lon: 17.0385 },
-  "kłodzko": { lat: 50.4346, lon: 16.6619 },
-  "wałbrzych": { lat: 50.7714, lon: 16.2843 },
-  "legnica": { lat: 51.2070, lon: 16.1619 },
-  "jelenia góra": { lat: 50.9044, lon: 15.7197 },
-  "świdnica": { lat: 50.8428, lon: 16.4880 },
-  "lubin": { lat: 51.4010, lon: 16.2015 },
-  "głogów": { lat: 51.6632, lon: 16.0846 },
-  "oleśnica": { lat: 51.2098, lon: 17.3827 },
-  "oława": { lat: 50.9471, lon: 17.2898 },
-  "bolesławiec": { lat: 51.2640, lon: 15.5696 },
-  "dzierżoniów": { lat: 50.7283, lon: 16.6509 },
-  "bielawa": { lat: 50.6897, lon: 16.6224 },
-  "zgorzelec": { lat: 51.1524, lon: 15.0083 },
-  "jawor": { lat: 51.0519, lon: 16.1946 },
-  "ząbkowice śląskie": { lat: 50.5879, lon: 16.8136 },
-  "strzelin": { lat: 50.7819, lon: 17.0662 },
-  "trzebnica": { lat: 51.3099, lon: 17.0623 },
-  "środa śląska": { lat: 51.1648, lon: 16.5932 },
-  "sobótka": { lat: 50.9329, lon: 16.7433 },
-  "strzegom": { lat: 50.9604, lon: 16.3489 },
-  "kamienna góra": { lat: 50.7806, lon: 16.0316 },
-  "kudowa-zdrój": { lat: 50.4432, lon: 16.2432 },
-  "polanica-zdrój": { lat: 50.4076, lon: 16.5124 },
-  "nowa ruda": { lat: 50.5831, lon: 16.4969 },
-  "bystrzyca kłodzka": { lat: 50.2979, lon: 16.6502 },
-  "lądek-zdrój": { lat: 50.3440, lon: 16.8779 },
-  "bardo": { lat: 50.5108, lon: 16.7402 },
-  "siechnice": { lat: 51.0311, lon: 17.1475 },
-  "kobierzyce": { lat: 51.0158, lon: 16.9294 },
-  "kąty wrocławskie": { lat: 51.0324, lon: 16.7654 },
-  "brzeg dolny": { lat: 51.2711, lon: 16.7127 },
-  "oborniki śląskie": { lat: 51.3043, lon: 16.9160 },
-  "żmigród": { lat: 51.4732, lon: 16.9135 },
-  "milicz": { lat: 51.5371, lon: 17.2877 },
-  "syców": { lat: 51.3073, lon: 17.7182 },
-  "twardogóra": { lat: 51.3621, lon: 17.4538 },
-  "bierutów": { lat: 51.1333, lon: 17.7411 },
-  "namysłów": { lat: 51.0772, lon: 17.7222 },
-  "kluczbork": { lat: 50.9734, lon: 18.2177 },
-  "dobroszyce": { lat: 51.2673, lon: 17.3181 },
-  "długołęka": { lat: 51.1869, lon: 17.2004 },
-  "czernica": { lat: 51.0532, lon: 17.2527 },
-  "święta katarzyna": { lat: 51.0602, lon: 17.1503 },
-  "żórawina": { lat: 50.9982, lon: 17.0507 },
-  "jordanów śląski": { lat: 50.8826, lon: 16.8637 },
-  "mietków": { lat: 50.9508, lon: 16.6328 },
+const MIN_CHARS = 3;
+
+const normalizePl = (input: string) =>
+  input
+    .toLowerCase()
+    .normalize("NFD")
+    // remove diacritics (ąęóśżźćń etc.)
+    .replace(/\p{Diacritic}/gu, "")
+    // handle characters not decomposed by NFD (ł)
+    .replace(/ł/g, "l")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const scoreCandidate = (queryRaw: string, candidateRaw: string) => {
+  const q = normalizePl(queryRaw);
+  const c = normalizePl(candidateRaw);
+  if (!q || !c) return 0;
+
+  if (c === q) return 1000;
+  if (c.startsWith(q)) return 900;
+  if (c.includes(` ${q}`)) return 850;
+  if (c.includes(q)) return 800;
+
+  const qTokens = q.split(" ").filter(Boolean);
+  const cTokens = c.split(" ").filter(Boolean);
+
+  let tokenScore = 0;
+  for (const qt of qTokens) {
+    let best = 0;
+    for (const ct of cTokens) {
+      if (ct.startsWith(qt)) best = Math.max(best, 700 - Math.min(50, ct.length - qt.length));
+      else if (ct.includes(qt)) best = Math.max(best, 600);
+      else if (qt.includes(ct)) best = Math.max(best, 450);
+    }
+    tokenScore += best;
+  }
+
+  // prefer shorter results when scores are similar
+  return tokenScore - Math.min(100, c.length);
+};
+
+const getCityCoords = (city: string): { lat: number; lng: number } | null => {
+  if (!city) return null;
+  const direct = (DOLNOSLASKIE_CITIES as any)[city] as { lat: number; lng: number } | undefined;
+  if (direct) return direct;
+
+  const cityNorm = normalizePl(city);
+  const matchKey = Object.keys(DOLNOSLASKIE_CITIES).find((k) => normalizePl(k) === cityNorm);
+  if (!matchKey) return null;
+  return (DOLNOSLASKIE_CITIES as any)[matchKey] as { lat: number; lng: number };
 };
 
 export function StreetAutocomplete({
@@ -81,9 +84,14 @@ export function StreetAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const cityNorm = useMemo(() => normalizePl(city || ""), [city]);
 
   useEffect(() => {
     setInputValue(value);
@@ -94,181 +102,168 @@ export function StreetAutocomplete({
     setSuggestions([]);
   }, [city]);
 
+  const updateDropdownRect = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    setDropdownRect(el.getBoundingClientRect());
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    updateDropdownRect();
+
+    // capture scroll in any container
+    window.addEventListener("scroll", updateDropdownRect, true);
+    window.addEventListener("resize", updateDropdownRect);
+    return () => {
+      window.removeEventListener("scroll", updateDropdownRect, true);
+      window.removeEventListener("resize", updateDropdownRect);
+    };
+  }, [isOpen, inputValue, suggestions.length]);
+
   const fetchSuggestions = async (query: string) => {
-    if (query.length < 3 || !city) {
+    if (query.length < MIN_CHARS || !city) {
       setSuggestions([]);
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const allStreets: StreetSuggestion[] = [];
-      
-      // Get city coordinates for better results
-      const cityLower = city.toLowerCase();
-      const coords = CITY_COORDS[cityLower] || { lat: 51.1079, lon: 17.0385 }; // Default to Wrocław
-      
-      // Use Photon API (Komoot) - better for autocomplete
-      // Search with location bias towards the city
-      const photonResponse = await fetch(
-        `https://photon.komoot.io/api/?` +
-          new URLSearchParams({
-            q: `${query} ${city}`,
-            lat: coords.lat.toString(),
-            lon: coords.lon.toString(),
-            limit: "20",
-            lang: "pl",
-            osm_tag: "highway",
-          })
-      );
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-      if (photonResponse.ok) {
-        const data = await photonResponse.json();
-        
-        if (data.features) {
-          data.features.forEach((feature: any) => {
-            const props = feature.properties;
-            const streetName = props.name || props.street;
-            
-            if (!streetName) return;
-            
-            // Check if it's in the right city
-            const featureCity = (props.city || props.town || props.village || "").toLowerCase();
-            const matchesCity = featureCity.includes(cityLower) || 
-                               cityLower.includes(featureCity) ||
-                               featureCity === "" ||
-                               props.state?.toLowerCase().includes("dolnośląskie");
-            
-            if (!matchesCity) return;
-            
-            // Check if the street name contains the query (partial match)
-            const streetLower = streetName.toLowerCase();
-            const queryLower = query.toLowerCase();
-            
-            // Match if any word in the street name starts with or contains the query
-            const words = streetLower.split(/\s+/);
-            const queryWords = queryLower.split(/\s+/);
-            
-            const matches = queryWords.every(qw => 
-              words.some(w => w.includes(qw) || qw.includes(w))
-            ) || streetLower.includes(queryLower);
-            
-            if (matches) {
-              allStreets.push({
-                name: streetName,
-                fullName: `${streetName}, ${props.city || props.town || props.village || city}`,
-              });
-            }
+    setIsLoading(true);
+
+    try {
+      const coords = getCityCoords(city);
+
+      // 1) Photon (fast autocomplete, supports short prefixes)
+      const photonParams = new URLSearchParams();
+      photonParams.set("q", query);
+      photonParams.set("limit", "30");
+      photonParams.set("lang", "pl");
+      if (coords) {
+        photonParams.set("lat", String(coords.lat));
+        photonParams.set("lon", String(coords.lng));
+      }
+      // include both streets and squares/places
+      photonParams.append("layer", "street");
+      photonParams.append("layer", "other");
+
+      const photonUrl = `https://photon.komoot.io/api/?${photonParams.toString()}`;
+
+      // 2) Nominatim (good for full queries / official names)
+      const nominatimQ = new URLSearchParams({
+        q: `${query}, ${city}, Polska`,
+        format: "json",
+        addressdetails: "1",
+        limit: "20",
+        countrycodes: "pl",
+        "accept-language": "pl",
+        dedupe: "1",
+      });
+
+      // 3) Nominatim structured query (better city binding, often returns 'Plac ...' even when user types only surname)
+      const nominatimStructured = new URLSearchParams({
+        street: query,
+        city,
+        country: "Polska",
+        format: "json",
+        addressdetails: "1",
+        limit: "20",
+        countrycodes: "pl",
+        "accept-language": "pl",
+      });
+
+      const [photonRes, nom1Res, nom2Res] = await Promise.allSettled([
+        fetch(photonUrl, { signal: controller.signal }),
+        fetch(`https://nominatim.openstreetmap.org/search?${nominatimQ.toString()}`, {
+          signal: controller.signal,
+          headers: { "User-Agent": "ZlecenieTeraz/1.0" },
+        }),
+        fetch(`https://nominatim.openstreetmap.org/search?${nominatimStructured.toString()}`, {
+          signal: controller.signal,
+          headers: { "User-Agent": "ZlecenieTeraz/1.0" },
+        }),
+      ]);
+
+      const candidates: StreetSuggestion[] = [];
+
+      // Photon parsing
+      if (photonRes.status === "fulfilled" && photonRes.value.ok) {
+        const data = await photonRes.value.json();
+        for (const feature of data?.features ?? []) {
+          const props = feature?.properties ?? {};
+          const name = props.name;
+          if (!name) continue;
+
+          const placeCity = props.city || props.town || props.village || props.locality || "";
+          const placeCityNorm = normalizePl(placeCity);
+
+          // keep tightly bound to chosen city when photon provides city
+          if (placeCityNorm && cityNorm && !placeCityNorm.includes(cityNorm) && !cityNorm.includes(placeCityNorm)) {
+            continue;
+          }
+
+          candidates.push({
+            name,
+            fullName: [name, placeCity || city].filter(Boolean).join(", "),
           });
         }
       }
 
-      // Also try Nominatim with multiple search variations for better coverage
-      const searchVariations = [
-        `ulica ${query}, ${city}`,
-        `${query}, ${city}`,
-        `plac ${query}, ${city}`,
-        `aleja ${query}, ${city}`,
-      ];
+      // Nominatim parsing helper
+      const consumeNominatim = async (res: Response) => {
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
 
-      for (const searchQuery of searchVariations) {
-        try {
-          const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/search?` +
-              new URLSearchParams({
-                q: searchQuery,
-                format: "json",
-                addressdetails: "1",
-                limit: "10",
-                countrycodes: "pl",
-                "accept-language": "pl",
-              }),
-            {
-              headers: {
-                "User-Agent": "ZlecenieTeraz/1.0",
-              },
-            }
-          );
+        for (const item of data) {
+          const addr = item?.address ?? {};
+          const name =
+            addr.road ||
+            addr.pedestrian ||
+            addr.footway ||
+            addr.square ||
+            item?.name ||
+            null;
+          if (!name) continue;
 
-          if (nominatimResponse.ok) {
-            const data = await nominatimResponse.json();
+          const resultCity = addr.city || addr.town || addr.village || addr.municipality || "";
+          const resultCityNorm = normalizePl(resultCity);
 
-            data.forEach((item: any) => {
-              const streetName = item.address?.road || 
-                                item.address?.pedestrian || 
-                                item.address?.footway ||
-                                item.address?.square ||
-                                item.address?.neighbourhood;
-              
-              if (!streetName) return;
-
-              const resultCity = (
-                item.address?.city ||
-                item.address?.town ||
-                item.address?.village ||
-                item.address?.municipality ||
-                ""
-              ).toLowerCase();
-
-              const matchesCity = resultCity.includes(cityLower) || 
-                                 cityLower.includes(resultCity) ||
-                                 resultCity === "";
-
-              if (!matchesCity) return;
-
-              // Check partial match
-              const streetLower = streetName.toLowerCase();
-              const queryLower = query.toLowerCase();
-              
-              if (streetLower.includes(queryLower) || 
-                  queryLower.split(/\s+/).some(w => streetLower.includes(w))) {
-                allStreets.push({
-                  name: streetName,
-                  fullName: item.display_name,
-                });
-              }
-            });
+          if (resultCityNorm && cityNorm && !resultCityNorm.includes(cityNorm) && !cityNorm.includes(resultCityNorm)) {
+            continue;
           }
-        } catch (e) {
-          // Ignore individual query errors
+
+          candidates.push({ name, fullName: item.display_name || name });
         }
+      };
+
+      if (nom1Res.status === "fulfilled" && nom1Res.value.ok) await consumeNominatim(nom1Res.value);
+      if (nom2Res.status === "fulfilled" && nom2Res.value.ok) await consumeNominatim(nom2Res.value);
+
+      // Deduplicate + score
+      const queryNorm = normalizePl(query);
+      const uniqueByName = new Map<string, StreetSuggestion>();
+      for (const c of candidates) {
+        const key = normalizePl(c.name);
+        if (!key) continue;
+        if (!uniqueByName.has(key)) uniqueByName.set(key, c);
       }
 
-      // Remove duplicates and sort by relevance
-      const queryLower = query.toLowerCase();
-      const uniqueStreets = allStreets
-        .filter(
-          (item, index, self) =>
-            index === self.findIndex((t) => t.name.toLowerCase() === item.name.toLowerCase())
-        )
-        .sort((a, b) => {
-          const aLower = a.name.toLowerCase();
-          const bLower = b.name.toLowerCase();
-          
-          // Exact match first
-          if (aLower === queryLower && bLower !== queryLower) return -1;
-          if (bLower === queryLower && aLower !== queryLower) return 1;
-          
-          // Starts with query
-          const aStarts = aLower.startsWith(queryLower);
-          const bStarts = bLower.startsWith(queryLower);
-          if (aStarts && !bStarts) return -1;
-          if (!aStarts && bStarts) return 1;
-          
-          // Contains query word
-          const aContainsWord = aLower.split(/\s+/).some(w => w.startsWith(queryLower));
-          const bContainsWord = bLower.split(/\s+/).some(w => w.startsWith(queryLower));
-          if (aContainsWord && !bContainsWord) return -1;
-          if (!aContainsWord && bContainsWord) return 1;
-          
-          // Alphabetical
-          return a.name.localeCompare(b.name, "pl");
-        })
-        .slice(0, 10);
+      const ranked = Array.from(uniqueByName.values())
+        // keep only somewhat relevant results
+        .map((c) => ({ c, score: scoreCandidate(queryNorm, c.name) }))
+        .filter((x) => x.score >= 350)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map((x) => x.c);
 
-      setSuggestions(uniqueStreets);
-    } catch (error) {
-      console.error("Error fetching street suggestions:", error);
+      setSuggestions(ranked);
+    } catch (error: any) {
+      // ignore abort
+      if (error?.name !== "AbortError") {
+        console.error("Error fetching street suggestions:", error);
+      }
       setSuggestions([]);
     } finally {
       setIsLoading(false);
@@ -281,16 +276,17 @@ export function StreetAutocomplete({
     setIsOpen(true);
     setHighlightedIndex(-1);
 
-    // Clear filter if input is empty
     if (newValue === "") {
       onChange("");
+      setSuggestions([]);
+      return;
     }
 
-    // Debounce API calls for suggestions
     if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+      window.clearTimeout(debounceRef.current);
     }
-    debounceRef.current = setTimeout(() => {
+
+    debounceRef.current = window.setTimeout(() => {
       fetchSuggestions(newValue);
     }, 250);
   };
@@ -303,44 +299,84 @@ export function StreetAutocomplete({
   };
 
   const handleBlur = () => {
-    // Delay to allow click on suggestion
-    setTimeout(() => {
-      setIsOpen(false);
-    }, 200);
+    // Delay to allow click on suggestion (mousedown)
+    setTimeout(() => setIsOpen(false), 150);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen || suggestions.length === 0) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-      }
+      if (e.key === "Enter") e.preventDefault();
       return;
     }
 
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev < suggestions.length - 1 ? prev + 1 : 0
-        );
+        setHighlightedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
         break;
       case "ArrowUp":
         e.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : suggestions.length - 1
-        );
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
         break;
       case "Enter":
         e.preventDefault();
-        if (highlightedIndex >= 0) {
-          handleSelect(suggestions[highlightedIndex]);
-        }
+        if (highlightedIndex >= 0) handleSelect(suggestions[highlightedIndex]);
         break;
       case "Escape":
         setIsOpen(false);
         break;
     }
   };
+
+  const dropdown =
+    isOpen &&
+    inputValue.length >= MIN_CHARS &&
+    dropdownRect &&
+    createPortal(
+      <div
+        style={{
+          position: "fixed",
+          top: dropdownRect.bottom + 4,
+          left: dropdownRect.left,
+          width: dropdownRect.width,
+          zIndex: 1000,
+        }}
+      >
+        {suggestions.length > 0 ? (
+          <ul
+            ref={listRef}
+            className="bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+          >
+            {suggestions.map((street, index) => (
+              <li
+                key={`${street.name}-${index}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(street);
+                }}
+                className={cn(
+                  "px-3 py-2 cursor-pointer flex items-center gap-2 text-sm",
+                  highlightedIndex === index
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-muted"
+                )}
+              >
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{street.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{street.fullName}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : !isLoading ? (
+          <div className="bg-popover border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
+            Nie znaleziono dopasowań dla „{inputValue}” w mieście {city}
+          </div>
+        ) : null}
+      </div>,
+      document.body
+    );
 
   return (
     <div className={cn("relative", className)}>
@@ -349,7 +385,7 @@ export function StreetAutocomplete({
           ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => inputValue.length >= 3 && setIsOpen(true)}
+          onFocus={() => inputValue.length >= MIN_CHARS && setIsOpen(true)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -365,40 +401,7 @@ export function StreetAutocomplete({
         </div>
       </div>
 
-      {isOpen && suggestions.length > 0 && (
-        <ul
-          ref={listRef}
-          className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto"
-        >
-          {suggestions.map((street, index) => (
-            <li
-              key={`${street.name}-${index}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelect(street);
-              }}
-              className={cn(
-                "px-3 py-2 cursor-pointer flex items-center gap-2 text-sm",
-                highlightedIndex === index
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted"
-              )}
-            >
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium">{street.name}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {isOpen &&
-        inputValue.length >= 3 &&
-        !isLoading &&
-        suggestions.length === 0 && (
-          <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
-            Nie znaleziono ulic pasujących do "{inputValue}" w mieście {city}
-          </div>
-        )}
+      {dropdown}
     </div>
   );
 }
