@@ -45,9 +45,6 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { StreetAutocomplete } from "@/components/jobs/StreetAutocomplete";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
-import { CountrySelect } from "@/components/jobs/CountrySelect";
-import { ForeignCitySelect } from "@/components/jobs/ForeignCitySelect";
-import { LocationTypeToggle } from "@/components/jobs/LocationTypeToggle";
 import { WOJEWODZTWA, WROCLAW_DISTRICTS, DOLNOSLASKIE_CITIES, DOLNOSLASKIE_BOUNDS, isInDolnoslaskie } from "@/lib/constants";
 import { PREMIUM_ADDONS } from "@/lib/stripe";
 
@@ -295,11 +292,7 @@ export default function NewJob() {
 			return form.title.length >= 5 && form.category_id !== "";
 		}
 		if (s === 2) {
-			if (form.is_foreign) {
-				// Foreign locations are allowed
-				return form.country !== "" && form.miasto !== "";
-			}
-			// Polish locations must be within 50km of Wrocław
+			// Polish locations must be within dolnośląskie
 			// For Wrocław, district is required
 			const isWroclaw = form.miasto.toLowerCase() === "wrocław";
 			const districtValid = !isWroclaw || form.district !== "";
@@ -867,170 +860,135 @@ export default function NewJob() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-6">
-							<div className="space-y-3">
-								<Label className="text-base font-semibold">
-									Rodzaj lokalizacji *
-								</Label>
-								<LocationTypeToggle
-									isForeign={form.is_foreign}
-									onChange={(v) => updateForm("is_foreign", v)}
-								/>
+							<div className="grid sm:grid-cols-2 gap-4">
+								<div className="space-y-2">
+									<Label>Województwo *</Label>
+									<WojewodztwoSelect
+										value={form.wojewodztwo}
+										onChange={(v) => updateForm("wojewodztwo", v)}
+									/>
+								</div>
+
+								<div className="space-y-2">
+									<Label>Miasto *</Label>
+									<CityAutocomplete
+										value={form.miasto}
+										onChange={(miasto, region) => {
+											updateForm("miasto", miasto);
+											let effectiveWojewodztwo = form.wojewodztwo;
+											if (region) {
+												const normalizedRegion = region.toLowerCase();
+												const matchedWojewodztwo = WOJEWODZTWA.find(
+													(w) => w.toLowerCase() === normalizedRegion
+												);
+												if (
+													matchedWojewodztwo &&
+													matchedWojewodztwo !== form.wojewodztwo
+												) {
+													effectiveWojewodztwo = matchedWojewodztwo;
+													setForm((prev) => ({
+														...prev,
+														miasto,
+														wojewodztwo: matchedWojewodztwo,
+													}));
+												}
+											}
+											// Check if in dolnośląskie
+											checkCityInDolnoslaskie(miasto, effectiveWojewodztwo);
+										}}
+										placeholder="Wpisz miasto..."
+									/>
+									{checkingLocation && (
+										<p className="text-xs text-muted-foreground flex items-center gap-1">
+											<Loader2 className="h-3 w-3 animate-spin" />
+											Sprawdzanie lokalizacji...
+										</p>
+									)}
+								</div>
 							</div>
 
-							{!form.is_foreign && (
-								<>
-									<div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
-										<div className="space-y-2">
-											<Label>Województwo *</Label>
-											<WojewodztwoSelect
-												value={form.wojewodztwo}
-												onChange={(v) => updateForm("wojewodztwo", v)}
-											/>
-										</div>
-
-										<div className="space-y-2">
-											<Label>Miasto *</Label>
-											<CityAutocomplete
-												value={form.miasto}
-												onChange={(miasto, region) => {
-													updateForm("miasto", miasto);
-													let effectiveWojewodztwo = form.wojewodztwo;
-													if (region) {
-														const normalizedRegion = region.toLowerCase();
-														const matchedWojewodztwo = WOJEWODZTWA.find(
-															(w) => w.toLowerCase() === normalizedRegion
-														);
-														if (
-															matchedWojewodztwo &&
-															matchedWojewodztwo !== form.wojewodztwo
-														) {
-															effectiveWojewodztwo = matchedWojewodztwo;
-															setForm((prev) => ({
-																...prev,
-																miasto,
-																wojewodztwo: matchedWojewodztwo,
-															}));
-														}
-													}
-													// Check if in dolnośląskie
-													checkCityInDolnoslaskie(miasto, effectiveWojewodztwo);
-												}}
-												placeholder="Wpisz miasto..."
-											/>
-											{checkingLocation && (
-												<p className="text-xs text-muted-foreground flex items-center gap-1">
-													<Loader2 className="h-3 w-3 animate-spin" />
-													Sprawdzanie lokalizacji...
-												</p>
-											)}
-										</div>
-									</div>
-
-								{/* District selector for Wrocław - REQUIRED */}
-								{form.miasto.toLowerCase() === "wrocław" && (
-									<div className="space-y-2 animate-fade-in">
-										<Label>Dzielnica *</Label>
-										<Select
-											value={form.district}
-											onValueChange={(v) => updateForm("district", v)}
-										>
-											<SelectTrigger className={!form.district ? "border-destructive/50" : ""}>
-												<SelectValue placeholder="Wybierz dzielnicę" />
-											</SelectTrigger>
-											<SelectContent>
-												{Object.keys(WROCLAW_DISTRICTS).map((district) => (
-													<SelectItem key={district} value={district}>
-														{district}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										{!form.district && (
-											<p className="text-xs text-destructive flex items-center gap-1">
-												<AlertTriangle className="h-3 w-3" />
-												Dla Wrocławia wybór dzielnicy jest obowiązkowy
-											</p>
-										)}
-										<p className="text-xs text-muted-foreground">
-											Dzielnica pozwala na precyzyjne wyświetlanie na Mapie Pracy
+							{/* District selector for Wrocław - REQUIRED */}
+							{form.miasto.toLowerCase() === "wrocław" && (
+								<div className="space-y-2 animate-fade-in">
+									<Label>Dzielnica *</Label>
+									<Select
+										value={form.district}
+										onValueChange={(v) => updateForm("district", v)}
+									>
+										<SelectTrigger className={!form.district ? "border-destructive/50" : ""}>
+											<SelectValue placeholder="Wybierz dzielnicę" />
+										</SelectTrigger>
+										<SelectContent>
+											{Object.keys(WROCLAW_DISTRICTS).map((district) => (
+												<SelectItem key={district} value={district}>
+													{district}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									{!form.district && (
+										<p className="text-xs text-destructive flex items-center gap-1">
+											<AlertTriangle className="h-3 w-3" />
+											Dla Wrocławia wybór dzielnicy jest obowiązkowy
 										</p>
-									</div>
-								)}
-
-									{/* Street field for dolnośląskie cities */}
-									{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
-										<div className="space-y-2 animate-fade-in">
-											<Label>Ulica i numer (opcjonalnie)</Label>
-											<StreetAutocomplete
-												value={form.street}
-												onChange={(street) => updateForm("street", street)}
-												city={form.miasto}
-												placeholder="Wpisz nazwę ulicy..."
-											/>
-											<p className="text-xs text-muted-foreground">
-												Podanie ulicy zwiększy precyzję lokalizacji na Mapie Pracy
-											</p>
-										</div>
 									)}
-
-									{/* Info for dolnośląskie cities */}
-									{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
-										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-											<Sparkles className="h-4 w-4 text-primary" />
-											<p className="text-sm text-muted-foreground">
-												Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla województwa dolnośląskiego
-											</p>
-										</div>
-									)}
-
-									{/* Error for cities outside 50km - blocks submission */}
-									{locationError && (
-										<div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
-											<AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-											<div>
-												<p className="text-sm font-medium text-destructive">
-													Lokalizacja poza zasięgiem
-												</p>
-												<p className="text-sm text-muted-foreground mt-1">
-													{locationError}
-												</p>
-											</div>
-										</div>
-									)}
-
-									{/* Info for cities in dolnośląskie but not in predefined list */}
-									{form.miasto && !DOLNOSLASKIE_CITIES[form.miasto] && form.wojewodztwo && !locationError && !checkingLocation && (
-										<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-											<Sparkles className="h-4 w-4 text-primary" />
-											<p className="text-sm text-muted-foreground">
-												Lokalizacja w województwie dolnośląskim - oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span>
-											</p>
-										</div>
-									)}
-								</>
+									<p className="text-xs text-muted-foreground">
+										Dzielnica pozwala na precyzyjne wyświetlanie na Mapie Pracy
+									</p>
+								</div>
 							)}
 
-							{form.is_foreign && (
-								<div className="grid sm:grid-cols-2 gap-4 animate-fade-in">
-									<div className="space-y-2">
-										<Label>Kraj *</Label>
-										<CountrySelect
-											value={form.country}
-											onChange={(v) => updateForm("country", v)}
-										/>
-									</div>
+							{/* Street field for dolnośląskie cities */}
+							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
+								<div className="space-y-2 animate-fade-in">
+									<Label>Ulica i numer (opcjonalnie)</Label>
+									<StreetAutocomplete
+										value={form.street}
+										onChange={(street) => updateForm("street", street)}
+										city={form.miasto}
+										placeholder="Wpisz nazwę ulicy..."
+									/>
+									<p className="text-xs text-muted-foreground">
+										Podanie ulicy zwiększy precyzję lokalizacji na Mapie Pracy
+									</p>
+								</div>
+							)}
 
-									<div className="space-y-2">
-										<Label>Miasto *</Label>
-										<ForeignCitySelect
-											country={form.country}
-											value={form.miasto}
-											onChange={(v) => updateForm("miasto", v)}
-											disabled={!form.country}
-										/>
+							{/* Info for dolnośląskie cities */}
+							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
+								<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+									<Sparkles className="h-4 w-4 text-primary" />
+									<p className="text-sm text-muted-foreground">
+										Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla województwa dolnośląskiego
+									</p>
+								</div>
+							)}
+
+							{/* Error for cities outside dolnośląskie */}
+							{locationError && (
+								<div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+									<AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+									<div>
+										<p className="text-sm font-medium text-destructive">
+											Lokalizacja poza zasięgiem
+										</p>
+										<p className="text-sm text-muted-foreground mt-1">
+											{locationError}
+										</p>
 									</div>
 								</div>
 							)}
+
+							{/* Info for cities in dolnośląskie but not in predefined list */}
+							{form.miasto && !DOLNOSLASKIE_CITIES[form.miasto] && form.wojewodztwo && !locationError && !checkingLocation && (
+								<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+									<Sparkles className="h-4 w-4 text-primary" />
+									<p className="text-sm text-muted-foreground">
+										Lokalizacja w województwie dolnośląskim - oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span>
+									</p>
+								</div>
+							)}
+
 
 							<div className="space-y-2">
 								<Label>Data i godzina rozpoczęcia</Label>
