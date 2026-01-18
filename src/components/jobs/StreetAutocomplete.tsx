@@ -14,8 +14,59 @@ interface StreetAutocompleteProps {
 
 interface StreetSuggestion {
   name: string;
-  display_name: string;
+  fullName: string;
 }
+
+// Polish city coordinates for better Photon API results
+const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
+  "wrocław": { lat: 51.1079, lon: 17.0385 },
+  "kłodzko": { lat: 50.4346, lon: 16.6619 },
+  "wałbrzych": { lat: 50.7714, lon: 16.2843 },
+  "legnica": { lat: 51.2070, lon: 16.1619 },
+  "jelenia góra": { lat: 50.9044, lon: 15.7197 },
+  "świdnica": { lat: 50.8428, lon: 16.4880 },
+  "lubin": { lat: 51.4010, lon: 16.2015 },
+  "głogów": { lat: 51.6632, lon: 16.0846 },
+  "oleśnica": { lat: 51.2098, lon: 17.3827 },
+  "oława": { lat: 50.9471, lon: 17.2898 },
+  "bolesławiec": { lat: 51.2640, lon: 15.5696 },
+  "dzierżoniów": { lat: 50.7283, lon: 16.6509 },
+  "bielawa": { lat: 50.6897, lon: 16.6224 },
+  "zgorzelec": { lat: 51.1524, lon: 15.0083 },
+  "jawor": { lat: 51.0519, lon: 16.1946 },
+  "ząbkowice śląskie": { lat: 50.5879, lon: 16.8136 },
+  "strzelin": { lat: 50.7819, lon: 17.0662 },
+  "trzebnica": { lat: 51.3099, lon: 17.0623 },
+  "środa śląska": { lat: 51.1648, lon: 16.5932 },
+  "sobótka": { lat: 50.9329, lon: 16.7433 },
+  "strzegom": { lat: 50.9604, lon: 16.3489 },
+  "kamienna góra": { lat: 50.7806, lon: 16.0316 },
+  "kudowa-zdrój": { lat: 50.4432, lon: 16.2432 },
+  "polanica-zdrój": { lat: 50.4076, lon: 16.5124 },
+  "nowa ruda": { lat: 50.5831, lon: 16.4969 },
+  "bystrzyca kłodzka": { lat: 50.2979, lon: 16.6502 },
+  "lądek-zdrój": { lat: 50.3440, lon: 16.8779 },
+  "bardo": { lat: 50.5108, lon: 16.7402 },
+  "siechnice": { lat: 51.0311, lon: 17.1475 },
+  "kobierzyce": { lat: 51.0158, lon: 16.9294 },
+  "kąty wrocławskie": { lat: 51.0324, lon: 16.7654 },
+  "brzeg dolny": { lat: 51.2711, lon: 16.7127 },
+  "oborniki śląskie": { lat: 51.3043, lon: 16.9160 },
+  "żmigród": { lat: 51.4732, lon: 16.9135 },
+  "milicz": { lat: 51.5371, lon: 17.2877 },
+  "syców": { lat: 51.3073, lon: 17.7182 },
+  "twardogóra": { lat: 51.3621, lon: 17.4538 },
+  "bierutów": { lat: 51.1333, lon: 17.7411 },
+  "namysłów": { lat: 51.0772, lon: 17.7222 },
+  "kluczbork": { lat: 50.9734, lon: 18.2177 },
+  "dobroszyce": { lat: 51.2673, lon: 17.3181 },
+  "długołęka": { lat: 51.1869, lon: 17.2004 },
+  "czernica": { lat: 51.0532, lon: 17.2527 },
+  "święta katarzyna": { lat: 51.0602, lon: 17.1503 },
+  "żórawina": { lat: 50.9982, lon: 17.0507 },
+  "jordanów śląski": { lat: 50.8826, lon: 16.8637 },
+  "mietków": { lat: 50.9508, lon: 16.6328 },
+};
 
 export function StreetAutocomplete({
   value,
@@ -51,46 +102,106 @@ export function StreetAutocomplete({
 
     setIsLoading(true);
     try {
-      // Use Nominatim API - search for streets in the specified city
-      // Add "ulica" prefix to help find street results
-      const searchQueries = [
-        `ulica ${query}, ${city}, Polska`,
-        `${query}, ${city}, Polska`,
-      ];
-      
       const allStreets: StreetSuggestion[] = [];
       
-      for (const searchQuery of searchQueries) {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-            new URLSearchParams({
-              q: searchQuery,
-              format: "json",
-              addressdetails: "1",
-              limit: "30",
-              countrycodes: "pl",
-              "accept-language": "pl",
-              dedupe: "1",
-            }),
-          {
-            headers: {
-              "User-Agent": "ZlecenieTeraz/1.0",
-            },
-          }
-        );
+      // Get city coordinates for better results
+      const cityLower = city.toLowerCase();
+      const coords = CITY_COORDS[cityLower] || { lat: 51.1079, lon: 17.0385 }; // Default to Wrocław
+      
+      // Use Photon API (Komoot) - better for autocomplete
+      // Search with location bias towards the city
+      const photonResponse = await fetch(
+        `https://photon.komoot.io/api/?` +
+          new URLSearchParams({
+            q: `${query} ${city}`,
+            lat: coords.lat.toString(),
+            lon: coords.lon.toString(),
+            limit: "20",
+            lang: "pl",
+            osm_tag: "highway",
+          })
+      );
 
-        if (response.ok) {
-          const data = await response.json();
+      if (photonResponse.ok) {
+        const data = await photonResponse.json();
+        
+        if (data.features) {
+          data.features.forEach((feature: any) => {
+            const props = feature.properties;
+            const streetName = props.name || props.street;
+            
+            if (!streetName) return;
+            
+            // Check if it's in the right city
+            const featureCity = (props.city || props.town || props.village || "").toLowerCase();
+            const matchesCity = featureCity.includes(cityLower) || 
+                               cityLower.includes(featureCity) ||
+                               featureCity === "" ||
+                               props.state?.toLowerCase().includes("dolnośląskie");
+            
+            if (!matchesCity) return;
+            
+            // Check if the street name contains the query (partial match)
+            const streetLower = streetName.toLowerCase();
+            const queryLower = query.toLowerCase();
+            
+            // Match if any word in the street name starts with or contains the query
+            const words = streetLower.split(/\s+/);
+            const queryWords = queryLower.split(/\s+/);
+            
+            const matches = queryWords.every(qw => 
+              words.some(w => w.includes(qw) || qw.includes(w))
+            ) || streetLower.includes(queryLower);
+            
+            if (matches) {
+              allStreets.push({
+                name: streetName,
+                fullName: `${streetName}, ${props.city || props.town || props.village || city}`,
+              });
+            }
+          });
+        }
+      }
 
-          // Extract street names from results
-          const streets = data
-            .map((item: any) => {
-              // Get street name from address details
-              const streetName = item.address?.road || item.address?.pedestrian || item.address?.footway;
+      // Also try Nominatim with multiple search variations for better coverage
+      const searchVariations = [
+        `ulica ${query}, ${city}`,
+        `${query}, ${city}`,
+        `plac ${query}, ${city}`,
+        `aleja ${query}, ${city}`,
+      ];
+
+      for (const searchQuery of searchVariations) {
+        try {
+          const nominatimResponse = await fetch(
+            `https://nominatim.openstreetmap.org/search?` +
+              new URLSearchParams({
+                q: searchQuery,
+                format: "json",
+                addressdetails: "1",
+                limit: "10",
+                countrycodes: "pl",
+                "accept-language": "pl",
+              }),
+            {
+              headers: {
+                "User-Agent": "ZlecenieTeraz/1.0",
+              },
+            }
+          );
+
+          if (nominatimResponse.ok) {
+            const data = await nominatimResponse.json();
+
+            data.forEach((item: any) => {
+              const streetName = item.address?.road || 
+                                item.address?.pedestrian || 
+                                item.address?.footway ||
+                                item.address?.square ||
+                                item.address?.neighbourhood;
               
-              if (!streetName) return null;
+              if (!streetName) return;
 
-              // Check if the result is in the correct city
               const resultCity = (
                 item.address?.city ||
                 item.address?.town ||
@@ -99,46 +210,58 @@ export function StreetAutocomplete({
                 ""
               ).toLowerCase();
 
-              // More lenient city matching
-              const cityLower = city.toLowerCase();
-              const matches = resultCity.includes(cityLower) || 
-                             cityLower.includes(resultCity) ||
-                             resultCity.replace(/ó/g, 'o').includes(cityLower.replace(/ó/g, 'o'));
+              const matchesCity = resultCity.includes(cityLower) || 
+                                 cityLower.includes(resultCity) ||
+                                 resultCity === "";
 
-              if (!matches && resultCity !== "") {
-                return null;
+              if (!matchesCity) return;
+
+              // Check partial match
+              const streetLower = streetName.toLowerCase();
+              const queryLower = query.toLowerCase();
+              
+              if (streetLower.includes(queryLower) || 
+                  queryLower.split(/\s+/).some(w => streetLower.includes(w))) {
+                allStreets.push({
+                  name: streetName,
+                  fullName: item.display_name,
+                });
               }
-
-              return {
-                name: streetName,
-                display_name: item.display_name,
-              };
-            })
-            .filter(
-              (item: StreetSuggestion | null): item is StreetSuggestion =>
-                item !== null
-            );
-
-          allStreets.push(...streets);
+            });
+          }
+        } catch (e) {
+          // Ignore individual query errors
         }
       }
-      
-      // Remove duplicates and filter
+
+      // Remove duplicates and sort by relevance
+      const queryLower = query.toLowerCase();
       const uniqueStreets = allStreets
         .filter(
           (item, index, self) =>
             index === self.findIndex((t) => t.name.toLowerCase() === item.name.toLowerCase())
         )
-        // Filter to show streets that contain the query (case insensitive)
-        .filter((item) =>
-          item.name.toLowerCase().includes(query.toLowerCase())
-        )
-        // Sort: streets starting with query first, then alphabetically
         .sort((a, b) => {
-          const aStarts = a.name.toLowerCase().startsWith(query.toLowerCase());
-          const bStarts = b.name.toLowerCase().startsWith(query.toLowerCase());
+          const aLower = a.name.toLowerCase();
+          const bLower = b.name.toLowerCase();
+          
+          // Exact match first
+          if (aLower === queryLower && bLower !== queryLower) return -1;
+          if (bLower === queryLower && aLower !== queryLower) return 1;
+          
+          // Starts with query
+          const aStarts = aLower.startsWith(queryLower);
+          const bStarts = bLower.startsWith(queryLower);
           if (aStarts && !bStarts) return -1;
           if (!aStarts && bStarts) return 1;
+          
+          // Contains query word
+          const aContainsWord = aLower.split(/\s+/).some(w => w.startsWith(queryLower));
+          const bContainsWord = bLower.split(/\s+/).some(w => w.startsWith(queryLower));
+          if (aContainsWord && !bContainsWord) return -1;
+          if (!aContainsWord && bContainsWord) return 1;
+          
+          // Alphabetical
           return a.name.localeCompare(b.name, "pl");
         })
         .slice(0, 10);
@@ -169,7 +292,7 @@ export function StreetAutocomplete({
     }
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(newValue);
-    }, 300);
+    }, 250);
   };
 
   const handleSelect = (street: StreetSuggestion) => {
