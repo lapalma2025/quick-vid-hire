@@ -147,7 +147,7 @@ export const Header = () => {
 						to="/workers"
 						className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
 					>
-						Panel Wykonawcy
+						Lista Wykonawców
 					</Link>
 					<Link
 						to="/work-map"
@@ -362,7 +362,7 @@ export const Header = () => {
 									className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
 									onClick={() => setMobileOpen(false)}
 								>
-									Panel Wykonawcy
+									Lista Wykonawców
 								</Link>
 								<Link
 									to="/work-map"
