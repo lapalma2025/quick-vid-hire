@@ -63,15 +63,38 @@ export function CategoryBadges({
         const isSelected = selectedCategories.includes(category.name);
         const Icon = category.icon;
         
+        // Extract base color for subtle unselected state
+        const colorMatch = category.color.match(/(orange|cyan|blue|indigo|amber|slate|green|pink|red|purple|emerald|yellow|rose|violet|gray)/);
+        const baseColor = colorMatch ? colorMatch[1] : 'gray';
+        
+        // Subtle color classes for unselected state
+        const subtleColorClasses: Record<string, string> = {
+          orange: "text-orange-600 border-orange-200/70 hover:bg-orange-50 hover:border-orange-300 dark:text-orange-400 dark:border-orange-800/50 dark:hover:bg-orange-950/30",
+          cyan: "text-cyan-600 border-cyan-200/70 hover:bg-cyan-50 hover:border-cyan-300 dark:text-cyan-400 dark:border-cyan-800/50 dark:hover:bg-cyan-950/30",
+          blue: "text-blue-600 border-blue-200/70 hover:bg-blue-50 hover:border-blue-300 dark:text-blue-400 dark:border-blue-800/50 dark:hover:bg-blue-950/30",
+          indigo: "text-indigo-600 border-indigo-200/70 hover:bg-indigo-50 hover:border-indigo-300 dark:text-indigo-400 dark:border-indigo-800/50 dark:hover:bg-indigo-950/30",
+          amber: "text-amber-600 border-amber-200/70 hover:bg-amber-50 hover:border-amber-300 dark:text-amber-400 dark:border-amber-800/50 dark:hover:bg-amber-950/30",
+          slate: "text-slate-600 border-slate-200/70 hover:bg-slate-50 hover:border-slate-300 dark:text-slate-400 dark:border-slate-700/50 dark:hover:bg-slate-800/30",
+          green: "text-green-600 border-green-200/70 hover:bg-green-50 hover:border-green-300 dark:text-green-400 dark:border-green-800/50 dark:hover:bg-green-950/30",
+          pink: "text-pink-600 border-pink-200/70 hover:bg-pink-50 hover:border-pink-300 dark:text-pink-400 dark:border-pink-800/50 dark:hover:bg-pink-950/30",
+          red: "text-red-600 border-red-200/70 hover:bg-red-50 hover:border-red-300 dark:text-red-400 dark:border-red-800/50 dark:hover:bg-red-950/30",
+          purple: "text-purple-600 border-purple-200/70 hover:bg-purple-50 hover:border-purple-300 dark:text-purple-400 dark:border-purple-800/50 dark:hover:bg-purple-950/30",
+          emerald: "text-emerald-600 border-emerald-200/70 hover:bg-emerald-50 hover:border-emerald-300 dark:text-emerald-400 dark:border-emerald-800/50 dark:hover:bg-emerald-950/30",
+          yellow: "text-yellow-600 border-yellow-200/70 hover:bg-yellow-50 hover:border-yellow-300 dark:text-yellow-400 dark:border-yellow-800/50 dark:hover:bg-yellow-950/30",
+          rose: "text-rose-600 border-rose-200/70 hover:bg-rose-50 hover:border-rose-300 dark:text-rose-400 dark:border-rose-800/50 dark:hover:bg-rose-950/30",
+          violet: "text-violet-600 border-violet-200/70 hover:bg-violet-50 hover:border-violet-300 dark:text-violet-400 dark:border-violet-800/50 dark:hover:bg-violet-950/30",
+          gray: "text-gray-600 border-gray-200/70 hover:bg-gray-50 hover:border-gray-300 dark:text-gray-400 dark:border-gray-700/50 dark:hover:bg-gray-800/30",
+        };
+        
         return (
           <Badge
             key={category.id}
             variant="outline"
             className={cn(
-              "cursor-pointer transition-all duration-200 px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap",
+              "cursor-pointer transition-all duration-200 px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap bg-background",
               isSelected 
                 ? `${category.color} border-2 shadow-sm` 
-                : "bg-background text-muted-foreground border-border hover:bg-muted/80 hover:border-muted-foreground/30"
+                : subtleColorClasses[baseColor] || subtleColorClasses.gray
             )}
             onClick={() => onCategoryToggle(category.name)}
           >
