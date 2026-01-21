@@ -18,6 +18,8 @@ import {
   Sparkles, 
   Palette, 
   Scissors,
+  Code,
+  Cog,
   LucideIcon
 } from "lucide-react";
 
@@ -43,6 +45,11 @@ export const MAIN_CATEGORIES: {
   { id: "2383bf25-3821-41ff-85b5-7c49d00fa5b6", name: "Instalacje", displayName: "Instalacje", icon: Plug, color: "bg-yellow-500/10 text-yellow-600 border-yellow-200 hover:bg-yellow-500/20" },
   { id: "46f28ed4-790d-435f-9fa5-636c22d70126", name: "Uroda i zdrowie", displayName: "Uroda", icon: Scissors, color: "bg-rose-500/10 text-rose-600 border-rose-200 hover:bg-rose-500/20" },
   { id: "2ed44ce3-8f3a-4c68-9bee-d01458c0d69b", name: "Sztuka i rzemiosło", displayName: "Rzemiosło", icon: Palette, color: "bg-violet-500/10 text-violet-600 border-violet-200 hover:bg-violet-500/20" },
+  // Added missing categories from database
+  { id: "ba172dc7-3932-44e8-ae0f-c125b1b25e9e", name: "Edukacja i szkolenia", displayName: "Edukacja", icon: GraduationCap, color: "bg-sky-500/10 text-sky-600 border-sky-200 hover:bg-sky-500/20" },
+  { id: "4b6dada1-94fb-4511-bc77-9b09bf143791", name: "Finanse i prawo", displayName: "Finanse", icon: Scale, color: "bg-zinc-500/10 text-zinc-600 border-zinc-200 hover:bg-zinc-500/20" },
+  { id: "7b2c6c9e-8f38-4c96-a99e-ee50bdda2051", name: "Motoryzacja", displayName: "Motoryzacja", icon: Cog, color: "bg-stone-500/10 text-stone-600 border-stone-200 hover:bg-stone-500/20" },
+  { id: "5f0ff7f0-4987-4e43-bd46-70fa8a1e53aa", name: "Programowanie", displayName: "Programowanie", icon: Code, color: "bg-teal-500/10 text-teal-600 border-teal-200 hover:bg-teal-500/20" },
   { id: "50ed805a-5705-46d9-8467-be94f43b7590", name: "Inne", displayName: "Inne", icon: MoreHorizontal, color: "bg-gray-500/10 text-gray-600 border-gray-200 hover:bg-gray-500/20" },
 ];
 
@@ -125,7 +132,7 @@ export function getCategoryColorClasses(categoryName: string, variant: 'full' | 
   }
   
   // Extract base color from the category color string
-  const colorMatch = category.color.match(/(orange|cyan|blue|indigo|amber|slate|green|pink|red|purple|emerald|yellow|rose|violet|gray)/);
+  const colorMatch = category.color.match(/(orange|cyan|blue|indigo|amber|slate|green|pink|red|purple|emerald|yellow|rose|violet|gray|sky|zinc|stone|teal)/);
   const baseColor = colorMatch ? colorMatch[1] : 'gray';
   
   if (variant === 'full') {
@@ -149,6 +156,11 @@ export function getCategoryColorClasses(categoryName: string, variant: 'full' | 
     rose: "bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40",
     violet: "bg-violet-50 text-violet-700 border-violet-200/60 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800/40",
     gray: "bg-gray-50 text-gray-700 border-gray-200/60 dark:bg-gray-800/30 dark:text-gray-400 dark:border-gray-700/40",
+    // New colors for added categories
+    sky: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800/40",
+    zinc: "bg-zinc-50 text-zinc-700 border-zinc-200/60 dark:bg-zinc-800/30 dark:text-zinc-400 dark:border-zinc-700/40",
+    stone: "bg-stone-50 text-stone-700 border-stone-200/60 dark:bg-stone-800/30 dark:text-stone-400 dark:border-stone-700/40",
+    teal: "bg-teal-50 text-teal-700 border-teal-200/60 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-800/40",
   };
   
   return subtleColors[baseColor] || subtleColors.gray;
