@@ -9,8 +9,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { cn } from "@/lib/utils";
-import { getCategoryColorClasses, findMainCategoryForSubcategory } from "@/components/shared/CategoryBadges";
+import { findMainCategoryForSubcategory } from "@/components/shared/CategoryBadges";
 
 interface Worker {
   id: string;
@@ -114,10 +113,7 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                 {firstCategory && (
                   <Badge 
                     variant="outline" 
-                    className={cn(
-                      "text-xs shrink-0 gap-1",
-                      getCategoryColorClasses(firstCategory.name, 'subtle')
-                    )}
+                    className="text-xs shrink-0 gap-1 bg-muted/50 text-muted-foreground border-border/60"
                   >
                     {(() => {
                       const mainCat = findMainCategoryForSubcategory(firstCategory.name);
@@ -147,10 +143,7 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                           <Badge 
                             key={i} 
                             variant="outline" 
-                            className={cn(
-                              "text-xs gap-1",
-                              getCategoryColorClasses(cat.name, 'subtle')
-                            )}
+                            className="text-xs gap-1 bg-muted/50 text-muted-foreground border-border/60"
                           >
                             {(() => {
                               const mainCat = findMainCategoryForSubcategory(cat.name);

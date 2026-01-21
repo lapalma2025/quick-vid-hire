@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { cn } from "@/lib/utils";
-import { getCategoryColorClasses, findMainCategoryForSubcategory } from "@/components/shared/CategoryBadges";
+import { findMainCategoryForSubcategory } from "@/components/shared/CategoryBadges";
 
 interface WorkMapJobListProps {
   jobs: JobMarker[];
@@ -91,10 +91,7 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
                   </span>
                 )}
                 {job.category && (
-                  <span className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded border",
-                    getCategoryColorClasses(job.category, 'subtle')
-                  )}>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded border bg-muted/50 text-muted-foreground border-border/60">
                     {(() => {
                       const mainCat = findMainCategoryForSubcategory(job.category);
                       const Icon = mainCat?.icon;
