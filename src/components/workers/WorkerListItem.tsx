@@ -9,6 +9,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { cn } from "@/lib/utils";
+import { getCategoryColorClasses, getCategoryByName } from "@/components/shared/CategoryBadges";
 
 interface Worker {
   id: string;
@@ -110,7 +112,18 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
             <div className="flex items-center justify-between gap-2 mt-auto pt-2">
               <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
                 {firstCategory && (
-                  <Badge variant="secondary" className="text-xs shrink-0">
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "text-xs shrink-0 gap-1",
+                      getCategoryColorClasses(firstCategory.name, 'subtle')
+                    )}
+                  >
+                    {(() => {
+                      const cat = getCategoryByName(firstCategory.name);
+                      const Icon = cat?.icon;
+                      return Icon ? <Icon className="h-2.5 w-2.5" /> : null;
+                    })()}
                     {firstCategory.name}
                   </Badge>
                 )}
@@ -131,7 +144,19 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {hiddenCategories.map((cat, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
+                          <Badge 
+                            key={i} 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs gap-1",
+                              getCategoryColorClasses(cat.name, 'subtle')
+                            )}
+                          >
+                            {(() => {
+                              const catInfo = getCategoryByName(cat.name);
+                              const Icon = catInfo?.icon;
+                              return Icon ? <Icon className="h-2.5 w-2.5" /> : null;
+                            })()}
                             {cat.name}
                           </Badge>
                         ))}

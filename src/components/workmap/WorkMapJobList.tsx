@@ -1,10 +1,11 @@
 import { JobMarker } from "@/hooks/useVehicleData";
 import { Link } from "react-router-dom";
-import { MapPin, Zap, Bookmark, Building2 } from "lucide-react";
+import { MapPin, Zap, Bookmark } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { cn } from "@/lib/utils";
+import { getCategoryColorClasses, getCategoryByName } from "@/components/shared/CategoryBadges";
 
 interface WorkMapJobListProps {
   jobs: JobMarker[];
@@ -37,7 +38,7 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
     return (
       <div className="p-10 text-center">
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
-          <Building2 className="h-8 w-8 text-muted-foreground/50" />
+          <MapPin className="h-8 w-8 text-muted-foreground/50" />
         </div>
         <p className="text-muted-foreground font-medium">Brak ofert w wybranej kategorii</p>
         <p className="text-sm text-muted-foreground/70 mt-1">Zmień filtry, aby zobaczyć więcej</p>
@@ -72,16 +73,10 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
               </h3>
 
               {/* Meta Row */}
-              <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
-                {job.category && (
-                  <span className="flex items-center gap-1">
-                    <Building2 className="h-3.5 w-3.5" />
-                    <span className="truncate max-w-[100px]">{job.category}</span>
-                  </span>
-                )}
+              <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" />
-                  <span className="truncate max-w-[120px]">
+                  <span className="truncate max-w-[140px]">
                     {job.miasto}{job.district ? `, ${job.district}` : ''}
                   </span>
                 </span>
@@ -96,7 +91,15 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
                   </span>
                 )}
                 {job.category && (
-                  <span className="px-2 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground rounded">
+                  <span className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded border",
+                    getCategoryColorClasses(job.category, 'subtle')
+                  )}>
+                    {(() => {
+                      const cat = getCategoryByName(job.category);
+                      const Icon = cat?.icon;
+                      return Icon ? <Icon className="h-2.5 w-2.5" /> : null;
+                    })()}
                     {job.category}
                   </span>
                 )}
