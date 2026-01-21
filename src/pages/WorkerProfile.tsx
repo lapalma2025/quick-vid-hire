@@ -246,23 +246,19 @@ export default function WorkerProfile() {
             </Card>
 
             {/* Specializations */}
-            <Card className="bg-gradient-to-br from-primary/5 via-background to-primary/10 border-primary/20">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  Specjalizacje
-                </CardTitle>
+                <CardTitle>Specjalizacje</CardTitle>
               </CardHeader>
               <CardContent>
                 {categories.length > 0 ? (
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (
                       <Badge 
                         key={cat.id} 
-                        variant="secondary"
-                        className="px-4 py-2 text-sm flex items-center gap-2 bg-background/80 border border-primary/20 hover:bg-primary/10 transition-colors"
+                        variant="outline"
+                        className="text-sm bg-muted/50 text-muted-foreground border-border/60"
                       >
-                        <CategoryIcon name={cat.icon || cat.name} className="h-4 w-4 text-primary" />
                         {cat.name}
                       </Badge>
                     ))}
