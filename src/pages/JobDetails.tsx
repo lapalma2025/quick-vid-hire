@@ -59,6 +59,7 @@ import {
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { CategoryIcon } from '@/components/jobs/CategoryIcon';
+import { ImageLightbox } from '@/components/ui/image-lightbox';
 
 interface JobDetails {
   id: string;
@@ -148,6 +149,8 @@ export default function JobDetails() {
   const [workerRatingDialogOpen, setWorkerRatingDialogOpen] = useState(false);
   const [hasRatedClient, setHasRatedClient] = useState(false);
   const [hasClientRated, setHasClientRated] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const isOwner = profile?.id === job?.user_id;
   const isSelectedWorker = profile?.id === job?.selected_worker_id;
@@ -797,16 +800,36 @@ export default function JobDetails() {
           <div className="space-y-6">
             {/* Images */}
             {job.job_images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {job.job_images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img.image_url}
-                    alt={`${job.title} ${i + 1}`}
-                    className="rounded-lg aspect-video object-cover w-full"
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {job.job_images.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setLightboxIndex(i);
+                        setLightboxOpen(true);
+                      }}
+                      className="group relative rounded-lg aspect-video overflow-hidden cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all duration-300"
+                    >
+                      <img
+                        src={img.image_url}
+                        alt={`${job.title} ${i + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                      <div className="absolute bottom-2 right-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        Powiększ
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <ImageLightbox
+                  images={job.job_images.map((img, i) => ({ id: String(i), image_url: img.image_url }))}
+                  initialIndex={lightboxIndex}
+                  open={lightboxOpen}
+                  onOpenChange={setLightboxOpen}
+                />
+              </>
             )}
 
             {/* Title & badges */}
