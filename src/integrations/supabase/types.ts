@@ -251,6 +251,7 @@ export type Database = {
           paid: boolean | null
           promotion_expires_at: string | null
           selected_worker_id: string | null
+          start_date_tbd: boolean | null
           start_time: string | null
           status: Database["public"]["Enums"]["job_status"] | null
           stripe_session_id: string | null
@@ -285,6 +286,7 @@ export type Database = {
           paid?: boolean | null
           promotion_expires_at?: string | null
           selected_worker_id?: string | null
+          start_date_tbd?: boolean | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           stripe_session_id?: string | null
@@ -319,6 +321,7 @@ export type Database = {
           paid?: boolean | null
           promotion_expires_at?: string | null
           selected_worker_id?: string | null
+          start_date_tbd?: boolean | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           stripe_session_id?: string | null

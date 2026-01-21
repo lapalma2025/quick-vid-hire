@@ -24,6 +24,7 @@ interface Job {
 	is_foreign: boolean | null;
 	country: string | null;
 	start_time: string | null;
+	start_date_tbd: boolean | null;
 	duration_hours: number | null;
 	budget: number | null;
 	budget_type: string | null;
@@ -66,6 +67,7 @@ export default function Jobs() {
 		availableAt: "",
 		startDate: "",
 		endDate: "",
+		startDateTbd: false,
 		sortBy: "newest",
 	});
 
@@ -123,6 +125,7 @@ export default function Jobs() {
         is_foreign,
         country,
         start_time,
+        start_date_tbd,
         end_time,
         duration_hours,
         budget,
@@ -189,24 +192,23 @@ export default function Jobs() {
 			query = query.eq("allows_group", true);
 		}
 
-		// Date filters - start_time (filter jobs starting on this date)
-		if (filters.startDate) {
-			const startOfDay = new Date(filters.startDate);
-			startOfDay.setHours(0, 0, 0, 0);
-			const endOfDay = new Date(filters.startDate);
-			endOfDay.setHours(23, 59, 59, 999);
-			query = query.gte("start_time", startOfDay.toISOString());
-			query = query.lte("start_time", endOfDay.toISOString());
+		// Filter for "Do ustalenia" (start_date_tbd)
+		if (filters.startDateTbd) {
+			query = query.eq("start_date_tbd", true);
 		}
 
-		// Date filters - end_time (filter jobs ending on this date)
-		if (filters.endDate) {
-			const startOfDay = new Date(filters.endDate);
+		// Date filters - start_time (filter jobs starting on or after this date)
+		if (filters.startDate && !filters.startDateTbd) {
+			const startOfDay = new Date(filters.startDate);
 			startOfDay.setHours(0, 0, 0, 0);
+			query = query.gte("start_time", startOfDay.toISOString());
+		}
+
+		// Date filters - filter jobs starting on or before this date
+		if (filters.endDate && !filters.startDateTbd) {
 			const endOfDay = new Date(filters.endDate);
 			endOfDay.setHours(23, 59, 59, 999);
-			query = query.gte("end_time", startOfDay.toISOString());
-			query = query.lte("end_time", endOfDay.toISOString());
+			query = query.lte("start_time", endOfDay.toISOString());
 		}
 
 		switch (filters.sortBy) {
