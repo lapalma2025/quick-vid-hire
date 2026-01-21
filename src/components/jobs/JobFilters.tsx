@@ -129,7 +129,6 @@ export const JobFilters = memo(function JobFilters({ onFiltersChange }: JobFilte
 		filters.category_id ||
 		filters.urgent ||
 		filters.groupOnly ||
-		filters.availableAt ||
 		filters.startDate ||
 		filters.endDate;
 
@@ -252,17 +251,6 @@ export const JobFilters = memo(function JobFilters({ onFiltersChange }: JobFilte
 			</div>
 			</div>
 
-			<div className="space-y-2">
-				<Label className="font-medium">Godzina rozpoczęcia</Label>
-				<TimePicker
-					value={filters.availableAt}
-					onChange={(v) => updateFilter("availableAt", v)}
-					placeholder="Wybierz godzinę"
-				/>
-				<p className="text-xs text-muted-foreground">
-					Lub bez ustalonego terminu
-				</p>
-			</div>
 
 			<div className="space-y-2">
 				<Label className="font-medium">Sortuj</Label>
