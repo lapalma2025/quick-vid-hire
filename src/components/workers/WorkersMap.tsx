@@ -147,6 +147,18 @@ export default function WorkersMap({
   const [isLoading, setIsLoading] = useState(true);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
 
+  // Keep callbacks stable so hover state doesn't trigger marker re-creation (which closes popups)
+  const onMarkerClickRef = useRef<WorkersMapProps["onMarkerClick"]>(onMarkerClick);
+  const onMarkerHoverRef = useRef<WorkersMapProps["onMarkerHover"]>(onMarkerHover);
+
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick;
+  }, [onMarkerClick]);
+
+  useEffect(() => {
+    onMarkerHoverRef.current = onMarkerHover;
+  }, [onMarkerHover]);
+
   // Separate workers into precise (with street) and clustered (without)
   const { preciseWorkers, clustersByLocation } = useMemo(() => {
     const shouldShowPrecise = currentZoom >= PRECISE_SPLIT_ZOOM;
@@ -252,14 +264,23 @@ export default function WorkersMap({
 
     // Add precise worker markers
     preciseWorkers.forEach(worker => {
-      const icon = createWorkerIcon(worker.id === highlightedWorkerId);
+      const icon = createWorkerIcon(false);
       const marker = L.marker([worker.lat, worker.lng], { icon, zIndexOffset: 350 });
-      
+
+      (marker as any).__markerKind = 'worker';
+      (marker as any).__workerId = worker.id;
+
       marker.bindPopup(createWorkerPopup(worker), { minWidth: 220, maxWidth: 280 });
-      marker.on('mouseover', () => onMarkerHover?.(worker.id));
-      marker.on('mouseout', () => onMarkerHover?.(null));
-      marker.on('click', () => onMarkerClick?.(worker.id));
-      
+      marker.on('mouseover', () => onMarkerHoverRef.current?.(worker.id));
+      marker.on('mouseout', () => {
+        if (marker.isPopupOpen()) return;
+        onMarkerHoverRef.current?.(null);
+      });
+      marker.on('click', () => {
+        marker.openPopup();
+        onMarkerClickRef.current?.(worker.id);
+      });
+
       marker.addTo(map);
       markersRef.current.push(marker);
     });
@@ -267,24 +288,37 @@ export default function WorkersMap({
     // Add cluster markers
     clustersByLocation.forEach(cluster => {
       if (cluster.workers.length === 0) return;
-      
+
       if (cluster.workers.length === 1) {
         const worker = cluster.workers[0];
-        const icon = createWorkerIcon(worker.id === highlightedWorkerId);
+        const icon = createWorkerIcon(false);
         const marker = L.marker([cluster.lat, cluster.lng], { icon, zIndexOffset: 300 });
-        
+
+        (marker as any).__markerKind = 'worker';
+        (marker as any).__workerId = worker.id;
+
         marker.bindPopup(createWorkerPopup(worker), { minWidth: 220, maxWidth: 280 });
-        marker.on('mouseover', () => onMarkerHover?.(worker.id));
-        marker.on('mouseout', () => onMarkerHover?.(null));
-        marker.on('click', () => onMarkerClick?.(worker.id));
-        
+        marker.on('mouseover', () => onMarkerHoverRef.current?.(worker.id));
+        marker.on('mouseout', () => {
+          if (marker.isPopupOpen()) return;
+          onMarkerHoverRef.current?.(null);
+        });
+        marker.on('click', () => {
+          marker.openPopup();
+          onMarkerClickRef.current?.(worker.id);
+        });
+
         marker.addTo(map);
         clusterMarkersRef.current.push(marker);
       } else {
         const icon = createClusterIcon(cluster.workers.length);
         const marker = L.marker([cluster.lat, cluster.lng], { icon, zIndexOffset: 400 });
-        
-        const workerListHtml = cluster.workers.map(w => `
+
+        (marker as any).__markerKind = 'cluster';
+
+        const workerListHtml = cluster.workers
+          .map(
+            w => `
           <a href="/worker/${w.id}" class="cluster-worker-item">
             <div class="cluster-worker-avatar" style="
               width: 32px;
@@ -297,7 +331,7 @@ export default function WorkersMap({
               color: white;
               font-weight: 600;
               font-size: 12px;
-            ">${!w.avatar_url ? (w.name?.charAt(0)?.toUpperCase() || 'W') : ''}</div>
+            ">${!w.avatar_url ? w.name?.charAt(0)?.toUpperCase() || 'W' : ''}</div>
             <div class="cluster-worker-info">
               <div class="cluster-worker-name">${w.name || 'Wykonawca'}</div>
               <div class="cluster-worker-meta">
@@ -306,9 +340,12 @@ export default function WorkersMap({
               </div>
             </div>
           </a>
-        `).join('');
-        
-        marker.bindPopup(`
+        `,
+          )
+          .join('');
+
+        marker.bindPopup(
+          `
           <div class="cluster-popup">
             <div class="cluster-popup-header">
               <strong>${cluster.miasto}${cluster.district ? ` • ${cluster.district}` : ''}</strong>
@@ -321,26 +358,35 @@ export default function WorkersMap({
               Wykonawcy bez podanego dokładnego adresu
             </div>
           </div>
-        `, { minWidth: 280, maxWidth: 340, maxHeight: 400 });
-        
+        `,
+          {
+            minWidth: 280,
+            maxWidth: 340,
+            maxHeight: 400,
+          },
+        );
+
         marker.addTo(map);
         clusterMarkersRef.current.push(marker);
       }
     });
-  }, [preciseWorkers, clustersByLocation, highlightedWorkerId, onMarkerClick, onMarkerHover]);
+  }, [preciseWorkers, clustersByLocation]);
 
-  // Update marker style when highlighted worker changes (NO panning)
+  // Update marker style when highlighted worker changes (NO re-creation, keeps popups open)
   useEffect(() => {
-    if (!mapRef.current || !highlightedWorkerId) return;
+    const applyHighlight = (marker: L.Marker) => {
+      const kind = (marker as any).__markerKind as 'worker' | 'cluster' | undefined;
+      if (kind !== 'worker') return;
 
-    // Just update icon styles, don't pan
-    markersRef.current.forEach((marker, index) => {
-      const worker = preciseWorkers[index];
-      if (worker) {
-        marker.setIcon(createWorkerIcon(worker.id === highlightedWorkerId));
-      }
-    });
-  }, [highlightedWorkerId, preciseWorkers]);
+      const workerId = (marker as any).__workerId as string | undefined;
+      if (!workerId) return;
+
+      marker.setIcon(createWorkerIcon(workerId === highlightedWorkerId));
+    };
+
+    markersRef.current.forEach(applyHighlight);
+    clusterMarkersRef.current.forEach(applyHighlight);
+  }, [highlightedWorkerId]);
 
   return (
     <div className="relative h-full w-full">

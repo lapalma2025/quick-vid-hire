@@ -14,8 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import {
 	Select,
 	SelectContent,
@@ -23,6 +21,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+
+interface Category {
+	id: string;
+	name: string;
+	icon: string | null;
+}
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -37,10 +41,7 @@ import {
 	X,
 	Crown,
 	Image,
-	Lock,
-	Sparkles,
 	Trash2,
-	AlertTriangle,
 } from "lucide-react";
 import {
 	AlertDialog,
@@ -54,13 +55,7 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { TimePicker } from "@/components/ui/time-picker";
-import { CategoryIcon } from "@/components/jobs/CategoryIcon";
-
-interface Category {
-	id: string;
-	name: string;
-	icon: string | null;
-}
+import { CategoryMultiSelect } from "@/components/jobs/CategoryMultiSelect";
 
 export default function Profile() {
 	const navigate = useNavigate();
@@ -788,31 +783,11 @@ export default function Profile() {
 									<p className="text-sm text-muted-foreground">
 										Wybierz kategorie, w których oferujesz swoje usługi.
 									</p>
-									<div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-										{categories.map((category) => (
-											<div
-												key={category.id}
-												className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-													selectedCategories.includes(category.id)
-														? "border-primary bg-primary/10"
-														: "border-border hover:bg-muted/50"
-												}`}
-												onClick={() => toggleCategory(category.id)}
-											>
-												<Checkbox
-													checked={selectedCategories.includes(category.id)}
-													onCheckedChange={() => toggleCategory(category.id)}
-												/>
-												<CategoryIcon
-													name={category.name}
-													className="h-4 w-4 text-muted-foreground"
-												/>
-												<span className="text-sm font-medium truncate">
-													{category.name}
-												</span>
-											</div>
-										))}
-									</div>
+									<CategoryMultiSelect
+										value={selectedCategories}
+										onChange={setSelectedCategories}
+										placeholder="Wyszukaj i dodaj kategorię..."
+									/>
 								</div>
 
 								<div className="space-y-3">

@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Label } from "@/components/ui/label";
-import { ChevronDown, ChevronRight, Loader2, Check } from "lucide-react";
+import { ChevronDown, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "./CategoryIcon";
 import {
@@ -34,56 +33,69 @@ interface CategorySelectProps {
   className?: string;
 }
 
+let categoryCache: Category[] | null = null;
+let categoryCachePromise: Promise<Category[]> | null = null;
+
 export function CategorySelect({
   value,
   onChange,
   placeholder = "Wybierz kategorię...",
   className,
 }: CategorySelectProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>(() => categoryCache ?? []);
+  const [loading, setLoading] = useState(() => !categoryCache);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetchCategories();
+    if (categoryCache) return;
+
+    let cancelled = false;
+
+    const fetchOnce = async () => {
+      try {
+        if (!categoryCachePromise) {
+          categoryCachePromise = (async () => {
+            const { data, error } = await supabase
+              .from("categories")
+              .select("id, name, parent_id, description")
+              .order("name");
+
+            if (error) throw error;
+            return (data ?? []) as Category[];
+          })();
+        }
+
+        const data = await categoryCachePromise;
+        categoryCache = data;
+
+        if (!cancelled) setCategories(data);
+      } catch {
+        // ignore - UI will just show placeholder
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchOnce();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const fetchCategories = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id, name, parent_id, description")
-      .order("name");
-    
-    if (data && !error) {
-      setCategories(data);
-    }
-    setLoading(false);
-  };
-
   // Group categories by parent
-  const { mainCategories, subcategoriesMap, allSelectableCategories } = useMemo(() => {
-    const main = categories.filter(c => !c.parent_id);
+  const { mainCategories, subcategoriesMap } = useMemo(() => {
+    const main = categories.filter((c) => !c.parent_id);
     const subMap = new Map<string, Category[]>();
-    
-    categories.forEach(c => {
+
+    categories.forEach((c) => {
       if (c.parent_id) {
         const existing = subMap.get(c.parent_id) || [];
         subMap.set(c.parent_id, [...existing, c]);
       }
     });
-    
-    // Build flat list with hierarchy for display
-    const selectable: { category: Category; isMain: boolean; parentName?: string }[] = [];
-    main.forEach(m => {
-      selectable.push({ category: m, isMain: true });
-      const subs = subMap.get(m.id) || [];
-      subs.forEach(s => {
-        selectable.push({ category: s, isMain: false, parentName: m.name });
-      });
-    });
-    
-    return { mainCategories: main, subcategoriesMap: subMap, allSelectableCategories: selectable };
+
+    return { mainCategories: main, subcategoriesMap: subMap };
   }, [categories]);
 
   const selectedCategory = categories.find(c => c.id === value);

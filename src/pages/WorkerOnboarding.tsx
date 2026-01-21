@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
+import { StreetAutocomplete } from "@/components/jobs/StreetAutocomplete";
 import { CategorySubcategorySelect } from "@/components/jobs/CategorySubcategorySelect";
 import { WOJEWODZTWA, WROCLAW_DISTRICTS, WROCLAW_AREA_CITIES } from "@/lib/constants";
 import {
@@ -70,7 +71,6 @@ export default function WorkerOnboarding() {
   
   const [form, setForm] = useState({
     name: "",
-    phone: "",
     wojewodztwo: "",
     miasto: "",
     district: "",
@@ -236,7 +236,6 @@ export default function WorkerOnboarding() {
           // Fallback to profile data
           setForm({
             name: profile.name || "",
-            phone: profile.phone || "",
             wojewodztwo: profile.wojewodztwo || "",
             miasto: profile.miasto || "",
             district: (profile as any).district || "",
@@ -249,7 +248,6 @@ export default function WorkerOnboarding() {
         // Pre-fill with existing profile data
         setForm({
           name: profile.name || "",
-          phone: profile.phone || "",
           wojewodztwo: profile.wojewodztwo || "",
           miasto: profile.miasto || "",
           district: (profile as any).district || "",
@@ -467,14 +465,13 @@ export default function WorkerOnboarding() {
 
   const isFormValid = () => {
     const nameValid = form.name.trim() !== "";
-    const phoneValid = form.phone.trim() !== "";
     const wojewodztwoValid = form.wojewodztwo !== "";
     const miastoValid = form.miasto.trim() !== "";
     const bioValid = form.bio.trim() !== "";
     const hourlyRateValid = form.hourly_rate !== "" && parseFloat(form.hourly_rate) > 0;
     const categoriesValid = selectedCategories.length > 0;
     
-    return nameValid && phoneValid && wojewodztwoValid && miastoValid && bioValid && hourlyRateValid && categoriesValid;
+    return nameValid && wojewodztwoValid && miastoValid && bioValid && hourlyRateValid && categoriesValid;
   };
 
   const handleSubmit = async () => {
@@ -521,7 +518,6 @@ export default function WorkerOnboarding() {
         .from("profiles")
         .update({
           name: form.name,
-          phone: form.phone,
           wojewodztwo: form.wojewodztwo,
           miasto: form.miasto,
           district: form.district || null,
@@ -692,25 +688,14 @@ export default function WorkerOnboarding() {
               </div>
 
               {/* Name & Phone */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Imię i nazwisko *</Label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => updateForm("name", e.target.value)}
-                    placeholder="Jan Kowalski"
-                    className="h-11 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Telefon *</Label>
-                  <Input
-                    value={form.phone}
-                    onChange={(e) => updateForm("phone", e.target.value)}
-                    placeholder="+48 123 456 789"
-                    className="h-11 rounded-xl"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label>Imię i nazwisko *</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => updateForm("name", e.target.value)}
+                  placeholder="Jan Kowalski"
+                  className="h-11 rounded-xl"
+                />
               </div>
 
               {/* Location */}
@@ -783,11 +768,11 @@ export default function WorkerOnboarding() {
                     <MapPin className="h-4 w-4" />
                     Ulica (opcjonalnie, bez numeru domu)
                   </Label>
-                  <Input
+                  <StreetAutocomplete
                     value={form.street}
-                    onChange={(e) => updateForm("street", e.target.value)}
-                    placeholder="np. Świdnicka"
-                    className="h-11 rounded-xl"
+                    onChange={(street) => updateForm("street", street)}
+                    city={form.miasto}
+                    placeholder="Wpisz nazwę ulicy..."
                   />
                   <p className="text-xs text-muted-foreground">
                     Jeśli podasz ulicę, na mapie pojawi się dokładniejsza lokalizacja Twojego profilu
@@ -968,7 +953,6 @@ export default function WorkerOnboarding() {
                 <p>Wypełnij brakujące pola:</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {!form.name.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">Imię i nazwisko</Badge>}
-                  {!form.phone.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">Telefon</Badge>}
                   {!form.wojewodztwo && <Badge variant="outline" className="text-destructive border-destructive/50">Województwo</Badge>}
                   {!form.miasto.trim() && <Badge variant="outline" className="text-destructive border-destructive/50">Miasto</Badge>}
                   {(!form.hourly_rate || parseFloat(form.hourly_rate) <= 0) && <Badge variant="outline" className="text-destructive border-destructive/50">Stawka godzinowa</Badge>}

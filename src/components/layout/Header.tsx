@@ -22,6 +22,7 @@ import {
 	BarChart3,
 	UserPlus,
 	MapPin,
+	Bookmark,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
@@ -186,8 +187,9 @@ export const Header = () => {
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
-									className="w-60 rounded-xl p-2"
+									className="w-60 rounded-xl p-2 z-[2000] bg-popover"
 									align="end"
+									sideOffset={8}
 								>
 									<div className="flex items-center gap-3 p-3 mb-2 bg-muted/50 rounded-lg">
 										<Avatar className="h-10 w-10 rounded-lg">
@@ -264,6 +266,15 @@ export const Header = () => {
 										<Link to="/profile">
 											<User className="mr-2 h-4 w-4" />
 											Profil
+										</Link>
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										asChild
+										className="rounded-lg cursor-pointer"
+									>
+										<Link to="/saved-jobs">
+											<Bookmark className="mr-2 h-4 w-4" />
+											Zapisane oferty
 										</Link>
 									</DropdownMenuItem>
 									<DropdownMenuItem
@@ -444,6 +455,14 @@ export const Header = () => {
 										>
 											<User className="h-5 w-5" />
 											Profil
+										</Link>
+										<Link
+											to="/saved-jobs"
+											className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
+											onClick={() => setMobileOpen(false)}
+										>
+											<Bookmark className="h-5 w-5" />
+											Zapisane oferty
 										</Link>
 										<Link
 											to="/subscription"

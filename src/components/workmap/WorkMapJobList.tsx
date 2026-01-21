@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { MapPin, Zap, Bookmark, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
+import { useSavedJobs } from "@/hooks/useSavedJobs";
+import { cn } from "@/lib/utils";
 
 interface WorkMapJobListProps {
   jobs: JobMarker[];
@@ -10,6 +12,8 @@ interface WorkMapJobListProps {
 }
 
 export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
+  const { isJobSaved, toggleSaveJob } = useSavedJobs();
+
   if (isLoading) {
     return (
       <div className="divide-y divide-border/40">
@@ -43,80 +47,92 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
 
   return (
     <div className="divide-y divide-border/40">
-      {jobs.map((job) => (
-        <Link
-          key={job.id}
-          to={`/jobs/${job.id}`}
-          className="flex items-start gap-4 p-4 hover:bg-secondary/40 transition-colors group"
-        >
-          {/* Category Icon */}
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 flex items-center justify-center flex-shrink-0">
-            <CategoryIcon 
-              name={job.category || "Inne"} 
-              className="h-5 w-5 text-primary"
-            />
-          </div>
+      {jobs.map((job) => {
+        const saved = isJobSaved(job.id);
+        
+        return (
+          <Link
+            key={job.id}
+            to={`/jobs/${job.id}`}
+            className="flex items-start gap-4 p-4 hover:bg-secondary/40 transition-colors group"
+          >
+            {/* Category Icon */}
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 flex items-center justify-center flex-shrink-0">
+              <CategoryIcon 
+                name={job.category || "Inne"} 
+                className="h-5 w-5 text-primary"
+              />
+            </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            {/* Title */}
-            <h3 className="font-semibold text-[15px] text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-1 pr-2">
-              {job.title}
-            </h3>
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              {/* Title */}
+              <h3 className="font-semibold text-[15px] text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-1 pr-2">
+                {job.title}
+              </h3>
 
-            {/* Meta Row */}
-            <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
-              {job.category && (
+              {/* Meta Row */}
+              <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
+                {job.category && (
+                  <span className="flex items-center gap-1">
+                    <Building2 className="h-3.5 w-3.5" />
+                    <span className="truncate max-w-[100px]">{job.category}</span>
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" />
-                  <span className="truncate max-w-[100px]">{job.category}</span>
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span className="truncate max-w-[120px]">
+                    {job.miasto}{job.district ? `, ${job.district}` : ''}
+                  </span>
                 </span>
-              )}
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" />
-                <span className="truncate max-w-[120px]">
-                  {job.miasto}{job.district ? `, ${job.district}` : ''}
-                </span>
-              </span>
+              </div>
+
+              {/* Tags Row */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {job.urgent && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase bg-red-500/10 text-red-600 rounded border border-red-500/20">
+                    <Zap className="h-2.5 w-2.5" />
+                    Pilne
+                  </span>
+                )}
+                {job.category && (
+                  <span className="px-2 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground rounded">
+                    {job.category}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Tags Row */}
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              {job.urgent && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase bg-red-500/10 text-red-600 rounded border border-red-500/20">
-                  <Zap className="h-2.5 w-2.5" />
-                  Pilne
+            {/* Right Side - Price & Actions */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              {job.budget ? (
+                <span className="text-sm font-bold text-emerald-600 whitespace-nowrap">
+                  {job.budget} zł
                 </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">Do negocjacji</span>
               )}
-              {job.category && (
-                <span className="px-2 py-0.5 text-[10px] font-medium bg-secondary text-secondary-foreground rounded">
-                  {job.category}
-                </span>
-              )}
+              <button 
+                className={cn(
+                  "p-1.5 transition-colors",
+                  saved 
+                    ? "text-primary hover:text-primary/80" 
+                    : "text-muted-foreground/50 hover:text-primary"
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleSaveJob(job.id);
+                }}
+              >
+                <Bookmark 
+                  className={cn("h-4 w-4", saved && "fill-current")} 
+                />
+              </button>
             </div>
-          </div>
-
-          {/* Right Side - Price & Actions */}
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            {job.budget ? (
-              <span className="text-sm font-bold text-emerald-600 whitespace-nowrap">
-                {job.budget} zł
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Do negocjacji</span>
-            )}
-            <button 
-              className="p-1.5 text-muted-foreground/50 hover:text-primary transition-colors"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
-              <Bookmark className="h-4 w-4" />
-            </button>
-          </div>
-        </Link>
-      ))}
+          </Link>
+        );
+      })}
     </div>
   );
 }

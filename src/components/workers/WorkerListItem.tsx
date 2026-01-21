@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
-import { MapPin, Banknote, ArrowRight } from "lucide-react";
+import { MapPin, Banknote, ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -21,6 +21,7 @@ interface Worker {
   rating_avg: number;
   rating_count: number;
   categories: { name: string }[];
+  completed_jobs_count?: number;
 }
 
 interface WorkerListItemProps {
@@ -35,11 +36,13 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
   const firstCategory = worker.categories[0];
   const hiddenCategories = worker.categories.slice(MAX_VISIBLE_CATEGORIES);
   const hasHiddenCategories = hiddenCategories.length > 0;
+  const isNewWorker = (worker.completed_jobs_count ?? 0) === 0;
+  const completedCount = worker.completed_jobs_count ?? 0;
 
   return (
     <Link to={`/worker/${worker.id}`}>
       <Card 
-        className={`group p-4 transition-all duration-200 hover:shadow-lg hover:border-primary/30 cursor-pointer h-[140px] flex flex-col ${
+        className={`group p-4 transition-all duration-200 hover:shadow-lg hover:border-primary/30 cursor-pointer h-[160px] flex flex-col ${
           isHighlighted ? 'border-primary shadow-lg ring-2 ring-primary/20' : ''
         }`}
         onMouseEnter={() => onHover?.(worker.id)}
@@ -56,11 +59,18 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
           
           {/* Content */}
           <div className="flex-1 min-w-0 flex flex-col">
-            {/* Name & Rating */}
+            {/* Name & Badges */}
             <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">
-                {worker.name || "Wykonawca"}
-              </h3>
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors text-sm">
+                  {worker.name || "Wykonawca"}
+                </h3>
+                {isNewWorker && (
+                  <Badge className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[10px] px-1.5 py-0 h-4 shrink-0 border-0">
+                    Nowy
+                  </Badge>
+                )}
+              </div>
               {worker.rating_avg > 0 && (
                 <div className="flex items-center gap-1 shrink-0">
                   <StarRating value={worker.rating_avg} size="sm" showValue readonly />
@@ -81,6 +91,14 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
               </div>
             )}
             
+            {/* Completed jobs count */}
+            {completedCount > 0 && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                <CheckCircle2 className="h-3 w-3 text-success" />
+                <span>{completedCount} {completedCount === 1 ? 'ukończone zlecenie' : completedCount < 5 ? 'ukończone zlecenia' : 'ukończonych zleceń'}</span>
+              </div>
+            )}
+
             {/* Bio - single line with ellipsis */}
             {worker.bio && (
               <p className="text-xs text-muted-foreground line-clamp-1 mb-auto">

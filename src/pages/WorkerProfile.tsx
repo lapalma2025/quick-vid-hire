@@ -35,6 +35,7 @@ interface WorkerProfile {
   rating_count: number;
   is_available: boolean;
   created_at: string;
+  completed_jobs_count: number;
 }
 
 interface Review {
@@ -83,7 +84,7 @@ export default function WorkerProfile() {
   const fetchWorker = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, is_available, created_at, completed_jobs_count')
       .eq('id', id)
       .eq('worker_profile_completed', true)
       .maybeSingle();
@@ -182,6 +183,11 @@ export default function WorkerProfile() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-2xl font-bold">{worker.name || 'Wykonawca'}</h1>
+                    {worker.completed_jobs_count === 0 && (
+                      <Badge className="bg-gradient-to-r from-emerald-400 to-teal-500 text-white border-0">
+                        Nowy wykonawca
+                      </Badge>
+                    )}
                     {worker.is_available ? (
                       <Badge className="bg-success">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -213,6 +219,10 @@ export default function WorkerProfile() {
                         {worker.hourly_rate} zł/h
                       </div>
                     )}
+                    <div className="flex items-center gap-1">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      {worker.completed_jobs_count} {worker.completed_jobs_count === 1 ? 'ukończone zlecenie' : worker.completed_jobs_count < 5 ? 'ukończone zlecenia' : 'ukończonych zleceń'}
+                    </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       Od {format(new Date(worker.created_at), 'MMMM yyyy', { locale: pl })}

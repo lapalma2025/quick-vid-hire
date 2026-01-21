@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, BarChart3, Eye, MessageSquare, Clock, TrendingUp, Lock, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, BarChart3, Eye, MessageSquare, Clock, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -24,7 +23,6 @@ interface HourlyStats {
 export default function Statistics() {
   const { isAuthenticated, profile } = useAuth();
   const navigate = useNavigate();
-  const { subscribed, plan, loading: subLoading } = useSubscription();
   
   const [stats, setStats] = useState<{
     totalViews: number;
@@ -42,20 +40,18 @@ export default function Statistics() {
   const [loading, setLoading] = useState(true);
   const [showAllJobs, setShowAllJobs] = useState(false);
 
-  const hasAccess = subscribed && (plan === "pro" || plan === "boost");
-
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
     
-    if (hasAccess && profile) {
+    if (profile) {
       fetchStats();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, hasAccess, profile]);
+  }, [isAuthenticated, profile]);
 
   const fetchStats = async () => {
     if (!profile) return;
@@ -139,33 +135,11 @@ export default function Statistics() {
     }
   };
 
-  if (subLoading || loading) {
+  if (loading) {
     return (
       <Layout>
         <div className="container py-12 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <Layout>
-        <div className="container py-12 max-w-2xl">
-          <Card className="text-center">
-            <CardContent className="py-12">
-              <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-              <h1 className="text-2xl font-bold mb-4">Statystyki dostępne w planie Pro i Boost</h1>
-              <p className="text-muted-foreground mb-6">
-                Uzyskaj dostęp do szczegółowych statystyk swoich ogłoszeń, najlepszych godzin publikacji
-                i analizy zaangażowania.
-              </p>
-              <Button onClick={() => navigate("/subscription")}>
-                Zobacz plany subskrypcji
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </Layout>
     );

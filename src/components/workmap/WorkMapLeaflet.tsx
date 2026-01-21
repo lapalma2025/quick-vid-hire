@@ -119,12 +119,12 @@ function getBoundsKey(bounds: L.LatLngBounds): string {
   return `${sw.lat.toFixed(4)},${sw.lng.toFixed(4)},${ne.lat.toFixed(4)},${ne.lng.toFixed(4)}`;
 }
 
-function createJobIcon(urgent: boolean = false, animate: boolean = false) {
+function createJobIcon(urgent: boolean = false) {
   const color = urgent ? "#ef4444" : "#8b5cf6";
   const size = urgent ? 36 : 32;
   
   return L.divIcon({
-    className: `job-marker ${animate ? 'animate-in' : ''}`,
+    className: 'job-marker',
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
     popupAnchor: [0, -size],
@@ -173,6 +173,8 @@ export function WorkMapLeaflet({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const clusterCacheRef = useRef<ClusterCache | null>(null);
   const updateTimeoutRef = useRef<number | null>(null);
+  const isZoomingRef = useRef(false);
+  const prevJobsKeyRef = useRef<string>("");
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
@@ -256,32 +258,58 @@ export function WorkMapLeaflet({
   }, []);
 
   // Update markers on map
-  const updateMarkers = useCallback(() => {
+  const updateMarkers = useCallback((forceRecreate: boolean = false) => {
     const map = mapRef.current;
     if (!map || !isLoaded) return;
 
     const zoom = map.getZoom();
     const bounds = map.getBounds();
+    
     // Ensure layer exists (use dedicated pane so markers always render above tiles)
     if (!markersLayerRef.current) {
       markersLayerRef.current = L.layerGroup([], { pane: JOB_MARKERS_PANE }).addTo(map);
     }
 
-    // Always clear markers first (important when filters produce 0 results)
+    // Create a key for current jobs
+    const jobsKey = jobs.map((j) => j.id).join("|");
+    const needsRecreate = forceRecreate || jobsKey !== prevJobsKeyRef.current;
+    
+    // Only clear and recreate markers if jobs changed or zoom requires reclustering
+    const cache = clusterCacheRef.current;
+    const zoomChanged = !cache || cache.zoom !== zoom;
+    
+    if (!needsRecreate && !zoomChanged && cache) {
+      // No changes needed, markers are already in place
+      return;
+    }
+
+    // Hide markers during zoom animation to prevent flickering
+    if (isZoomingRef.current && markersLayerRef.current) {
+      const pane = map.getPane(JOB_MARKERS_PANE);
+      if (pane) {
+        pane.style.opacity = '0';
+        pane.style.transition = 'opacity 0.15s ease-out';
+      }
+    }
+
+    // Clear markers
     markersLayerRef.current.clearLayers();
+    prevJobsKeyRef.current = jobsKey;
 
-    console.log(`[WorkMap] updateMarkers called: ${jobs.length} jobs total, zoom: ${zoom}`);
-
-    if (jobs.length === 0) return;
+    if (jobs.length === 0) {
+      // Restore visibility
+      const pane = map.getPane(JOB_MARKERS_PANE);
+      if (pane) {
+        pane.style.opacity = '1';
+      }
+      return;
+    }
 
     // Use ALL jobs for clustering (not just viewport) to ensure markers are always visible
     const { clusters, singles } = computeClusters(map, jobs, zoom);
 
-    console.log(`[WorkMap] Computed: ${clusters.length} clusters, ${singles.length} singles`);
-
     // Cache the results
     const boundsKey = getBoundsKey(bounds);
-    const jobsKey = jobs.map((j) => j.id).join("|");
 
     clusterCacheRef.current = {
       zoom,
@@ -291,9 +319,9 @@ export function WorkMapLeaflet({
       singles,
     };
 
-    // Add single markers
+    // Add single markers (no animation during updates)
     singles.forEach((job) => {
-      const icon = createJobIcon(job.urgent, true);
+      const icon = createJobIcon(job.urgent);
       const marker = L.marker([job.lat, job.lng], {
         icon,
         pane: JOB_MARKERS_PANE,
@@ -372,16 +400,25 @@ export function WorkMapLeaflet({
 
       markersLayerRef.current!.addLayer(marker);
     });
+
+    // Restore marker visibility after update
+    requestAnimationFrame(() => {
+      const pane = map.getPane(JOB_MARKERS_PANE);
+      if (pane) {
+        pane.style.opacity = '1';
+      }
+      isZoomingRef.current = false;
+    });
   }, [jobs, isLoaded, computeClusters, onClusterSelect]);
 
-  // Debounced update
+  // Debounced update for zoom
   const scheduleUpdate = useCallback(() => {
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
     updateTimeoutRef.current = window.setTimeout(() => {
-      updateMarkers();
-    }, 100);
+      updateMarkers(false);
+    }, 150);
   }, [updateMarkers]);
 
   // Initialize map
@@ -430,6 +467,16 @@ export function WorkMapLeaflet({
     // Event handlers - only update on zoom change, not on pan
     let lastZoom = map.getZoom();
     
+    const handleZoomStart = () => {
+      isZoomingRef.current = true;
+      // Hide markers immediately when zoom starts to prevent jarring movements
+      const pane = map.getPane(JOB_MARKERS_PANE);
+      if (pane) {
+        pane.style.opacity = '0';
+        pane.style.transition = 'opacity 0.1s ease-out';
+      }
+    };
+    
     const handleZoomEnd = () => {
       const newZoom = map.getZoom();
       setCurrentZoom(newZoom);
@@ -438,6 +485,13 @@ export function WorkMapLeaflet({
       if (newZoom !== lastZoom) {
         lastZoom = newZoom;
         scheduleUpdate();
+      } else {
+        // If zoom didn't change (e.g., cancelled zoom), restore visibility
+        const pane = map.getPane(JOB_MARKERS_PANE);
+        if (pane) {
+          pane.style.opacity = '1';
+        }
+        isZoomingRef.current = false;
       }
     };
 
@@ -446,6 +500,7 @@ export function WorkMapLeaflet({
       // Don't recalculate on pan - markers are already placed at correct coordinates
     };
 
+    map.on('zoomstart', handleZoomStart);
     map.on('zoomend', handleZoomEnd);
     map.on('moveend', handleMoveEnd);
     map.on('resize', handleZoomEnd);
@@ -462,6 +517,10 @@ export function WorkMapLeaflet({
         markersLayerRef.current.clearLayers();
         markersLayerRef.current = null;
       }
+      map.off('zoomstart');
+      map.off('zoomend');
+      map.off('moveend');
+      map.off('resize');
       map.remove();
       mapRef.current = null;
     };
@@ -470,9 +529,9 @@ export function WorkMapLeaflet({
   // Update markers when jobs or filters change
   useEffect(() => {
     if (isLoaded) {
-      // Clear cache to force recalculation
+      // Force recreate markers when jobs change
       clusterCacheRef.current = null;
-      updateMarkers();
+      updateMarkers(true);
     }
   }, [jobs, isLoaded, updateMarkers]);
 
@@ -558,14 +617,8 @@ export function WorkMapLeaflet({
       )}
 
       <style>{`
-        .job-marker.animate-in .job-pin {
-          animation: marker-pop 0.3s ease-out;
-        }
-        
-        @keyframes marker-pop {
-          0% { transform: rotate(-45deg) scale(0); opacity: 0; }
-          60% { transform: rotate(-45deg) scale(1.1); }
-          100% { transform: rotate(-45deg) scale(1); opacity: 1; }
+        .job-marker-wrapper {
+          will-change: transform;
         }
         
         .cluster-marker-wrapper {
@@ -719,8 +772,9 @@ export function WorkMapLeaflet({
         }
         
         .job-popup-modern {
-          padding: 20px;
-          min-width: 260px;
+          padding: 16px;
+          min-width: 220px;
+          max-width: 280px;
           font-family: system-ui, -apple-system, sans-serif;
         }
         
@@ -751,12 +805,11 @@ export function WorkMapLeaflet({
         }
         
         .job-popup-title {
-          font-size: 18px;
+          font-size: 15px;
           font-weight: 700;
           color: #111827;
           line-height: 1.3;
-          margin: 0 0 12px 0;
-          padding-right: 20px;
+          margin: 0 0 10px 0;
         }
         
         .job-popup-location {
@@ -791,16 +844,17 @@ export function WorkMapLeaflet({
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 6px;
           width: 100%;
-          padding: 12px 16px;
+          padding: 10px 12px;
           background: linear-gradient(135deg, #10b981, #059669) !important;
           color: #ffffff !important;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           text-decoration: none !important;
           border-radius: 8px;
           transition: all 0.2s ease;
+          box-sizing: border-box;
         }
         
         .job-popup-cta:visited,
