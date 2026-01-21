@@ -381,7 +381,7 @@ export const NotificationBell = () => {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-80 rounded-xl p-2" align="end">
+        <DropdownMenuContent className="w-80 rounded-xl p-2 z-[2000]" align="end">
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               Ładowanie...
