@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/jobs/CategoryIcon";
 import { useSavedJobs } from "@/hooks/useSavedJobs";
 import { cn } from "@/lib/utils";
-import { getCategoryColorClasses, getCategoryByName } from "@/components/shared/CategoryBadges";
+import { getCategoryColorClasses, findMainCategoryForSubcategory } from "@/components/shared/CategoryBadges";
 
 interface WorkMapJobListProps {
   jobs: JobMarker[];
@@ -96,8 +96,8 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
                     getCategoryColorClasses(job.category, 'subtle')
                   )}>
                     {(() => {
-                      const cat = getCategoryByName(job.category);
-                      const Icon = cat?.icon;
+                      const mainCat = findMainCategoryForSubcategory(job.category);
+                      const Icon = mainCat?.icon;
                       return Icon ? <Icon className="h-2.5 w-2.5" /> : null;
                     })()}
                     {job.category}
