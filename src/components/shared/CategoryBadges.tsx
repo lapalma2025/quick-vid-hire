@@ -101,69 +101,14 @@ export function getCategoryByName(name: string) {
   return MAIN_CATEGORIES.find(c => c.name === name);
 }
 
-// Helper to get category color classes for badge styling
-// Supports both main categories and subcategories (via parentCategoryName)
-export function getCategoryColorClasses(categoryName: string, variant: 'full' | 'subtle' = 'subtle', parentCategoryName?: string): string {
-  // First try to find by exact match
-  let category = MAIN_CATEGORIES.find(c => c.name === categoryName);
-  
-  // If not found and we have a parent category name, use that
-  if (!category && parentCategoryName) {
-    category = MAIN_CATEGORIES.find(c => c.name === parentCategoryName);
-  }
-  
-  // If still not found, try partial matching (for subcategories)
-  if (!category) {
-    // Try to find a main category that the category name starts with or contains
-    category = MAIN_CATEGORIES.find(c => {
-      const mainWords = c.name.toLowerCase().split(/\s+/);
-      const catWords = categoryName.toLowerCase().split(/\s+/);
-      // Check if first word matches (e.g., "Montaż" from "Montaż mebli" matches "Montaż i naprawy")
-      return mainWords[0] === catWords[0] || 
-             categoryName.toLowerCase().includes(c.name.toLowerCase()) ||
-             c.name.toLowerCase().includes(categoryName.toLowerCase());
-    });
-  }
-  
-  if (!category) {
-    return variant === 'full' 
-      ? "bg-gray-500/10 text-gray-600 border-gray-200" 
-      : "bg-muted text-muted-foreground border-border";
-  }
-  
-  // Extract base color from the category color string
-  const colorMatch = category.color.match(/(orange|cyan|blue|indigo|amber|slate|green|pink|red|purple|emerald|yellow|rose|violet|gray|sky|zinc|stone|teal)/);
-  const baseColor = colorMatch ? colorMatch[1] : 'gray';
-  
+// Helper to get category color classes for badge styling - now returns neutral colors only
+export function getCategoryColorClasses(_categoryName: string, variant: 'full' | 'subtle' = 'subtle', _parentCategoryName?: string): string {
   if (variant === 'full') {
-    return category.color;
+    return "bg-muted text-muted-foreground border-border hover:bg-muted/80";
   }
   
-  // Subtle variant - less saturated, more muted
-  const subtleColors: Record<string, string> = {
-    orange: "bg-orange-50 text-orange-700 border-orange-200/60 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800/40",
-    cyan: "bg-cyan-50 text-cyan-700 border-cyan-200/60 dark:bg-cyan-950/30 dark:text-cyan-400 dark:border-cyan-800/40",
-    blue: "bg-blue-50 text-blue-700 border-blue-200/60 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800/40",
-    indigo: "bg-indigo-50 text-indigo-700 border-indigo-200/60 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-800/40",
-    amber: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40",
-    slate: "bg-slate-50 text-slate-700 border-slate-200/60 dark:bg-slate-800/30 dark:text-slate-400 dark:border-slate-700/40",
-    green: "bg-green-50 text-green-700 border-green-200/60 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800/40",
-    pink: "bg-pink-50 text-pink-700 border-pink-200/60 dark:bg-pink-950/30 dark:text-pink-400 dark:border-pink-800/40",
-    red: "bg-red-50 text-red-700 border-red-200/60 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/40",
-    purple: "bg-purple-50 text-purple-700 border-purple-200/60 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800/40",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40",
-    yellow: "bg-yellow-50 text-yellow-700 border-yellow-200/60 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800/40",
-    rose: "bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800/40",
-    violet: "bg-violet-50 text-violet-700 border-violet-200/60 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800/40",
-    gray: "bg-gray-50 text-gray-700 border-gray-200/60 dark:bg-gray-800/30 dark:text-gray-400 dark:border-gray-700/40",
-    // New colors for added categories
-    sky: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800/40",
-    zinc: "bg-zinc-50 text-zinc-700 border-zinc-200/60 dark:bg-zinc-800/30 dark:text-zinc-400 dark:border-zinc-700/40",
-    stone: "bg-stone-50 text-stone-700 border-stone-200/60 dark:bg-stone-800/30 dark:text-stone-400 dark:border-stone-700/40",
-    teal: "bg-teal-50 text-teal-700 border-teal-200/60 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-800/40",
-  };
-  
-  return subtleColors[baseColor] || subtleColors.gray;
+  // Subtle variant - neutral styling
+  return "bg-muted/50 text-muted-foreground border-border/60 dark:bg-muted/30 dark:text-muted-foreground dark:border-border/40";
 }
 
 // Helper to find matching main category for a subcategory
