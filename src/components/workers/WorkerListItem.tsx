@@ -10,7 +10,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
-import { getCategoryColorClasses, getCategoryByName } from "@/components/shared/CategoryBadges";
+import { getCategoryColorClasses, findMainCategoryForSubcategory } from "@/components/shared/CategoryBadges";
 
 interface Worker {
   id: string;
@@ -120,8 +120,8 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                     )}
                   >
                     {(() => {
-                      const cat = getCategoryByName(firstCategory.name);
-                      const Icon = cat?.icon;
+                      const mainCat = findMainCategoryForSubcategory(firstCategory.name);
+                      const Icon = mainCat?.icon;
                       return Icon ? <Icon className="h-2.5 w-2.5" /> : null;
                     })()}
                     {firstCategory.name}
@@ -153,8 +153,8 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
                             )}
                           >
                             {(() => {
-                              const catInfo = getCategoryByName(cat.name);
-                              const Icon = catInfo?.icon;
+                              const mainCat = findMainCategoryForSubcategory(cat.name);
+                              const Icon = mainCat?.icon;
                               return Icon ? <Icon className="h-2.5 w-2.5" /> : null;
                             })()}
                             {cat.name}
