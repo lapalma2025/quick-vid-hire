@@ -23,6 +23,7 @@ export interface JobMarker {
 	lat: number;
 	lng: number;
 	category?: string;
+	parentCategory?: string; // main category name for filtering
 	budget?: number;
 	urgent?: boolean;
 	hasPreciseLocation: boolean; // true if street/address was geocoded (coords from DB)
@@ -285,12 +286,12 @@ export function useVehicleData(intervalMinutes: number = 30) {
 	// Fetch jobs from database
 	const fetchJobs = useCallback(async () => {
 		try {
-			const { data, error } = await supabase
-				.from("jobs")
-				.select(
-					"id, title, miasto, district, location_lat, location_lng, budget, urgent, category_id, categories(name)"
-				)
-				.eq("status", "active")
+		const { data, error } = await supabase
+			.from("jobs")
+			.select(
+				"id, title, miasto, district, location_lat, location_lng, budget, urgent, category_id, categories(name, parent_id, parent:parent_id(name))"
+			)
+			.eq("status", "active")
 				.not("miasto", "is", null);
 
 			if (error) throw error;
@@ -307,6 +308,10 @@ export function useVehicleData(intervalMinutes: number = 30) {
 				);
 
 				if (coords) {
+					// Determine parent category name for filtering
+					const categoryName = job.categories?.name;
+					const parentCategoryName = job.categories?.parent?.name || categoryName;
+					
 					jobMarkers.push({
 						id: job.id,
 						title: job.title,
@@ -314,7 +319,8 @@ export function useVehicleData(intervalMinutes: number = 30) {
 						district: job.district,
 						lat: coords.lat,
 						lng: coords.lng,
-						category: job.categories?.name,
+						category: categoryName,
+						parentCategory: parentCategoryName,
 						budget: job.budget,
 						urgent: job.urgent,
 						hasPreciseLocation: coords.hasPreciseLocation,
