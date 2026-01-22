@@ -171,6 +171,7 @@ export function WorkMapLeaflet({
   const mapRef = useRef<L.Map | null>(null);
   const heatLayerRef = useRef<L.Layer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const markersByKeyRef = useRef<Map<string, L.Marker>>(new Map());
   const clusterCacheRef = useRef<ClusterCache | null>(null);
   const updateTimeoutRef = useRef<number | null>(null);
   const isZoomingRef = useRef(false);
@@ -290,11 +291,17 @@ export function WorkMapLeaflet({
     const shouldRestoreOpacity =
       !!pane && (isZoomingRef.current || pane.style.opacity === "0");
 
-    // Clear markers
-    markersLayerRef.current.clearLayers();
+    // We update markers differentially (no blanket clear) to avoid the visible
+    // "blink" when the category filter changes.
     prevJobsKeyRef.current = jobsKey;
 
     if (jobs.length === 0) {
+      // Remove all existing markers (diff mode)
+      for (const [, marker] of markersByKeyRef.current) {
+        markersLayerRef.current.removeLayer(marker);
+      }
+      markersByKeyRef.current.clear();
+
       // Restore visibility only if it was hidden during zoom
       if (pane && shouldRestoreOpacity) {
         pane.style.transition = "opacity 0.2s ease-out";
@@ -318,21 +325,11 @@ export function WorkMapLeaflet({
       singles,
     };
 
-    // Add single markers (no animation during updates)
-    singles.forEach((job) => {
-      const icon = createJobIcon(job.urgent);
-      const marker = L.marker([job.lat, job.lng], {
-        icon,
-        pane: JOB_MARKERS_PANE,
-        zIndexOffset: job.urgent ? 400 : 300,
-      });
-
-      marker.bindPopup(
-        `
+    const jobPopupHtml = (job: JobMarker) => `
         <div class="job-popup-modern">
           <div class="job-popup-badge-row">
-            ${job.urgent ? '<span class="badge-urgent">🔥 PILNE</span>' : ''}
-            ${job.category ? `<span class="badge-category">${job.category}</span>` : ''}
+            ${job.urgent ? '<span class="badge-urgent">🔥 PILNE</span>' : ""}
+            ${job.category ? `<span class="badge-category">${job.category}</span>` : ""}
           </div>
           <h3 class="job-popup-title">${job.title}</h3>
           <div class="job-popup-location">
@@ -340,13 +337,13 @@ export function WorkMapLeaflet({
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <span>${job.miasto}${job.district ? `, ${job.district}` : ''}</span>
+            <span>${job.miasto}${job.district ? `, ${job.district}` : ""}</span>
           </div>
           ${job.budget ? `
             <div class="job-popup-budget">
               <span class="budget-value">${job.budget} zł</span>
             </div>
-          ` : ''}
+          ` : ""}
           <a href="/jobs/${job.id}" class="job-popup-cta">
             Zobacz szczegóły
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -354,23 +351,22 @@ export function WorkMapLeaflet({
             </svg>
           </a>
         </div>
-      `,
-        { minWidth: 260, maxWidth: 320, className: "modern-popup" },
-      );
+      `;
 
-      markersLayerRef.current!.addLayer(marker);
-    });
+    const jobHash = (job: JobMarker) =>
+      `${job.id}|${job.lat.toFixed(6)}|${job.lng.toFixed(6)}|${job.urgent ? 1 : 0}|${job.title}|${job.miasto}|${job.district ?? ""}|${job.budget ?? ""}|${job.category ?? ""}`;
 
-    // Add cluster markers
-    clusters.forEach((cluster) => {
-      const icon = createClusterIcon(cluster.jobs.length, cluster.hasUrgent);
-      const marker = L.marker([cluster.lat, cluster.lng], {
-        icon,
-        pane: JOB_MARKERS_PANE,
-        zIndexOffset: 500,
-      });
+    const clusterKey = (cluster: Cluster) => {
+      const ids = cluster.jobs.map((j) => j.id).sort();
+      return `cluster:${ids.join("|")}`;
+    };
 
-      // Generate ALL job preview cards for popup (with scroll)
+    const clusterHash = (cluster: Cluster) => {
+      const ids = cluster.jobs.map((j) => j.id).sort();
+      return `${ids.join("|")}|${cluster.lat.toFixed(6)}|${cluster.lng.toFixed(6)}|${cluster.hasUrgent ? 1 : 0}`;
+    };
+
+    const clusterPopupHtml = (cluster: Cluster) => {
       const jobPreview = cluster.jobs
         .map(
           (j) => `
@@ -385,20 +381,99 @@ export function WorkMapLeaflet({
         )
         .join("");
 
-      marker.bindPopup(
-        `
+      return `
         <div class="cluster-popup">
           <div class="cluster-popup-header">${cluster.jobs.length} ofert w tym miejscu</div>
           <div class="cluster-popup-list">
             ${jobPreview}
           </div>
         </div>
-      `,
-        { minWidth: 280, maxWidth: 320, className: "cluster-popup-wrapper" },
-      );
+      `;
+    };
 
+    const nextKeys = new Set<string>();
+
+    // Singles
+    singles.forEach((job) => {
+      const key = `job:${job.id}`;
+      nextKeys.add(key);
+      const next = jobHash(job);
+
+      const existing = markersByKeyRef.current.get(key);
+      if (existing) {
+        const prev = (existing as any).__hash as string | undefined;
+        if (prev !== next) {
+          existing.setLatLng([job.lat, job.lng]);
+          existing.setIcon(createJobIcon(job.urgent));
+          existing.setZIndexOffset(job.urgent ? 400 : 300);
+
+          const html = jobPopupHtml(job);
+          if (existing.getPopup()) {
+            existing.setPopupContent(html);
+          } else {
+            existing.bindPopup(html, { minWidth: 260, maxWidth: 320, className: "modern-popup" });
+          }
+
+          (existing as any).__hash = next;
+        }
+        return;
+      }
+
+      const marker = L.marker([job.lat, job.lng], {
+        icon: createJobIcon(job.urgent),
+        pane: JOB_MARKERS_PANE,
+        zIndexOffset: job.urgent ? 400 : 300,
+      });
+      marker.bindPopup(jobPopupHtml(job), { minWidth: 260, maxWidth: 320, className: "modern-popup" });
+      (marker as any).__hash = next;
       markersLayerRef.current!.addLayer(marker);
+      markersByKeyRef.current.set(key, marker);
     });
+
+    // Clusters
+    clusters.forEach((cluster) => {
+      const key = clusterKey(cluster);
+      nextKeys.add(key);
+      const next = clusterHash(cluster);
+
+      const existing = markersByKeyRef.current.get(key);
+      if (existing) {
+        const prev = (existing as any).__hash as string | undefined;
+        if (prev !== next) {
+          existing.setLatLng([cluster.lat, cluster.lng]);
+          existing.setIcon(createClusterIcon(cluster.jobs.length, cluster.hasUrgent));
+          existing.setZIndexOffset(500);
+
+          const html = clusterPopupHtml(cluster);
+          if (existing.getPopup()) {
+            existing.setPopupContent(html);
+          } else {
+            existing.bindPopup(html, { minWidth: 280, maxWidth: 320, className: "cluster-popup-wrapper" });
+          }
+
+          (existing as any).__hash = next;
+        }
+        return;
+      }
+
+      const marker = L.marker([cluster.lat, cluster.lng], {
+        icon: createClusterIcon(cluster.jobs.length, cluster.hasUrgent),
+        pane: JOB_MARKERS_PANE,
+        zIndexOffset: 500,
+      });
+      marker.bindPopup(clusterPopupHtml(cluster), { minWidth: 280, maxWidth: 320, className: "cluster-popup-wrapper" });
+      (marker as any).__hash = next;
+      markersLayerRef.current!.addLayer(marker);
+      markersByKeyRef.current.set(key, marker);
+    });
+
+    // Remove markers that are no longer needed
+    for (const [key, marker] of markersByKeyRef.current) {
+      if (!nextKeys.has(key)) {
+        markersLayerRef.current!.removeLayer(marker);
+        markersByKeyRef.current.delete(key);
+      }
+    }
 
     // Restore marker visibility after update only if zoom logic hid the pane
     if (pane && shouldRestoreOpacity) {
