@@ -283,13 +283,12 @@ export function WorkMapLeaflet({
       return;
     }
 
-    // Hide markers during zoom animation to prevent flickering
-    if (isZoomingRef.current && markersLayerRef.current) {
-      const pane = map.getPane(JOB_MARKERS_PANE);
-      if (pane) {
-        pane.style.opacity = '0';
-        pane.style.transition = 'opacity 0.15s ease-out';
-      }
+    // For filter changes (jobs changed) or zoom changes, do a smooth fade transition
+    const pane = map.getPane(JOB_MARKERS_PANE);
+    
+    // Hide markers smoothly before updating
+    if (pane && (needsRecreate || zoomChanged)) {
+      pane.style.opacity = '0';
     }
 
     // Clear markers
@@ -298,7 +297,6 @@ export function WorkMapLeaflet({
 
     if (jobs.length === 0) {
       // Restore visibility
-      const pane = map.getPane(JOB_MARKERS_PANE);
       if (pane) {
         pane.style.opacity = '1';
       }
@@ -450,6 +448,8 @@ export function WorkMapLeaflet({
     if (jobPane) {
       jobPane.style.zIndex = "650";
       jobPane.style.pointerEvents = "auto";
+      // Smooth transition for opacity changes (filter changes, zoom)
+      jobPane.style.transition = "opacity 0.2s ease-out";
     }
 
     // Use a faster tile layer
