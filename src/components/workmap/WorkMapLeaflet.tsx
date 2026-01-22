@@ -176,6 +176,7 @@ export function WorkMapLeaflet({
   const updateTimeoutRef = useRef<number | null>(null);
   const isZoomingRef = useRef(false);
   const prevJobsKeyRef = useRef<string>("");
+  const updateMarkersRef = useRef<(forceRecreate?: boolean) => void>(() => undefined);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
@@ -487,15 +488,20 @@ export function WorkMapLeaflet({
     }
   }, [jobs, isLoaded, computeClusters, onClusterSelect]);
 
+  // Keep a stable ref so other callbacks/effects don't need to depend on `updateMarkers`
+  useEffect(() => {
+    updateMarkersRef.current = updateMarkers;
+  }, [updateMarkers]);
+
   // Debounced update for zoom
   const scheduleUpdate = useCallback(() => {
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
     }
     updateTimeoutRef.current = window.setTimeout(() => {
-      updateMarkers(false);
+      updateMarkersRef.current(false);
     }, 150);
-  }, [updateMarkers]);
+  }, []);
 
   // Initialize map
   useEffect(() => {
