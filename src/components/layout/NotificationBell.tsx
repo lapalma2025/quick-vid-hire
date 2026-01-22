@@ -20,6 +20,10 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import {
+  dismissNotificationIds,
+  getDismissedNotificationIds,
+} from "@/lib/notificationDismissals";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -78,16 +82,30 @@ export const NotificationBell = () => {
   const clearNotifications = async () => {
     if (!profile) return;
 
+    // Persist dismissal (covers response/confirmation/accepted which are derived from other tables)
+    dismissNotificationIds(
+      profile.id,
+      notifications.map((n) => n.id)
+    );
+
     // Mark all unread messages as read
     const messageIds = notifications
       .filter(n => n.type === "message")
       .map(n => n.id);
 
     if (messageIds.length > 0) {
-      await supabase
+      const { error } = await supabase
         .from("chat_messages")
         .update({ read: true })
         .in("id", messageIds);
+
+      if (error) {
+        toast({
+          title: "Błąd",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
 
     setNotifications([]);
@@ -176,6 +194,8 @@ export const NotificationBell = () => {
   const fetchNotifications = async () => {
     if (!profile) return;
     setLoading(true);
+
+    const dismissed = getDismissedNotificationIds(profile.id);
 
     const notifs: Notification[] = [];
     const seenIds = new Set<string>();
@@ -381,9 +401,13 @@ export const NotificationBell = () => {
       }
     }
 
-    // Sort by date and limit
+    // Sort by date, remove dismissed, then limit
     const uniqueNotifs = notifs
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      .filter((n) => !dismissed.has(n.id))
       .slice(0, 10);
 
     setNotifications(uniqueNotifs);
@@ -452,7 +476,7 @@ export const NotificationBell = () => {
                   className="h-6 text-xs text-muted-foreground hover:text-foreground"
                   onClick={(e) => {
                     e.preventDefault();
-                    clearNotifications();
+                    void clearNotifications();
                   }}
                 >
                   Wyczyść
