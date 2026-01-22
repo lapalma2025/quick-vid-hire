@@ -283,23 +283,24 @@ export function WorkMapLeaflet({
       return;
     }
 
-    // For filter changes (jobs changed) or zoom changes, do a smooth fade transition
+    // IMPORTANT: Do not hide the marker pane on category/filter changes.
+    // Hiding (opacity=0) introduces a visible "blink". We only restore opacity
+    // when markers were hidden due to zoom handling.
     const pane = map.getPane(JOB_MARKERS_PANE);
-    
-    // Hide markers smoothly before updating
-    if (pane && (needsRecreate || zoomChanged)) {
-      pane.style.opacity = '0';
-    }
+    const shouldRestoreOpacity =
+      !!pane && (isZoomingRef.current || pane.style.opacity === "0");
 
     // Clear markers
     markersLayerRef.current.clearLayers();
     prevJobsKeyRef.current = jobsKey;
 
     if (jobs.length === 0) {
-      // Restore visibility
-      if (pane) {
-        pane.style.opacity = '1';
+      // Restore visibility only if it was hidden during zoom
+      if (pane && shouldRestoreOpacity) {
+        pane.style.transition = "opacity 0.2s ease-out";
+        pane.style.opacity = "1";
       }
+      isZoomingRef.current = false;
       return;
     }
 
@@ -399,14 +400,16 @@ export function WorkMapLeaflet({
       markersLayerRef.current!.addLayer(marker);
     });
 
-    // Restore marker visibility after update
-    requestAnimationFrame(() => {
-      const pane = map.getPane(JOB_MARKERS_PANE);
-      if (pane) {
-        pane.style.opacity = '1';
-      }
+    // Restore marker visibility after update only if zoom logic hid the pane
+    if (pane && shouldRestoreOpacity) {
+      requestAnimationFrame(() => {
+        pane.style.transition = "opacity 0.2s ease-out";
+        pane.style.opacity = "1";
+        isZoomingRef.current = false;
+      });
+    } else {
       isZoomingRef.current = false;
-    });
+    }
   }, [jobs, isLoaded, computeClusters, onClusterSelect]);
 
   // Debounced update for zoom
