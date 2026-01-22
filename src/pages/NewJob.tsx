@@ -87,6 +87,7 @@ export default function NewJob() {
 		street: "",
 		country: "",
 		start_time: "",
+		start_date_tbd: false, // true = "Do ustalenia"
 		end_time: "",
 		duration_hours: "",
 		budget: "",
@@ -296,7 +297,9 @@ export default function NewJob() {
 			// For Wrocław, district is required
 			const isWroclaw = form.miasto.toLowerCase() === "wrocław";
 			const districtValid = !isWroclaw || form.district !== "";
-			return form.wojewodztwo !== "" && form.miasto !== "" && districtValid && !locationError && !checkingLocation;
+			// Start date is required - either a date or "Do ustalenia" must be selected
+			const startDateValid = form.start_date_tbd || form.start_time !== "";
+			return form.wojewodztwo !== "" && form.miasto !== "" && districtValid && !locationError && !checkingLocation && startDateValid;
 		}
 		if (s === 3) {
 			// Budget is required
@@ -631,7 +634,8 @@ export default function NewJob() {
 				country: form.is_foreign ? form.country : null,
 				location_lat: locationLat,
 				location_lng: locationLng,
-				start_time: form.start_time || null,
+				start_time: form.start_date_tbd ? null : (form.start_time || null),
+				start_date_tbd: form.start_date_tbd,
 				end_time: form.end_time || null,
 				duration_hours: form.duration_hours
 					? parseInt(form.duration_hours)
@@ -654,7 +658,7 @@ export default function NewJob() {
 					form.applicant_limit && form.applicant_limit !== "unlimited"
 						? parseInt(form.applicant_limit)
 						: null,
-			})
+			} as any)
 			.select()
 			.single();
 
@@ -1010,13 +1014,44 @@ export default function NewJob() {
 							)}
 
 
-							<div className="space-y-2">
-								<Label>Data i godzina rozpoczęcia</Label>
-								<DateTimePicker
-									value={form.start_time}
-									onChange={(v) => updateForm("start_time", v)}
-									placeholder="Wybierz datę i godzinę"
-								/>
+							<div className="space-y-3">
+								<div className="flex items-center justify-between">
+									<Label>Data i godzina rozpoczęcia *</Label>
+								</div>
+								
+								{!form.start_date_tbd && (
+									<DateTimePicker
+										value={form.start_time}
+										onChange={(v) => updateForm("start_time", v)}
+										placeholder="Wybierz datę i godzinę"
+									/>
+								)}
+								
+								<div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
+									<Checkbox
+										id="start_date_tbd"
+										checked={form.start_date_tbd}
+										onCheckedChange={(checked) => {
+											updateForm("start_date_tbd", checked);
+											if (checked) {
+												updateForm("start_time", "");
+											}
+										}}
+									/>
+									<Label 
+										htmlFor="start_date_tbd" 
+										className="cursor-pointer text-sm font-medium"
+									>
+										Do ustalenia
+									</Label>
+								</div>
+								
+								{!form.start_time && !form.start_date_tbd && (
+									<p className="text-xs text-destructive flex items-center gap-1">
+										<AlertTriangle className="h-3 w-3" />
+										Wybierz datę lub zaznacz "Do ustalenia"
+									</p>
+								)}
 							</div>
 
 							<div className="space-y-2">

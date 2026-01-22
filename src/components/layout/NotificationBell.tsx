@@ -25,7 +25,7 @@ import { pl } from "date-fns/locale";
 
 interface Notification {
   id: string;
-  type: "message" | "response" | "confirmation";
+  type: "message" | "response" | "confirmation" | "accepted";
   jobId: string;
   jobTitle: string;
   senderName: string;
@@ -75,8 +75,23 @@ export const NotificationBell = () => {
     fetchNotifications();
   };
 
-  const clearNotifications = () => {
+  const clearNotifications = async () => {
+    if (!profile) return;
+
+    // Mark all unread messages as read
+    const messageIds = notifications
+      .filter(n => n.type === "message")
+      .map(n => n.id);
+
+    if (messageIds.length > 0) {
+      await supabase
+        .from("chat_messages")
+        .update({ read: true })
+        .in("id", messageIds);
+    }
+
     setNotifications([]);
+    setUnreadCount(0);
   };
 
   const handleNotificationClick = (notif: Notification, e: React.MouseEvent) => {
@@ -331,6 +346,41 @@ export const NotificationBell = () => {
       }
     }
 
+    // Fetch accepted job responses for client's jobs (so client knows when worker accepted)
+    const { data: acceptedResponses } = await supabase
+      .from("job_responses")
+      .select(`
+        id,
+        created_at,
+        updated_at,
+        status,
+        job:jobs!inner(id, title, user_id),
+        worker:profiles!job_responses_worker_id_fkey(name)
+      `)
+      .eq("status", "accepted")
+      .order("updated_at", { ascending: false })
+      .limit(10);
+
+    if (acceptedResponses) {
+      for (const resp of acceptedResponses as any[]) {
+        // Only show to job owner (client)
+        if (resp.job?.user_id === profile.id) {
+          const notifId = `accepted-${resp.id}`;
+          if (!seenIds.has(notifId)) {
+            seenIds.add(notifId);
+            notifs.push({
+              id: notifId,
+              type: "accepted",
+              jobId: resp.job.id,
+              jobTitle: resp.job.title,
+              senderName: resp.worker?.name || "Wykonawca",
+              createdAt: resp.updated_at || resp.created_at,
+            });
+          }
+        }
+      }
+    }
+
     // Sort by date and limit
     const uniqueNotifs = notifs
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -351,6 +401,7 @@ export const NotificationBell = () => {
       case "message": return "secondary";
       case "response": return "default";
       case "confirmation": return "destructive";
+      case "accepted": return "default";
       default: return "default";
     }
   };
@@ -360,6 +411,7 @@ export const NotificationBell = () => {
       case "message": return "Wiadomość";
       case "response": return "Oferta";
       case "confirmation": return "Do potwierdzenia";
+      case "accepted": return "Zaakceptowane";
       default: return "Powiadomienie";
     }
   };
@@ -381,7 +433,7 @@ export const NotificationBell = () => {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-80 rounded-xl p-2" align="end">
+        <DropdownMenuContent className="w-80 rounded-xl p-2 z-[2000]" align="end">
           {loading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               Ładowanie...
@@ -452,7 +504,9 @@ export const NotificationBell = () => {
                         </div>
                         <p className="font-medium text-sm truncate">{notif.jobTitle}</p>
                         <p className="text-xs text-muted-foreground">
-                          od: {notif.senderName}
+                          {notif.type === "accepted" 
+                            ? `${notif.senderName} zaakceptował zlecenie` 
+                            : `od: ${notif.senderName}`}
                         </p>
                       </div>
                     </Link>

@@ -18,6 +18,8 @@ import {
   Sparkles, 
   Palette, 
   Scissors,
+  Code,
+  Cog,
   LucideIcon
 } from "lucide-react";
 
@@ -43,6 +45,11 @@ export const MAIN_CATEGORIES: {
   { id: "2383bf25-3821-41ff-85b5-7c49d00fa5b6", name: "Instalacje", displayName: "Instalacje", icon: Plug, color: "bg-yellow-500/10 text-yellow-600 border-yellow-200 hover:bg-yellow-500/20" },
   { id: "46f28ed4-790d-435f-9fa5-636c22d70126", name: "Uroda i zdrowie", displayName: "Uroda", icon: Scissors, color: "bg-rose-500/10 text-rose-600 border-rose-200 hover:bg-rose-500/20" },
   { id: "2ed44ce3-8f3a-4c68-9bee-d01458c0d69b", name: "Sztuka i rzemiosło", displayName: "Rzemiosło", icon: Palette, color: "bg-violet-500/10 text-violet-600 border-violet-200 hover:bg-violet-500/20" },
+  // Added missing categories from database
+  { id: "ba172dc7-3932-44e8-ae0f-c125b1b25e9e", name: "Edukacja i szkolenia", displayName: "Edukacja", icon: GraduationCap, color: "bg-sky-500/10 text-sky-600 border-sky-200 hover:bg-sky-500/20" },
+  { id: "4b6dada1-94fb-4511-bc77-9b09bf143791", name: "Finanse i prawo", displayName: "Finanse", icon: Scale, color: "bg-zinc-500/10 text-zinc-600 border-zinc-200 hover:bg-zinc-500/20" },
+  { id: "7b2c6c9e-8f38-4c96-a99e-ee50bdda2051", name: "Motoryzacja", displayName: "Motoryzacja", icon: Cog, color: "bg-stone-500/10 text-stone-600 border-stone-200 hover:bg-stone-500/20" },
+  { id: "5f0ff7f0-4987-4e43-bd46-70fa8a1e53aa", name: "Programowanie", displayName: "Programowanie", icon: Code, color: "bg-teal-500/10 text-teal-600 border-teal-200 hover:bg-teal-500/20" },
   { id: "50ed805a-5705-46d9-8467-be94f43b7590", name: "Inne", displayName: "Inne", icon: MoreHorizontal, color: "bg-gray-500/10 text-gray-600 border-gray-200 hover:bg-gray-500/20" },
 ];
 
@@ -92,4 +99,30 @@ export function getCategoryIdByName(name: string): string | undefined {
 // Helper to get category by name
 export function getCategoryByName(name: string) {
   return MAIN_CATEGORIES.find(c => c.name === name);
+}
+
+// Helper to get category color classes for badge styling - now returns neutral colors only
+export function getCategoryColorClasses(_categoryName: string, variant: 'full' | 'subtle' = 'subtle', _parentCategoryName?: string): string {
+  if (variant === 'full') {
+    return "bg-muted text-muted-foreground border-border hover:bg-muted/80";
+  }
+  
+  // Subtle variant - neutral styling
+  return "bg-muted/50 text-muted-foreground border-border/60 dark:bg-muted/30 dark:text-muted-foreground dark:border-border/40";
+}
+
+// Helper to find matching main category for a subcategory
+export function findMainCategoryForSubcategory(categoryName: string): typeof MAIN_CATEGORIES[0] | undefined {
+  // First try exact match
+  let category = MAIN_CATEGORIES.find(c => c.name === categoryName);
+  if (category) return category;
+  
+  // Try partial matching
+  return MAIN_CATEGORIES.find(c => {
+    const mainWords = c.name.toLowerCase().split(/\s+/);
+    const catWords = categoryName.toLowerCase().split(/\s+/);
+    return mainWords[0] === catWords[0] || 
+           categoryName.toLowerCase().includes(c.name.toLowerCase()) ||
+           c.name.toLowerCase().includes(categoryName.toLowerCase());
+  });
 }

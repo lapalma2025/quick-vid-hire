@@ -38,7 +38,7 @@ interface Worker {
   hourly_rate: number | null;
   rating_avg: number;
   rating_count: number;
-  categories: { name: string }[];
+  categories: { name: string; parentName?: string }[];
   available_from: string | null;
   available_to: string | null;
   completed_jobs_count: number;
@@ -117,7 +117,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, completed_jobs_count, worker_categories(category:categories(name))`,
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, completed_jobs_count, worker_categories(category:categories(name, parent_id, parent:parent_id(name)))`,
           { count: "exact" },
         )
         .eq("is_available", true)
@@ -145,7 +145,14 @@ export default function Workers() {
       if (data && !error) {
         const workersData = data.map((w: any) => ({
           ...w,
-          categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
+          categories: w.worker_categories?.map((wc: any) => {
+            const cat = wc.category;
+            if (!cat) return null;
+            return {
+              name: cat.name,
+              parentName: cat.parent?.name || cat.name, // Use parent name for filtering, or self if no parent
+            };
+          }).filter(Boolean) || [],
         }));
 
         setWorkers(workersData);
@@ -186,7 +193,7 @@ export default function Workers() {
       let query = supabase
         .from("profiles")
         .select(
-          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, completed_jobs_count, worker_categories(category:categories(name))`,
+          `id, name, avatar_url, bio, wojewodztwo, miasto, district, street, location_lat, location_lng, hourly_rate, rating_avg, rating_count, available_from, available_to, completed_jobs_count, worker_categories(category:categories(name, parent_id, parent:parent_id(name)))`,
         )
         .eq("is_available", true)
         .eq("worker_profile_completed", true);
@@ -213,7 +220,14 @@ export default function Workers() {
       if (!error && data) {
         const newWorkersData = data.map((w: any) => ({
           ...w,
-          categories: w.worker_categories?.map((wc: any) => wc.category).filter(Boolean) || [],
+          categories: w.worker_categories?.map((wc: any) => {
+            const cat = wc.category;
+            if (!cat) return null;
+            return {
+              name: cat.name,
+              parentName: cat.parent?.name || cat.name,
+            };
+          }).filter(Boolean) || [],
         }));
 
         setWorkers((prev) => [...prev, ...newWorkersData]);
@@ -286,7 +300,12 @@ export default function Workers() {
 
   const filteredWorkersForMap = useMemo(() => {
     if (selectedCategories.length === 0) return workers;
-    return workers.filter((worker) => worker.categories.some((cat) => selectedCategories.includes(cat.name)));
+    return workers.filter((worker) => 
+      worker.categories.some((cat) => 
+        selectedCategories.includes(cat.name) || 
+        (cat.parentName && selectedCategories.includes(cat.parentName))
+      )
+    );
   }, [workers, selectedCategories]);
 
   const isMapView = viewMode === "map";

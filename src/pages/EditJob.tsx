@@ -54,6 +54,7 @@ export default function EditJob() {
     miasto: '',
     country: '',
     start_time: '',
+    start_date_tbd: false,
     duration_hours: '',
     budget: '',
     budget_max: '',
@@ -114,6 +115,7 @@ export default function EditJob() {
       miasto: job.miasto || '',
       country: job.country || (isForeign ? job.wojewodztwo : '') || '',
       start_time: job.start_time ? job.start_time.slice(0, 16) : '',
+      start_date_tbd: (job as any).start_date_tbd || false,
       duration_hours: job.duration_hours?.toString() || '',
       budget: job.budget?.toString() || '',
       budget_max: budgetMaxValue?.toString() || '',
@@ -159,7 +161,8 @@ export default function EditJob() {
         wojewodztwo: form.is_foreign ? form.country : form.wojewodztwo,
         miasto: form.miasto,
         country: form.is_foreign ? form.country : null,
-        start_time: form.start_time || null,
+        start_time: form.start_date_tbd ? null : (form.start_time || null),
+        start_date_tbd: form.start_date_tbd,
         duration_hours: form.duration_hours ? parseInt(form.duration_hours) : null,
         budget: form.budget ? parseFloat(form.budget) : null,
         budget_max: form.budget_range_mode && form.budget_max ? parseFloat(form.budget_max) : null,
@@ -346,13 +349,37 @@ export default function EditJob() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label>Data i godzina rozpoczęcia</Label>
-                <Input
-                  type="datetime-local"
-                  value={form.start_time}
-                  onChange={(e) => updateForm('start_time', e.target.value)}
-                />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Data i godzina rozpoczęcia *</Label>
+                </div>
+                
+                {!form.start_date_tbd && (
+                  <Input
+                    type="datetime-local"
+                    value={form.start_time}
+                    onChange={(e) => updateForm('start_time', e.target.value)}
+                  />
+                )}
+                
+                <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
+                  <Switch
+                    id="start_date_tbd"
+                    checked={form.start_date_tbd}
+                    onCheckedChange={(checked) => {
+                      updateForm('start_date_tbd', checked);
+                      if (checked) {
+                        updateForm('start_time', '');
+                      }
+                    }}
+                  />
+                  <Label 
+                    htmlFor="start_date_tbd" 
+                    className="cursor-pointer text-sm font-medium"
+                  >
+                    Do ustalenia
+                  </Label>
+                </div>
               </div>
 
               <div className="space-y-2">

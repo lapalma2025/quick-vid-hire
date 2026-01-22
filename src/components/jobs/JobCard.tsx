@@ -15,6 +15,7 @@ interface Job {
   is_foreign?: boolean | null;
   country?: string | null;
   start_time: string | null;
+  start_date_tbd?: boolean | null;
   duration_hours: number | null;
   budget: number | null;
   budget_max?: number | null;
@@ -131,6 +132,15 @@ export const JobCard = ({ job }: JobCardProps) => {
           )}
           */}
           
+          {/* Urgent badge */}
+          {job.urgent && (
+            <div className="absolute top-2 right-2">
+              <Badge className="bg-red-500 hover:bg-red-500 text-white font-bold">
+                ⚡ PILNE
+              </Badge>
+            </div>
+          )}
+          
           {/* Foreign job badge */}
           {job.is_foreign && (
             <div className="absolute bottom-2 left-2">
@@ -182,12 +192,16 @@ export const JobCard = ({ job }: JobCardProps) => {
 
           {/* Time info */}
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            {job.start_time && (
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1.5" />
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-1.5" />
+              {job.start_date_tbd ? (
+                <span className="text-orange-600 dark:text-orange-400 font-medium">Do ustalenia</span>
+              ) : job.start_time ? (
                 <span>{format(new Date(job.start_time), 'dd MMM', { locale: pl })}</span>
-              </div>
-            )}
+              ) : (
+                <span className="text-muted-foreground">-</span>
+              )}
+            </div>
             {job.duration_hours && (
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1.5" />
