@@ -22,10 +22,14 @@ const WorkMap = () => {
 
   const { jobs, heatmapPoints, isLoading } = useVehicleData(filters.timeInterval);
 
-  // Filter jobs by selected categories
+  // Filter jobs by selected categories (matches both category name and parent category name)
   const filteredJobs = useMemo<JobMarker[]>(() => {
     if (selectedCategories.length === 0) return jobs;
-    return jobs.filter((job) => job.category && selectedCategories.includes(job.category));
+    return jobs.filter((job) => {
+      // Match if the category name OR the parent category name is in the selected list
+      return (job.category && selectedCategories.includes(job.category)) ||
+             (job.parentCategory && selectedCategories.includes(job.parentCategory));
+    });
   }, [jobs, selectedCategories]);
 
   // Clear cluster selection when filters/categories change
