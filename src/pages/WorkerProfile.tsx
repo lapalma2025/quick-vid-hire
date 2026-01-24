@@ -272,16 +272,18 @@ export default function WorkerProfile() {
           </div>
 
           {/* Extended Description */}
-          {worker.extended_description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Rozszerzony opis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap text-muted-foreground">{worker.extended_description}</p>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Rozszerzony opis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-muted-foreground">
+                {worker.extended_description?.trim()
+                  ? worker.extended_description
+                  : "Brak szczegółowego opisu"}
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Gallery */}
           {gallery.length > 0 && (
