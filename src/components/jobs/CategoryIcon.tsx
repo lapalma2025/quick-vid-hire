@@ -1,9 +1,8 @@
 import { 
   Hammer, 
-  Brush, 
   Truck, 
   PartyPopper, 
-  UtensilsCrossed,
+  Utensils,
   Flower2, 
   Car, 
   Wrench, 
@@ -12,40 +11,62 @@ import {
   Laptop, 
   MoreHorizontal,
   GraduationCap,
-  Sparkles,
+  Brush,
   Scale,
   Cog,
   Palette,
+  Scissors,
+  Code,
+  Plug,
   LucideIcon
 } from 'lucide-react';
 
-const iconMap: Record<string, LucideIcon> = {
+// Main categories with their icons - synced with MAIN_CATEGORIES in CategoryBadges.tsx
+export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   'Prace fizyczne': Hammer,
   'Sprzątanie': Brush,
   'Przeprowadzki': Truck,
-  'Eventy': PartyPopper,
-  'Gastronomia': UtensilsCrossed,
-  'Ogród': Flower2,
   'Transport': Car,
-  'Montaż i naprawy': Wrench,
-  'Opieka': Heart,
   'Dostawy': Package,
+  'Montaż i naprawy': Wrench,
+  'Ogród': Flower2,
+  'Opieka': Heart,
+  'Gastronomia': Utensils,
+  'Eventy': PartyPopper,
   'IT i komputery': Laptop,
-  'Edukacja i szkolenia': GraduationCap,
-  'Uroda i zdrowie': Sparkles,
-  'Finanse i prawo': Scale,
-  'Motoryzacja': Car,
-  'Instalacje': Cog,
+  'Instalacje': Plug,
+  'Uroda i zdrowie': Scissors,
   'Sztuka i rzemiosło': Palette,
+  'Edukacja i szkolenia': GraduationCap,
+  'Finanse i prawo': Scale,
+  'Motoryzacja': Cog,
+  'Programowanie': Code,
   'Inne': MoreHorizontal,
 };
 
+// Get icon for a category, checking parent category if it's a subcategory
+export function getCategoryIcon(categoryName: string, parentCategoryName?: string): LucideIcon {
+  // First try exact match
+  if (CATEGORY_ICON_MAP[categoryName]) {
+    return CATEGORY_ICON_MAP[categoryName];
+  }
+  
+  // If parent category is provided, use its icon
+  if (parentCategoryName && CATEGORY_ICON_MAP[parentCategoryName]) {
+    return CATEGORY_ICON_MAP[parentCategoryName];
+  }
+  
+  // Default to MoreHorizontal
+  return MoreHorizontal;
+}
+
 interface CategoryIconProps {
   name: string;
+  parentName?: string;
   className?: string;
 }
 
-export const CategoryIcon = ({ name, className }: CategoryIconProps) => {
-  const Icon = iconMap[name] || MoreHorizontal;
+export const CategoryIcon = ({ name, parentName, className }: CategoryIconProps) => {
+  const Icon = getCategoryIcon(name, parentName);
   return <Icon className={className} />;
 };

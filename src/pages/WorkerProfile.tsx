@@ -28,12 +28,15 @@ interface WorkerProfile {
   name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  extended_description: string | null;
   wojewodztwo: string | null;
   miasto: string | null;
   hourly_rate: number | null;
   rating_avg: number;
   rating_count: number;
   is_available: boolean;
+  available_from: string | null;
+  available_to: string | null;
   created_at: string;
   completed_jobs_count: number;
 }
@@ -84,7 +87,7 @@ export default function WorkerProfile() {
   const fetchWorker = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, name, avatar_url, bio, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, is_available, created_at, completed_jobs_count')
+      .select('id, name, avatar_url, bio, extended_description, wojewodztwo, miasto, hourly_rate, rating_avg, rating_count, is_available, available_from, available_to, created_at, completed_jobs_count')
       .eq('id', id)
       .eq('worker_profile_completed', true)
       .maybeSingle();
@@ -219,12 +222,17 @@ export default function WorkerProfile() {
                         {worker.hourly_rate} zł/h
                       </div>
                     )}
+                    {worker.available_from && worker.available_to && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        Dostępność: {worker.available_from.slice(0, 5)} - {worker.available_to.slice(0, 5)}
+                      </div>
+                    )}
                     <div className="flex items-center gap-1">
                       <CheckCircle2 className="h-4 w-4 text-success" />
                       {worker.completed_jobs_count} {worker.completed_jobs_count === 1 ? 'ukończone zlecenie' : worker.completed_jobs_count < 5 ? 'ukończone zlecenia' : 'ukończonych zleceń'}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       Od {format(new Date(worker.created_at), 'MMMM yyyy', { locale: pl })}
                     </div>
                   </div>
@@ -233,7 +241,7 @@ export default function WorkerProfile() {
             </CardContent>
           </Card>
 
-          {/* Two column layout for Bio/Reviews and Categories */}
+          {/* Two column layout for Bio and Categories */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Bio */}
             <Card>
@@ -269,6 +277,20 @@ export default function WorkerProfile() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Extended Description */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Rozszerzony opis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-muted-foreground">
+                {worker.extended_description?.trim()
+                  ? worker.extended_description
+                  : "Brak szczegółowego opisu"}
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Gallery */}
           {gallery.length > 0 && (
