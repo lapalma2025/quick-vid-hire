@@ -362,6 +362,13 @@ export default function Profile() {
 
 		setLoading(true);
 
+		// Format time to HH:MM (remove seconds if present)
+		const formatTime = (time: string | null) => {
+			if (!time) return null;
+			// If time has seconds (HH:MM:SS), strip them
+			return time.slice(0, 5);
+		};
+
 		const updateData: any = {
 			name: form.name || null,
 			phone: form.phone || null,
@@ -371,9 +378,9 @@ export default function Profile() {
 			hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
 			is_available: form.is_available,
 			available_from: form.has_custom_hours
-				? form.available_from || null
+				? formatTime(form.available_from)
 				: null,
-			available_to: form.has_custom_hours ? form.available_to || null : null,
+			available_to: form.has_custom_hours ? formatTime(form.available_to) : null,
 			updated_at: new Date().toISOString(),
 		};
 
