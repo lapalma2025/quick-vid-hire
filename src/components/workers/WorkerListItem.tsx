@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
-import { MapPin, Banknote, ArrowRight, CheckCircle2 } from "lucide-react";
+import { MapPin, Banknote, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -23,6 +23,8 @@ interface Worker {
   rating_count: number;
   categories: { name: string }[];
   completed_jobs_count?: number;
+  available_from?: string | null;
+  available_to?: string | null;
 }
 
 interface WorkerListItemProps {
@@ -97,6 +99,14 @@ export function WorkerListItem({ worker, isHighlighted, onHover }: WorkerListIte
               <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                 <CheckCircle2 className="h-3 w-3 text-success" />
                 <span>{completedCount} {completedCount === 1 ? 'ukończone zlecenie' : completedCount < 5 ? 'ukończone zlecenia' : 'ukończonych zleceń'}</span>
+              </div>
+            )}
+
+            {/* Availability hours */}
+            {worker.available_from && worker.available_to && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                <Clock className="h-3 w-3" />
+                <span>{worker.available_from.slice(0, 5)} - {worker.available_to.slice(0, 5)}</span>
               </div>
             )}
 
