@@ -11,7 +11,7 @@ import {
   Laptop, 
   MoreHorizontal,
   GraduationCap,
-  Sparkles,
+  Brush,
   Scale,
   Cog,
   Palette,
@@ -24,7 +24,7 @@ import {
 // Main categories with their icons - synced with MAIN_CATEGORIES in CategoryBadges.tsx
 export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   'Prace fizyczne': Hammer,
-  'Sprzątanie': Sparkles,
+  'Sprzątanie': Brush,
   'Przeprowadzki': Truck,
   'Transport': Car,
   'Dostawy': Package,
