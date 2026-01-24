@@ -61,6 +61,7 @@ export function WorkMapJobList({ jobs, isLoading }: WorkMapJobListProps) {
             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 flex items-center justify-center flex-shrink-0">
               <CategoryIcon 
                 name={job.category || "Inne"} 
+                parentName={job.parentCategory}
                 className="h-5 w-5 text-primary"
               />
             </div>
