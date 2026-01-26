@@ -1032,17 +1032,22 @@ export default function JobDetails() {
                               Proponowana cena: {response.offer_price} zł
                             </p>
                           )}
-                          {response.cv_url && cvSignedUrls[response.id] && (
-                            <a 
-                              href={cvSignedUrls[response.id]} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline mt-1"
-                            >
-                              <FileText className="h-4 w-4" />
-                              Zobacz CV
-                            </a>
-                          )}
+                          <div className="flex items-center gap-1.5 text-sm mt-1">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">CV:</span>
+                            {response.cv_url && cvSignedUrls[response.id] ? (
+                              <a 
+                                href={cvSignedUrls[response.id]} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                              >
+                                Pobierz PDF
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground italic">brak</span>
+                            )}
+                          </div>
                           <div className="flex gap-2 mt-3 flex-wrap">
                             {canSelect && (
                               <Button 
