@@ -4,10 +4,11 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, CheckCircle2, Clock, Shirt, Phone, Check, X, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, Clock, Phone, Check, X, HelpCircle, MapPin, CreditCard, Calendar, Wrench, Users, Shield, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -37,41 +38,102 @@ interface JobResponse {
   worker_id: string;
 }
 
-// Predefiniowane szybkie wiadomości - rozszerzone
-const QUICK_QUESTIONS = [
-  { id: 'today', label: 'Czy dziś?', icon: Clock },
-  { id: 'hours', label: 'Ile godzin?', icon: HelpCircle },
-  { id: 'clothes', label: 'Czy strój roboczy?', icon: Shirt },
-  { id: 'phone', label: 'Poproszę o telefon', icon: Phone },
-  { id: 'tools', label: 'Czy narzędzia?', icon: HelpCircle },
-  { id: 'address', label: 'Jaki adres?', icon: HelpCircle },
-  { id: 'payment', label: 'Forma płatności?', icon: HelpCircle },
-  { id: 'experience', label: 'Jakie doświadczenie?', icon: HelpCircle },
+// Pytania dla WYKONAWCÓW (workers) - mogą wysyłać tylko te predefiniowane
+const WORKER_QUESTIONS = [
+  { 
+    id: 'availability', 
+    label: 'Termin realizacji', 
+    icon: Calendar,
+    fullText: '📅 Czy mogę poznać preferowany termin realizacji zlecenia? Chciałbym dopasować swój harmonogram.'
+  },
+  { 
+    id: 'address', 
+    label: 'Dokładny adres', 
+    icon: MapPin,
+    fullText: '📍 Czy mogę prosić o dokładny adres realizacji zlecenia? Potrzebuję go do zaplanowania dojazdu.'
+  },
+  { 
+    id: 'tools', 
+    label: 'Narzędzia i materiały', 
+    icon: Wrench,
+    fullText: '🔧 Czy powinienem przynieść własne narzędzia i materiały, czy będą one dostępne na miejscu?'
+  },
+  { 
+    id: 'payment', 
+    label: 'Forma płatności', 
+    icon: CreditCard,
+    fullText: '💳 Jaka forma płatności będzie preferowana? Gotówka, przelew czy inna metoda?'
+  },
+  { 
+    id: 'phone', 
+    label: 'Kontakt telefoniczny', 
+    icon: Phone,
+    fullText: '📞 Czy mogę prosić o numer telefonu, aby ustalić szczegóły telefonicznie?'
+  },
+  { 
+    id: 'scope', 
+    label: 'Zakres prac', 
+    icon: HelpCircle,
+    fullText: '📋 Czy mogę poznać dokładny zakres prac? Chciałbym się odpowiednio przygotować do zlecenia.'
+  },
 ];
 
-const QUICK_RESPONSES = [
+// Pytania dla ZLECENIODAWCÓW (clients) - mogą wysyłać te predefiniowane
+const CLIENT_QUESTIONS = [
+  { 
+    id: 'experience', 
+    label: 'Doświadczenie', 
+    icon: Shield,
+    fullText: '🏆 Jakie masz doświadczenie w tego typu pracach? Czy możesz pokazać przykłady realizacji?'
+  },
+  { 
+    id: 'timeline', 
+    label: 'Czas realizacji', 
+    icon: Clock,
+    fullText: '⏱️ Ile czasu zajmie realizacja tego zlecenia? Kiedy możesz zacząć?'
+  },
+  { 
+    id: 'team', 
+    label: 'Praca zespołowa', 
+    icon: Users,
+    fullText: '👥 Czy będziesz pracować samodzielnie, czy z pomocnikami? Ile osób będzie zaangażowanych?'
+  },
+  { 
+    id: 'guarantee', 
+    label: 'Gwarancja', 
+    icon: Shield,
+    fullText: '✅ Czy udzielasz gwarancji na wykonaną pracę? Na jakich warunkach?'
+  },
+  { 
+    id: 'phone_request', 
+    label: 'Prośba o telefon', 
+    icon: Phone,
+    fullText: '📞 Czy możesz podać swój numer telefonu, żebyśmy mogli ustalić szczegóły?'
+  },
+  { 
+    id: 'price_details', 
+    label: 'Szczegóły ceny', 
+    icon: CreditCard,
+    fullText: '💰 Czy możesz rozpisać szczegółowo co zawiera Twoja wycena? Co jest wliczone w cenę?'
+  },
+];
+
+// Szybkie odpowiedzi dla ZLECENIODAWCÓW (mogą odpowiadać swobodnie + te przyciski)
+const CLIENT_QUICK_RESPONSES = [
   { id: 'yes', label: 'Tak', icon: Check, variant: 'default' as const },
   { id: 'no', label: 'Nie', icon: X, variant: 'outline' as const },
   { id: 'call', label: 'Zadzwoń pod:', icon: Phone, variant: 'secondary' as const },
-  { id: 'confirm', label: 'Potwierdzam', icon: Check, variant: 'default' as const },
+  { id: 'confirm', label: 'Potwierdzam zlecenie', icon: Check, variant: 'default' as const },
   { id: 'later', label: 'Odezwę się później', icon: Clock, variant: 'outline' as const },
 ];
 
-// Mapowanie ID wiadomości na pełny tekst
-const MESSAGE_MAP: Record<string, string> = {
-  'today': '❓ Czy dziś możesz wykonać zlecenie?',
-  'hours': '❓ Ile godzin zajmie praca?',
-  'clothes': '❓ Czy potrzebuję stroju roboczego?',
-  'phone': '📞 Poproszę o numer telefonu, aby ustalić szczegóły.',
-  'tools': '❓ Czy mam przynieść własne narzędzia?',
-  'address': '❓ Jaki jest dokładny adres wykonania zlecenia?',
-  'payment': '❓ Jaka jest preferowana forma płatności?',
-  'experience': '❓ Jakie masz doświadczenie w tego typu pracach?',
+// Mapowanie ID odpowiedzi na pełny tekst
+const RESPONSE_MESSAGE_MAP: Record<string, string> = {
   'yes': '✅ Tak',
   'no': '❌ Nie',
   'call': '📱 Zadzwoń pod numer:',
-  'confirm': '✅ Potwierdzam zlecenie',
-  'later': '⏰ Odezwę się później z więcej informacjami',
+  'confirm': '✅ Potwierdzam zlecenie! Możemy przystąpić do realizacji.',
+  'later': '⏳ Odezwę się później z więcej informacjami.',
 };
 
 export default function Chat() {
@@ -87,6 +149,7 @@ export default function Chat() {
   const [hasApplied, setHasApplied] = useState(false);
   const [phoneInput, setPhoneInput] = useState('');
   const [showPhoneInput, setShowPhoneInput] = useState(false);
+  const [freeTextInput, setFreeTextInput] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -203,14 +266,14 @@ export default function Chat() {
     };
   };
 
-  const sendQuickMessage = async (messageText: string) => {
-    if (!profile || !id) return;
+  const sendMessage = async (messageText: string) => {
+    if (!profile || !id || !messageText.trim()) return;
 
     setSending(true);
     const { error } = await supabase.from('chat_messages').insert({
       job_id: id,
       sender_id: profile.id,
-      message: messageText,
+      message: messageText.trim(),
     });
     setSending(false);
 
@@ -223,29 +286,33 @@ export default function Chat() {
     }
   };
 
-  const handleQuickQuestion = (questionId: string) => {
-    const message = MESSAGE_MAP[questionId];
-    if (message) {
-      sendQuickMessage(message);
-    }
+  const handleQuickQuestion = (question: typeof WORKER_QUESTIONS[0] | typeof CLIENT_QUESTIONS[0]) => {
+    sendMessage(question.fullText);
   };
 
   const handleQuickResponse = (responseId: string) => {
     if (responseId === 'call') {
       setShowPhoneInput(true);
     } else {
-      const message = MESSAGE_MAP[responseId];
+      const message = RESPONSE_MESSAGE_MAP[responseId];
       if (message) {
-        sendQuickMessage(message);
+        sendMessage(message);
       }
     }
   };
 
   const handleSendPhone = () => {
     if (phoneInput.trim()) {
-      sendQuickMessage(`📱 Zadzwoń pod numer: ${phoneInput.trim()}`);
+      sendMessage(`📱 Zadzwoń pod numer: ${phoneInput.trim()}`);
       setPhoneInput('');
       setShowPhoneInput(false);
+    }
+  };
+
+  const handleSendFreeText = () => {
+    if (freeTextInput.trim()) {
+      sendMessage(freeTextInput);
+      setFreeTextInput('');
     }
   };
 
@@ -269,6 +336,9 @@ export default function Chat() {
   const isParticipant = profile && job && 
     (profile.id === job.user_id || profile.id === job.selected_worker_id || hasApplied);
 
+  // Determine if current user is the job owner (client)
+  const isJobOwner = profile?.id === job?.user_id;
+
   // Determine other participant for display
   const getOtherParticipant = () => {
     if (!profile || !job) return null;
@@ -282,13 +352,13 @@ export default function Chat() {
   
   const otherParticipant = getOtherParticipant();
 
-  // Sprawdź ostatnią wiadomość, czy to pytanie
+  // Sprawdź ostatnią wiadomość, czy to pytanie od drugiej strony
   const lastMessage = messages[messages.length - 1];
-  const isLastMessageQuestion = lastMessage?.message?.startsWith('❓');
+  const isLastMessageQuestion = lastMessage?.message?.includes('?') || lastMessage?.message?.startsWith('📅') || lastMessage?.message?.startsWith('📍') || lastMessage?.message?.startsWith('🔧') || lastMessage?.message?.startsWith('💳') || lastMessage?.message?.startsWith('📞') || lastMessage?.message?.startsWith('📋') || lastMessage?.message?.startsWith('🏆') || lastMessage?.message?.startsWith('⏱️') || lastMessage?.message?.startsWith('👥') || lastMessage?.message?.startsWith('✅') || lastMessage?.message?.startsWith('💰');
   const isLastMessageFromOther = lastMessage?.sender_id !== profile?.id;
-  // Tylko zleceniodawca może odpowiadać na pytania
-  const isJobOwner = profile?.id === job?.user_id;
-  const showResponseButtons = isLastMessageQuestion && isLastMessageFromOther && isJobOwner;
+  
+  // Pokazuj szybkie odpowiedzi jeśli ostatnia wiadomość jest pytaniem od drugiej osoby
+  const showQuickResponses = isLastMessageQuestion && isLastMessageFromOther && isJobOwner;
 
   if (loading) {
     return (
@@ -312,6 +382,9 @@ export default function Chat() {
       </Layout>
     );
   }
+
+  // Wybierz odpowiednie pytania w zależności od roli
+  const questions = isJobOwner ? CLIENT_QUESTIONS : WORKER_QUESTIONS;
 
   return (
     <Layout>
@@ -345,10 +418,12 @@ export default function Chat() {
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-2">Szybka komunikacja</p>
               <p className="text-sm text-muted-foreground">
-                Wybierz jedno z szybkich pytań poniżej, aby rozpocząć rozmowę.
+                {isJobOwner 
+                  ? 'Wybierz jedno z pytań poniżej lub napisz własną wiadomość.'
+                  : 'Wybierz jedno z pytań poniżej, aby rozpocząć rozmowę.'}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                💡 Przez czat można wysyłać tylko szybkie wiadomości tekstowe (bez zdjęć i plików)
+                💡 Szczegóły możecie ustalić telefonicznie po wymianie kontaktu
               </p>
             </div>
           ) : (
@@ -403,12 +478,37 @@ export default function Chat() {
               </div>
             ) : (
               <>
-                {/* Show response buttons if last message was a question from other person */}
-                {showResponseButtons && (
+                {/* Free text input for job owners (clients) */}
+                {isJobOwner && (
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder="Napisz wiadomość..."
+                      value={freeTextInput}
+                      onChange={(e) => setFreeTextInput(e.target.value)}
+                      className="min-h-[60px] resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendFreeText();
+                        }
+                      }}
+                    />
+                    <Button 
+                      onClick={handleSendFreeText} 
+                      disabled={!freeTextInput.trim() || sending}
+                      className="self-end"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Show quick response buttons for clients when worker asks a question */}
+                {showQuickResponses && (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground text-center">Szybka odpowiedź:</p>
                     <div className="flex flex-wrap gap-2 justify-center">
-                      {QUICK_RESPONSES.map((response) => (
+                      {CLIENT_QUICK_RESPONSES.map((response) => (
                         <Button
                           key={response.id}
                           variant={response.variant}
@@ -425,16 +525,18 @@ export default function Chat() {
                   </div>
                 )}
 
-                {/* Always show quick questions */}
+                {/* Quick questions - different for workers and clients */}
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground text-center">Szybkie pytania:</p>
+                  <p className="text-xs text-muted-foreground text-center">
+                    {isJobOwner ? 'Zapytaj wykonawcę:' : 'Zapytaj zleceniodawcę:'}
+                  </p>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    {QUICK_QUESTIONS.map((question) => (
+                    {questions.map((question) => (
                       <Button
                         key={question.id}
                         variant="outline"
                         size="sm"
-                        onClick={() => handleQuickQuestion(question.id)}
+                        onClick={() => handleQuickQuestion(question)}
                         disabled={sending}
                         className="gap-2"
                       >
@@ -444,6 +546,12 @@ export default function Chat() {
                     ))}
                   </div>
                 </div>
+
+                {!isJobOwner && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    💡 Możesz wysyłać tylko predefiniowane wiadomości. Szczegóły ustalcie telefonicznie.
+                  </p>
+                )}
               </>
             )}
           </div>

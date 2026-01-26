@@ -128,6 +128,7 @@ export type Database = {
           client_confirmed_done: boolean | null
           completed_at: string | null
           created_at: string | null
+          cv_url: string | null
           group_members: string[] | null
           group_size: number | null
           id: string
@@ -144,6 +145,7 @@ export type Database = {
           client_confirmed_done?: boolean | null
           completed_at?: string | null
           created_at?: string | null
+          cv_url?: string | null
           group_members?: string[] | null
           group_size?: number | null
           id?: string
@@ -160,6 +162,7 @@ export type Database = {
           client_confirmed_done?: boolean | null
           completed_at?: string | null
           created_at?: string | null
+          cv_url?: string | null
           group_members?: string[] | null
           group_size?: number | null
           id?: string
