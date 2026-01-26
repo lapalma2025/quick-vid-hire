@@ -55,7 +55,7 @@ export default function Index() {
 
 	useSEO({
 		title: "Strona główna",
-		description: "Hop Hop to platforma łącząca zleceniodawców z wykonawcami. Dodaj zlecenie lub znajdź pracę w swojej okolicy. Szybko, bezpiecznie i bez pośredników.",
+		description: "Closey to platforma łącząca zleceniodawców z wykonawcami. Dodaj zlecenie lub znajdź pracę w swojej okolicy. Szybko, bezpiecznie i bez pośredników.",
 		keywords: "zlecenia, usługi, wykonawcy, praca dorywcza, fachowcy, remonty, sprzątanie, transport, pomoc domowa, Polska",
 	});
 

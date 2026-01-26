@@ -76,9 +76,9 @@ export const Header = () => {
 						<div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-glow shadow-lg shadow-primary/20 group-hover:shadow-xl group-hover:shadow-primary/30 group-hover:scale-105 transition-all duration-300">
 							<Briefcase className="h-6 w-6 text-white" />
 						</div>
-						<span className="text-2xl font-display font-bold tracking-tight">
-							Hop Hop
-						</span>
+					<span className="text-2xl font-display font-bold tracking-tight">
+						Closey
+					</span>
 					</Link>
 
 					{isAuthenticated && (
@@ -354,9 +354,9 @@ export const Header = () => {
 									<div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
 										<Briefcase className="h-5 w-5 text-white" />
 									</div>
-									<span className="text-xl font-display font-bold">
-										Hop hop
-									</span>
+								<span className="text-xl font-display font-bold">
+									Closey
+								</span>
 								</div>
 							</div>
 
