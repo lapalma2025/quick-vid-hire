@@ -12,7 +12,7 @@ import {
 import { Cookie, Settings, Shield, BarChart3, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const COOKIE_CONSENT_KEY = "hophop_cookie_consent";
+const COOKIE_CONSENT_KEY = "closey_cookie_consent";
 
 export interface CookiePreferences {
   necessary: boolean;

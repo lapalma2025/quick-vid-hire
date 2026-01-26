@@ -54,7 +54,9 @@ import {
   CheckCircle2,
   X,
   Check,
-  Users
+  Users,
+  FileText,
+  Upload
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -102,6 +104,7 @@ interface Response {
   is_group_application: boolean | null;
   group_size: number | null;
   group_members: string[] | null;
+  cv_url: string | null;
   worker: {
     id: string;
     name: string | null;
@@ -135,6 +138,8 @@ export default function JobDetails() {
     group_size: '2',
     group_members: '',
   });
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [uploadingCv, setUploadingCv] = useState(false);
 
   const [ratingForm, setRatingForm] = useState({
     rating: 0,
@@ -151,6 +156,7 @@ export default function JobDetails() {
   const [hasClientRated, setHasClientRated] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [cvSignedUrls, setCvSignedUrls] = useState<Record<string, string>>({});
 
   const isOwner = profile?.id === job?.user_id;
   const isSelectedWorker = profile?.id === job?.selected_worker_id;
@@ -272,6 +278,7 @@ export default function JobDetails() {
         is_group_application,
         group_size,
         group_members,
+        cv_url,
         worker:profiles!job_responses_worker_id_fkey(id, name, avatar_url, rating_avg, rating_count, bio)
       `)
       .eq('job_id', id)
@@ -279,7 +286,30 @@ export default function JobDetails() {
 
     if (!error && data) {
       setResponses(data as any);
+      // Generate public URLs for CVs (bucket is now public)
+      generateCvUrls(data as any);
     }
+  };
+
+  const generateCvUrls = (responsesData: Response[]) => {
+    const cvResponses = responsesData.filter(r => r.cv_url);
+    if (cvResponses.length === 0) return;
+
+    const urls: Record<string, string> = {};
+    
+    for (const response of cvResponses) {
+      if (response.cv_url) {
+        const { data } = supabase.storage
+          .from('cv-files')
+          .getPublicUrl(response.cv_url);
+        
+        if (data?.publicUrl) {
+          urls[response.id] = data.publicUrl;
+        }
+      }
+    }
+    
+    setCvSignedUrls(urls);
   };
 
   const fetchResponseCount = async () => {
@@ -379,6 +409,36 @@ export default function JobDetails() {
             .filter(Boolean)
         : null;
 
+    // Upload CV if provided
+    let cvUrl: string | null = null;
+    if (cvFile) {
+      setUploadingCv(true);
+      const fileExt = cvFile.name.split('.').pop();
+      const fileName = `${session.user.id}/${id}_${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('cv-files')
+        .upload(fileName, cvFile, {
+          contentType: 'application/pdf',
+          upsert: false,
+        });
+
+      setUploadingCv(false);
+
+      if (uploadError) {
+        toast({
+          title: 'Błąd przesyłania CV',
+          description: uploadError.message,
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      // Store the file path - we'll generate signed URLs when displaying
+      cvUrl = fileName;
+    }
+
     const { error } = await supabase.from('job_responses').insert({
       job_id: id,
       worker_id: freshProfile.id,
@@ -387,6 +447,7 @@ export default function JobDetails() {
       is_group_application: responseForm.is_group,
       group_size: responseForm.is_group ? parseInt(responseForm.group_size) : 1,
       group_members: groupMembers,
+      cv_url: cvUrl,
     });
 
     setSubmitting(false);
@@ -417,6 +478,7 @@ export default function JobDetails() {
       group_size: '2',
       group_members: '',
     });
+    setCvFile(null);
     fetchResponses();
     fetchResponseCount();
     refreshProfile();
@@ -970,6 +1032,22 @@ export default function JobDetails() {
                               Proponowana cena: {response.offer_price} zł
                             </p>
                           )}
+                          <div className="flex items-center gap-1.5 text-sm mt-1">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">CV:</span>
+                            {response.cv_url && cvSignedUrls[response.id] ? (
+                              <a 
+                                href={cvSignedUrls[response.id]} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                              >
+                                Pobierz PDF
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground italic">brak</span>
+                            )}
+                          </div>
                           <div className="flex gap-2 mt-3 flex-wrap">
                             {canSelect && (
                               <Button 
@@ -1174,13 +1252,82 @@ export default function JobDetails() {
                             </div>
                           )}
                           
+                          {/* CV Upload Section */}
+                          <div className="space-y-2 p-4 rounded-lg border bg-muted/30">
+                            <div className="flex items-center gap-3">
+                              <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <FileText className="h-4 w-4 text-blue-500" />
+                              </div>
+                              <div className="flex-1">
+                                <Label className="text-sm font-medium">Dołącz CV (opcjonalnie)</Label>
+                                <p className="text-xs text-muted-foreground">
+                                  Tylko pliki PDF, max 5MB
+                                </p>
+                              </div>
+                            </div>
+                            <div className="pt-2">
+                              <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                                <input
+                                  type="file"
+                                  accept=".pdf,application/pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      if (file.size > 5 * 1024 * 1024) {
+                                        toast({
+                                          title: 'Plik za duży',
+                                          description: 'Maksymalny rozmiar pliku to 5MB',
+                                          variant: 'destructive',
+                                        });
+                                        return;
+                                      }
+                                      if (file.type !== 'application/pdf') {
+                                        toast({
+                                          title: 'Nieprawidłowy format',
+                                          description: 'Dozwolone są tylko pliki PDF',
+                                          variant: 'destructive',
+                                        });
+                                        return;
+                                      }
+                                      setCvFile(file);
+                                    }
+                                  }}
+                                />
+                                {cvFile ? (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <FileText className="h-4 w-4 text-primary" />
+                                    <span className="text-primary font-medium">{cvFile.name}</span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setCvFile(null);
+                                      }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <Upload className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm text-muted-foreground">Kliknij, aby wybrać plik CV</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+                          </div>
+                          
                           <Button 
                             className="w-full" 
                             onClick={handleSubmitResponse}
-                            disabled={submitting}
+                            disabled={submitting || uploadingCv}
                           >
-                            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {responseForm.is_group ? `Wyślij ofertę grupową (${responseForm.group_size} os.)` : 'Wyślij ofertę'}
+                            {(submitting || uploadingCv) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {uploadingCv ? 'Przesyłanie CV...' : responseForm.is_group ? `Wyślij ofertę grupową (${responseForm.group_size} os.)` : 'Wyślij ofertę'}
                           </Button>
                         </div>
                       </DialogContent>

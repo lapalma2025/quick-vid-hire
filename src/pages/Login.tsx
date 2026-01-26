@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/layout/Layout';
 import { Loader2, Mail } from 'lucide-react';
@@ -19,9 +20,44 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail || !z.string().email().safeParse(resetEmail).success) {
+      toast({
+        title: 'Błąd',
+        description: 'Wprowadź prawidłowy adres email',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Błąd',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Email wysłany!',
+        description: 'Sprawdź swoją skrzynkę pocztową i kliknij link, aby zresetować hasło.',
+      });
+      setResetDialogOpen(false);
+      setResetEmail('');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +173,47 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Hasło</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Hasło</Label>
+                  <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Zapomniałeś hasła?
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Resetowanie hasła</DialogTitle>
+                        <DialogDescription>
+                          Wprowadź adres email powiązany z Twoim kontem. Wyślemy Ci link do resetowania hasła.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="resetEmail">Email</Label>
+                          <Input
+                            id="resetEmail"
+                            type="email"
+                            placeholder="twoj@email.pl"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                          />
+                        </div>
+                        <Button 
+                          onClick={handlePasswordReset} 
+                          className="w-full"
+                          disabled={resetLoading}
+                        >
+                          {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Wyślij link resetujący
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Input
                   id="password"
                   type="password"

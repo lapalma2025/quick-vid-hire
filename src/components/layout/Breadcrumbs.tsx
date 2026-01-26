@@ -92,7 +92,7 @@ const generateBreadcrumbPath = (pathname: string): { path: string; label: string
 
 // Generowanie JSON-LD dla breadcrumbs
 const generateBreadcrumbSchema = (breadcrumbs: { path: string; label: string }[]) => {
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://hophop.pl";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://closey.pl";
   
   return {
     "@context": "https://schema.org",
