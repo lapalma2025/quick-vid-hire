@@ -1,29 +1,29 @@
-# Robots.txt for Hop Hop
+# Robots.txt for Closey
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://hophop.pl/sitemap.xml
+Sitemap: https://closey.pl/sitemap.xml
 
 # Disallow private pages
 Disallow: /dashboard
 Disallow: /profile
 Disallow: /subscription
 Disallow: /statistics
-Disallow: /worker-onboarding
+Disallow: /saved-jobs
 
-# Disallow dynamic chat pages
-Disallow: /jobs/*/chat
+# Disallow authentication pages from indexing
+Disallow: /login
+Disallow: /register
 
-# Allow search engine crawlers
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# Allow crawlers to access public pages
+Allow: /jobs
+Allow: /workers
+Allow: /work-map
+Allow: /how-it-works
+Allow: /faq
+Allow: /safety
+Allow: /reviews
+Allow: /help
+Allow: /terms
+Allow: /privacy

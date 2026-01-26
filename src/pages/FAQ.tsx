@@ -52,8 +52,8 @@ const FAQ = () => {
 
 	useSEO({
 		title: "FAQ - Najczęściej zadawane pytania",
-		description: "Odpowiedzi na najczęstsze pytania dotyczące Hop Hop. Dowiedz się jak dodać zlecenie, ile kosztuje publikacja, jak wybrać wykonawcę i więcej.",
-		keywords: "FAQ, pytania, odpowiedzi, pomoc, zlecenia, wykonawcy, Hop Hop",
+		description: "Odpowiedzi na najczęstsze pytania dotyczące Closey. Dowiedz się jak dodać zlecenie, ile kosztuje publikacja, jak wybrać wykonawcę i więcej.",
+		keywords: "FAQ, pytania, odpowiedzi, pomoc, zlecenia, wykonawcy, Closey",
 	});
 
 	const faqSchema = generateFAQSchema(faqs);
@@ -71,9 +71,9 @@ const FAQ = () => {
 					<h1 className="text-4xl font-bold text-center mb-4">
 						Najczęściej zadawane pytania
 					</h1>
-					<p className="text-muted-foreground text-center mb-12 text-lg">
-						Znajdź odpowiedzi na najczęstsze pytania dotyczące Hop Hop.
-					</p>
+				<p className="text-muted-foreground text-center mb-12 text-lg">
+					Znajdź odpowiedzi na najczęstsze pytania dotyczące Closey.
+				</p>
 
 					<Accordion type="single" collapsible className="w-full">
 						{faqs.map((faq, index) => (

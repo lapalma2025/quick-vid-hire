@@ -189,13 +189,13 @@ export const Layout = ({
             </div>
             <div className="border-t border-border/50 mt-10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-                  <span className="text-lg font-bold text-white">Z</span>
-                </div>
-                <span className="font-display font-bold text-xl">Hop Hop</span>
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
+                <span className="text-lg font-bold text-white">C</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                © 2025 Hop Hop. Wszystkie prawa zastrzeżone.
+              <span className="font-display font-bold text-xl">Closey</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              © 2025 Closey. Wszystkie prawa zastrzeżone.
               </p>
             </div>
           </div>

@@ -15,7 +15,7 @@ const Privacy = () => {
             <CardContent className="p-6 prose prose-sm dark:prose-invert max-w-none">
               <h2>1. Administrator danych</h2>
               <p>
-                Administratorem danych osobowych jest ZlecenieTeraz Sp. z o.o. z siedzibą w Warszawie, 
+                Administratorem danych osobowych jest Closey Sp. z o.o. z siedzibą w Warszawie, 
                 ul. Przykładowa 1, 00-001 Warszawa.
               </p>
 
@@ -79,7 +79,7 @@ const Privacy = () => {
               <h2>9. Kontakt</h2>
               <p>
                 W sprawach związanych z ochroną danych osobowych prosimy o kontakt: 
-                privacy@zlecenieteraz.pl
+                privacy@closey.pl
               </p>
             </CardContent>
           </Card>

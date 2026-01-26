@@ -160,8 +160,8 @@ const Safety = () => {
               <span className="font-semibold text-primary">Platforma dla ludzi</span>
             </div>
             
-            <h1 className="hero-item text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-              Hop Hop - 
+          <h1 className="hero-item text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
+              Closey - 
               <span className="text-primary"> Twoja lokalna</span>
               <br />
               giełda zleceń
@@ -208,9 +208,9 @@ const Safety = () => {
       <section className="py-20" ref={featuresRef}>
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-              Dlaczego Hop Hop?
-            </h2>
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+            Dlaczego Closey?
+          </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Stworzyliśmy platformę, która stawia na prostotę i wygodę użytkowników.
             </p>
@@ -237,9 +237,9 @@ const Safety = () => {
         <div className="container">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="mission-item text-3xl md:text-4xl font-display font-bold mb-4">
-                Dla kogo jest Hop Hop?
-              </h2>
+            <h2 className="mission-item text-3xl md:text-4xl font-display font-bold mb-4">
+              Dla kogo jest Closey?
+            </h2>
               <p className="mission-item text-muted-foreground text-lg">
                 Platforma stworzona z myślą o różnych grupach użytkowników.
               </p>
@@ -272,9 +272,9 @@ const Safety = () => {
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 overflow-hidden">
             <CardContent className="p-8 md:p-12 text-center">
               <Sparkles className="w-12 h-12 text-primary mx-auto mb-6" />
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-                Dołącz do społeczności Hop Hop
-              </h2>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+              Dołącz do społeczności Closey
+            </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
                 Rejestracja jest całkowicie darmowa. Zacznij publikować zlecenia lub znajdź 
                 swoją pierwszą pracę dorywczą już dziś.

@@ -15,7 +15,7 @@ const Reviews = () => {
       name: 'Marek W.',
       role: 'Wykonawca',
       rating: 5,
-      text: 'Dzięki ZlecenieTeraz mam stały dopływ zleceń. Aplikacja jest prosta w obsłudze, a klienci są weryfikowani.',
+      text: 'Dzięki Closey mam stały dopływ zleceń. Aplikacja jest prosta w obsłudze, a klienci są weryfikowani.',
       city: 'Kraków'
     },
     {
@@ -81,7 +81,7 @@ const Reviews = () => {
 
           <div className="text-center mt-12">
             <p className="text-muted-foreground">
-              Dołącz do tysięcy zadowolonych użytkowników ZlecenieTeraz!
+              Dołącz do tysięcy zadowolonych użytkowników Closey!
             </p>
           </div>
         </div>

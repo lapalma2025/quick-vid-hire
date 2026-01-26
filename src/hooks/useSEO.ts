@@ -14,7 +14,7 @@ export const useSEO = ({
   title,
   description,
   keywords,
-  ogImage = "https://hophop.pl/og-image.png",
+  ogImage = "https://closey.pl/og-image.png",
   ogType = "website",
   canonicalUrl,
   noIndex = false,
@@ -22,8 +22,8 @@ export const useSEO = ({
   useEffect(() => {
     // Ustaw tytuł
     const fullTitle = title === "Strona główna" 
-      ? "Hop Hop - Platforma zleceń i usług"
-      : `${title} | Hop Hop`;
+      ? "Closey - Platforma zleceń i usług"
+      : `${title} | Closey`;
     document.title = fullTitle;
 
     // Helper do aktualizacji lub tworzenia meta tagów
@@ -50,7 +50,7 @@ export const useSEO = ({
     setMetaTag("og:description", description, true);
     setMetaTag("og:type", ogType, true);
     setMetaTag("og:image", ogImage, true);
-    setMetaTag("og:site_name", "Hop Hop", true);
+    setMetaTag("og:site_name", "Closey", true);
     setMetaTag("og:locale", "pl_PL", true);
 
     // Twitter Cards
@@ -90,9 +90,9 @@ export const useSEO = ({
 export const generateOrganizationSchema = () => ({
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "Hop Hop",
-  "url": "https://hophop.pl",
-  "logo": "https://hophop.pl/logo.png",
+  "name": "Closey",
+  "url": "https://closey.pl",
+  "logo": "https://closey.pl/logo.png",
   "description": "Platforma do zlecania i wykonywania usług. Znajdź wykonawców lub zlecenia w swojej okolicy.",
   "sameAs": [],
   "contactPoint": {
@@ -105,13 +105,13 @@ export const generateOrganizationSchema = () => ({
 export const generateWebsiteSchema = () => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "Hop Hop",
-  "url": "https://hophop.pl",
+  "name": "Closey",
+  "url": "https://closey.pl",
   "potentialAction": {
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://hophop.pl/jobs?search={search_term_string}"
+      "urlTemplate": "https://closey.pl/jobs?search={search_term_string}"
     },
     "query-input": "required name=search_term_string"
   }
@@ -120,9 +120,9 @@ export const generateWebsiteSchema = () => ({
 export const generateLocalBusinessSchema = () => ({
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
-  "name": "Hop Hop",
+  "name": "Closey",
   "description": "Platforma do zlecania i wykonywania usług",
-  "url": "https://hophop.pl",
+  "url": "https://closey.pl",
   "address": {
     "@type": "PostalAddress",
     "addressCountry": "PL"
@@ -152,8 +152,8 @@ export const generateJobPostingSchema = (job: {
   },
   "hiringOrganization": {
     "@type": "Organization",
-    "name": "Hop Hop",
-    "sameAs": "https://hophop.pl"
+    "name": "Closey",
+    "sameAs": "https://closey.pl"
   },
   ...(job.budget && {
     "baseSalary": {
