@@ -286,12 +286,12 @@ export default function JobDetails() {
 
     if (!error && data) {
       setResponses(data as any);
-      // Generate signed URLs for CVs
-      generateCvSignedUrls(data as any);
+      // Generate public URLs for CVs (bucket is now public)
+      generateCvUrls(data as any);
     }
   };
 
-  const generateCvSignedUrls = async (responsesData: Response[]) => {
+  const generateCvUrls = (responsesData: Response[]) => {
     const cvResponses = responsesData.filter(r => r.cv_url);
     if (cvResponses.length === 0) return;
 
@@ -299,12 +299,12 @@ export default function JobDetails() {
     
     for (const response of cvResponses) {
       if (response.cv_url) {
-        const { data } = await supabase.storage
+        const { data } = supabase.storage
           .from('cv-files')
-          .createSignedUrl(response.cv_url, 3600); // 1 hour expiry
+          .getPublicUrl(response.cv_url);
         
-        if (data?.signedUrl) {
-          urls[response.id] = data.signedUrl;
+        if (data?.publicUrl) {
+          urls[response.id] = data.publicUrl;
         }
       }
     }
