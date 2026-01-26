@@ -33,6 +33,7 @@ import Statistics from "./pages/Statistics";
 import WorkerOnboarding from "./pages/WorkerOnboarding";
 import WorkMap from "./pages/WorkMap";
 import SavedJobs from "./pages/SavedJobs";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -46,7 +47,8 @@ const App = () => (
 				<CookieConsent />
 				<Routes>
 					<Route path="/" element={<Index />} />
-					<Route path="/login" element={<Login />} />
+				<Route path="/login" element={<Login />} />
+					<Route path="/reset-password" element={<ResetPassword />} />
 					<Route path="/register" element={<Register />} />
 					<Route path="/jobs" element={<Jobs />} />
 					<Route path="/jobs/new" element={<NewJob />} />
