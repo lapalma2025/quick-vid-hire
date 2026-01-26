@@ -105,6 +105,13 @@ export default function Profile() {
 		}
 	}, [isLoading, isAuthenticated]);
 
+	// Format time to HH:MM (remove seconds if present)
+	const formatTimeDisplay = (time: string | null | undefined): string => {
+		if (!time) return "";
+		// If time has seconds (HH:MM:SS), strip them
+		return time.slice(0, 5);
+	};
+
 	useEffect(() => {
 		if (profile) {
 			const hasHours =
@@ -117,8 +124,8 @@ export default function Profile() {
 				bio: profile.bio || "",
 				hourly_rate: profile.hourly_rate?.toString() || "",
 				is_available: profile.is_available,
-				available_from: (profile as any).available_from || "",
-				available_to: (profile as any).available_to || "",
+				available_from: formatTimeDisplay((profile as any).available_from),
+				available_to: formatTimeDisplay((profile as any).available_to),
 				extended_description: (profile as any).extended_description || "",
 				has_custom_hours: hasHours,
 			});
