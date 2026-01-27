@@ -151,7 +151,6 @@ function createClusterIcon(count: number, hasUrgent: boolean) {
     popupAnchor: [0, -size / 2],
     html: `
       <div class="cluster-marker-wrapper" style="width: ${size}px; height: ${size}px;">
-        ${hasUrgent ? '<div class="cluster-pulse" style="background: #ef4444;"></div>' : ''}
         <div class="cluster-core" style="background: linear-gradient(135deg, ${clusterColor}, ${clusterColor}dd); width: ${size}px; height: ${size}px;">
           <span class="cluster-count">${count}</span>
         </div>
@@ -717,19 +716,6 @@ export function WorkMapLeaflet({
           transform: scale(1.1);
         }
         
-        .cluster-pulse {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          opacity: 0;
-          animation: pulse 2s ease-out infinite;
-        }
-        
-        @keyframes pulse {
-          0% { transform: scale(0.8); opacity: 0.6; }
-          100% { transform: scale(1.6); opacity: 0; }
-        }
         
         .cluster-core {
           border-radius: 50%;
