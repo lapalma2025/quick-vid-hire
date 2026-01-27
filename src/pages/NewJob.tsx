@@ -45,7 +45,13 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { CityAutocomplete } from "@/components/jobs/CityAutocomplete";
 import { StreetAutocomplete } from "@/components/jobs/StreetAutocomplete";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
-import { WOJEWODZTWA, WROCLAW_DISTRICTS, DOLNOSLASKIE_CITIES, DOLNOSLASKIE_BOUNDS, isInDolnoslaskie } from "@/lib/constants";
+import {
+	WOJEWODZTWA,
+	WROCLAW_DISTRICTS,
+	DOLNOSLASKIE_CITIES,
+	DOLNOSLASKIE_BOUNDS,
+	isInDolnoslaskie,
+} from "@/lib/constants";
 import { PREMIUM_ADDONS } from "@/lib/stripe";
 
 interface Category {
@@ -175,7 +181,10 @@ export default function NewJob() {
 	};
 
 	// Walidacja lokalizacji - czy jest w dolnośląskim
-	const checkCityInDolnoslaskie = async (miasto: string, wojewodztwo: string) => {
+	const checkCityInDolnoslaskie = async (
+		miasto: string,
+		wojewodztwo: string
+	) => {
 		if (!miasto) {
 			setLocationError(null);
 			return;
@@ -226,13 +235,17 @@ export default function NewJob() {
 			);
 
 			if (!res.ok) {
-				setLocationError("Nie udało się sprawdzić lokalizacji. Spróbuj ponownie.");
+				setLocationError(
+					"Nie udało się sprawdzić lokalizacji. Spróbuj ponownie."
+				);
 				return;
 			}
 
 			const data = await res.json();
 			if (!Array.isArray(data) || data.length === 0) {
-				setLocationError("Nie znaleziono miasta. Sprawdź pisownię lub wybierz inne miasto.");
+				setLocationError(
+					"Nie znaleziono miasta. Sprawdź pisownię lub wybierz inne miasto."
+				);
 				return;
 			}
 
@@ -299,15 +312,24 @@ export default function NewJob() {
 			const districtValid = !isWroclaw || form.district !== "";
 			// Start date is required - either a date or "Do ustalenia" must be selected
 			const startDateValid = form.start_date_tbd || form.start_time !== "";
-			return form.wojewodztwo !== "" && form.miasto !== "" && districtValid && !locationError && !checkingLocation && startDateValid;
+			return (
+				form.wojewodztwo !== "" &&
+				form.miasto !== "" &&
+				districtValid &&
+				!locationError &&
+				!checkingLocation &&
+				startDateValid
+			);
 		}
 		if (s === 3) {
 			// Budget is required
 			const hasBudget = form.budget !== "" && parseFloat(form.budget) > 0;
 			// If range mode, budget_max must also be valid and greater than budget
 			if (form.budget_range_mode) {
-				const hasMaxBudget = form.budget_max !== "" && parseFloat(form.budget_max) > 0;
-				const maxGreaterThanMin = parseFloat(form.budget_max) > parseFloat(form.budget);
+				const hasMaxBudget =
+					form.budget_max !== "" && parseFloat(form.budget_max) > 0;
+				const maxGreaterThanMin =
+					parseFloat(form.budget_max) > parseFloat(form.budget);
 				return hasBudget && hasMaxBudget && maxGreaterThanMin;
 			}
 			return hasBudget;
@@ -573,16 +595,19 @@ export default function NewJob() {
 
 				// Find result that matches the city best
 				const cityLower = city.toLowerCase();
-				const best = data.find((it: any) => {
-					const resultCity = (
-						it.address?.city ||
-						it.address?.town ||
-						it.address?.village ||
-						it.address?.municipality ||
-						""
-					).toLowerCase();
-					return resultCity.includes(cityLower) || cityLower.includes(resultCity);
-				}) || data[0];
+				const best =
+					data.find((it: any) => {
+						const resultCity = (
+							it.address?.city ||
+							it.address?.town ||
+							it.address?.village ||
+							it.address?.municipality ||
+							""
+						).toLowerCase();
+						return (
+							resultCity.includes(cityLower) || cityLower.includes(resultCity)
+						);
+					}) || data[0];
 
 				const lat = parseFloat(best.lat);
 				const lng = parseFloat(best.lon);
@@ -634,14 +659,17 @@ export default function NewJob() {
 				country: form.is_foreign ? form.country : null,
 				location_lat: locationLat,
 				location_lng: locationLng,
-				start_time: form.start_date_tbd ? null : (form.start_time || null),
+				start_time: form.start_date_tbd ? null : form.start_time || null,
 				start_date_tbd: form.start_date_tbd,
 				end_time: form.end_time || null,
 				duration_hours: form.duration_hours
 					? parseInt(form.duration_hours)
 					: null,
 				budget: form.budget ? parseFloat(form.budget) : null,
-				budget_max: form.budget_range_mode && form.budget_max ? parseFloat(form.budget_max) : null,
+				budget_max:
+					form.budget_range_mode && form.budget_max
+						? parseFloat(form.budget_max)
+						: null,
 				budget_type: form.budget_type,
 				urgent: form.urgent || addons.urgent,
 				status: "active",
@@ -759,11 +787,17 @@ export default function NewJob() {
 									</p>
 								)}
 								<p className="text-xs text-muted-foreground">
-									Nie znalazłeś odpowiedniej podkategorii? Możesz wybrać kategorię ogólną (oznaczoną jako "Ogólna").{" "}
-									Jeśli żadna kategoria nie pasuje,{" "}
+									Nie znalazłeś odpowiedniej podkategorii? Możesz wybrać
+									kategorię ogólną (oznaczoną jako "Ogólna"). Jeśli żadna
+									kategoria nie pasuje,{" "}
 									<button
 										type="button"
-										onClick={() => updateForm("category_id", "50ed805a-5705-46d9-8467-be94f43b7590")}
+										onClick={() =>
+											updateForm(
+												"category_id",
+												"50ed805a-5705-46d9-8467-be94f43b7590"
+											)
+										}
 										className="text-primary hover:underline font-medium"
 									>
 										wybierz "Inne"
@@ -789,21 +823,23 @@ export default function NewJob() {
 									onChange={(imgs) => updateForm("images", imgs)}
 									maxImages={5}
 								/>
-						</div>
-
-						{/* Urgent job toggle */}
-						<div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-							<div className="space-y-0.5">
-								<Label className="text-base">Zlecenie pilne</Label>
-								<p className="text-xs text-muted-foreground">Start dziś lub jutro</p>
 							</div>
-							<Switch
-								checked={form.urgent}
-								onCheckedChange={(v) => updateForm("urgent", v)}
-							/>
-						</div>
 
-						{/* Group application toggle */}
+							{/* Urgent job toggle */}
+							<div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+								<div className="space-y-0.5">
+									<Label className="text-base">Zlecenie pilne</Label>
+									<p className="text-xs text-muted-foreground">
+										Start dziś lub jutro
+									</p>
+								</div>
+								<Switch
+									checked={form.urgent}
+									onCheckedChange={(v) => updateForm("urgent", v)}
+								/>
+							</div>
+
+							{/* Group application toggle */}
 							<div className="space-y-4 p-4 rounded-lg border bg-muted/30">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
@@ -951,7 +987,9 @@ export default function NewJob() {
 										value={form.district}
 										onValueChange={(v) => updateForm("district", v)}
 									>
-										<SelectTrigger className={!form.district ? "border-destructive/50" : ""}>
+										<SelectTrigger
+											className={!form.district ? "border-destructive/50" : ""}
+										>
 											<SelectValue placeholder="Wybierz dzielnicę" />
 										</SelectTrigger>
 										<SelectContent>
@@ -974,33 +1012,40 @@ export default function NewJob() {
 								</div>
 							)}
 
-						{/* Street field for dolnośląskie cities */}
-						{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
-							<div className="space-y-2 animate-fade-in">
-								<Label>Ulica *</Label>
-								<StreetAutocomplete
-									value={form.street}
-									onChange={(street) => updateForm("street", street)}
-									city={form.miasto}
-									placeholder="Wpisz nazwę ulicy..."
-								/>
-								<p className="text-xs text-muted-foreground">
-									Nazwa ulicy nie będzie widoczna dla innych użytkowników.
-									<br />
-									Jedynie służy umieszczeniu ogłoszenia we właściwej okolicy na mapie.
-								</p>
-							</div>
-						)}
-
-							{/* Info for dolnośląskie cities */}
-							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
-								<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-									<Sparkles className="h-4 w-4 text-primary" />
-									<p className="text-sm text-muted-foreground">
-										Twoja oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span> dla województwa dolnośląskiego
+							{/* Street field for dolnośląskie cities */}
+							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
+								<div className="space-y-2 animate-fade-in">
+									<Label>Ulica *</Label>
+									<StreetAutocomplete
+										value={form.street}
+										onChange={(street) => updateForm("street", street)}
+										city={form.miasto}
+										placeholder="Wpisz nazwę ulicy..."
+									/>
+									<p className="text-xs text-muted-foreground">
+										Nazwa ulicy nie będzie widoczna dla innych użytkowników.
+										<br />
+										Jedynie służy umieszczeniu ogłoszenia we właściwej okolicy
+										na mapie.
 									</p>
 								</div>
 							)}
+
+							{/* Info for dolnośląskie cities */}
+							{form.miasto &&
+								DOLNOSLASKIE_CITIES[form.miasto] &&
+								form.miasto.toLowerCase() !== "wrocław" && (
+									<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+										<Sparkles className="h-4 w-4 text-primary" />
+										<p className="text-sm text-muted-foreground">
+											Twoja oferta będzie widoczna na{" "}
+											<span className="font-medium text-foreground">
+												Mapie Pracy
+											</span>{" "}
+											dla województwa dolnośląskiego
+										</p>
+									</div>
+								)}
 
 							{/* Error for cities outside dolnośląskie */}
 							{locationError && (
@@ -1018,21 +1063,28 @@ export default function NewJob() {
 							)}
 
 							{/* Info for cities in dolnośląskie but not in predefined list */}
-							{form.miasto && !DOLNOSLASKIE_CITIES[form.miasto] && form.wojewodztwo && !locationError && !checkingLocation && (
-								<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-									<Sparkles className="h-4 w-4 text-primary" />
-									<p className="text-sm text-muted-foreground">
-										Lokalizacja w województwie dolnośląskim - oferta będzie widoczna na <span className="font-medium text-foreground">Mapie Pracy</span>
-									</p>
-								</div>
-							)}
-
+							{form.miasto &&
+								!DOLNOSLASKIE_CITIES[form.miasto] &&
+								form.wojewodztwo &&
+								!locationError &&
+								!checkingLocation && (
+									<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+										<Sparkles className="h-4 w-4 text-primary" />
+										<p className="text-sm text-muted-foreground">
+											Lokalizacja w województwie dolnośląskim - oferta będzie
+											widoczna na{" "}
+											<span className="font-medium text-foreground">
+												Mapie Pracy
+											</span>
+										</p>
+									</div>
+								)}
 
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
 									<Label>Data i godzina rozpoczęcia *</Label>
 								</div>
-								
+
 								{!form.start_date_tbd && (
 									<DateTimePicker
 										value={form.start_time}
@@ -1040,7 +1092,7 @@ export default function NewJob() {
 										placeholder="Wybierz datę i godzinę"
 									/>
 								)}
-								
+
 								<div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
 									<Checkbox
 										id="start_date_tbd"
@@ -1052,14 +1104,14 @@ export default function NewJob() {
 											}
 										}}
 									/>
-									<Label 
-										htmlFor="start_date_tbd" 
+									<Label
+										htmlFor="start_date_tbd"
 										className="cursor-pointer text-sm font-medium"
 									>
 										Do ustalenia
 									</Label>
 								</div>
-								
+
 								{!form.start_time && !form.start_date_tbd && (
 									<p className="text-xs text-destructive flex items-center gap-1">
 										<AlertTriangle className="h-3 w-3" />
@@ -1067,7 +1119,6 @@ export default function NewJob() {
 									</p>
 								)}
 							</div>
-
 
 							<div className="space-y-2">
 								<Label>Szacowany czas pracy (godziny)</Label>
@@ -1138,7 +1189,9 @@ export default function NewJob() {
 										onChange={(e) => updateForm("budget", e.target.value)}
 									/>
 									<p className="text-xs text-muted-foreground">
-										{form.budget_type === "hourly" ? "Stawka za godzinę" : "Kwota za całe zlecenie"}
+										{form.budget_type === "hourly"
+											? "Stawka za godzinę"
+											: "Kwota za całe zlecenie"}
 									</p>
 								</div>
 							)}
@@ -1167,18 +1220,22 @@ export default function NewJob() {
 										/>
 									</div>
 									<p className="text-xs text-muted-foreground col-span-full">
-										{form.budget_type === "hourly" ? "Zakres stawki godzinowej" : "Zakres kwoty za całe zlecenie"}
+										{form.budget_type === "hourly"
+											? "Zakres stawki godzinowej"
+											: "Zakres kwoty za całe zlecenie"}
 									</p>
 								</div>
 							)}
 
 							{/* Validation message */}
-							{form.budget_range_mode && form.budget && form.budget_max && 
+							{form.budget_range_mode &&
+								form.budget &&
+								form.budget_max &&
 								parseFloat(form.budget_max) <= parseFloat(form.budget) && (
-								<p className="text-sm text-destructive">
-									Kwota "Do" musi być większa niż "Od"
-								</p>
-							)}
+									<p className="text-sm text-destructive">
+										Kwota "Do" musi być większa niż "Od"
+									</p>
+								)}
 						</CardContent>
 					</Card>
 				)}
@@ -1186,10 +1243,10 @@ export default function NewJob() {
 				{/* Step 4: Payment & Summary */}
 				{step === 4 && (
 					<Card>
-					<CardHeader>
-						<CardTitle>Podsumowanie</CardTitle>
-						<CardDescription>Sprawdź dane przed publikacją</CardDescription>
-					</CardHeader>
+						<CardHeader>
+							<CardTitle>Podsumowanie</CardTitle>
+							<CardDescription>Sprawdź dane przed publikacją</CardDescription>
+						</CardHeader>
 						<CardContent className="space-y-6">
 							{/* Summary */}
 							<div className="rounded-lg border p-4 space-y-2">
@@ -1209,12 +1266,15 @@ export default function NewJob() {
 								{form.budget && (
 									<p className="text-sm">
 										<strong>Budżet:</strong>{" "}
-										{form.budget_range_mode && form.budget_max 
-											? `${form.budget} - ${form.budget_max} zł` 
-											: `${form.budget} zł`}
-										{" "}
+										{form.budget_range_mode && form.budget_max
+											? `${form.budget} - ${form.budget_max} zł`
+											: `${form.budget} zł`}{" "}
 										<span className="text-muted-foreground">
-											({form.budget_type === "hourly" ? "za godzinę" : "za całość"})
+											(
+											{form.budget_type === "hourly"
+												? "za godzinę"
+												: "za całość"}
+											)
 										</span>
 									</p>
 								)}
@@ -1291,7 +1351,7 @@ export default function NewJob() {
 							<div className="rounded-lg border p-4 border-primary/30 bg-primary/5">
 								<div className="flex items-center gap-2 mb-2">
 									<CheckCircle className="h-5 w-5 text-primary" />
-									<span className="font-medium">Darmowy dostęp</span>
+									<span className="font-medium">Darmowa publikacja</span>
 								</div>
 								<p className="text-sm text-muted-foreground">
 									Publikacja ogłoszeń jest obecnie{" "}
