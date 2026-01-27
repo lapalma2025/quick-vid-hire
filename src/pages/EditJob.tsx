@@ -25,7 +25,7 @@ import { CityAutocomplete } from '@/components/jobs/CityAutocomplete';
 import { WojewodztwoSelect } from '@/components/jobs/WojewodztwoSelect';
 import { CountrySelect } from '@/components/jobs/CountrySelect';
 import { ForeignCitySelect } from '@/components/jobs/ForeignCitySelect';
-import { LocationTypeToggle } from '@/components/jobs/LocationTypeToggle';
+
 import { Link } from 'react-router-dom';
 import { WOJEWODZTWA } from '@/lib/constants';
 
@@ -284,14 +284,6 @@ export default function EditJob() {
               <CardTitle>Lokalizacja i termin</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Location type toggle */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Rodzaj lokalizacji *</Label>
-                <LocationTypeToggle
-                  isForeign={form.is_foreign}
-                  onChange={(v) => updateForm('is_foreign', v)}
-                />
-              </div>
 
               {/* Polish location */}
               {!form.is_foreign && (

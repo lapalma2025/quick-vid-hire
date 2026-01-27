@@ -484,7 +484,7 @@ export default function Profile() {
 	return (
 		<Layout>
 			<div className="container max-w-2xl py-8">
-				<h1 className="text-2xl font-bold mb-6">Mój profil</h1>
+				<h1 className="text-2xl font-bold mb-6">Profil użytkownika</h1>
 
 				{/* Subscription status */}
 				{subscribed && (
@@ -572,8 +572,9 @@ export default function Profile() {
 					</CardContent>
 				</Card>
 
-			{/* Logo upload - now free for everyone */}
-				<Card className="mb-6">
+		{/* Logo upload - only for completed worker profiles */}
+			{workerProfileCompleted && (
+			<Card className="mb-6">
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<div>
@@ -656,8 +657,9 @@ export default function Profile() {
 							</div>
 						)}
 						*/}
-					</CardContent>
-				</Card>
+				</CardContent>
+			</Card>
+			)}
 
 				{/* Form */}
 				<Card>

@@ -207,57 +207,52 @@ export const Header = () => {
 											</p>
 										</div>
 									</div>
-									<DropdownMenuItem
-										asChild
-										className="rounded-lg cursor-pointer"
-									>
-										<Link to="/dashboard">
-											<LayoutDashboard className="mr-2 h-4 w-4" />
-											Panel
-										</Link>
-									</DropdownMenuItem>
-									{workerProfileCompleted ? (
-										<>
-											<DropdownMenuItem
-												onClick={() => {
-													setViewMode("client");
-													navigate("/dashboard");
-												}}
-												className="rounded-lg cursor-pointer"
-											>
-												<Briefcase className="mr-2 h-4 w-4" />
-												Zleceniodawca
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setViewMode("worker");
-													navigate("/dashboard");
-												}}
-												className="rounded-lg cursor-pointer"
-											>
-												<Wrench className="mr-2 h-4 w-4" />
-												Wykonawca
-											</DropdownMenuItem>
-										</>
-									) : (
-										<>
-											<DropdownMenuItem className="rounded-lg bg-primary/5 text-primary cursor-default">
-												<Briefcase className="mr-2 h-4 w-4" />
-												Zleceniodawca
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												asChild
-												className="rounded-lg cursor-pointer border border-dashed border-primary/30 mt-2"
-											>
-												<Link to="/worker-onboarding">
-													<UserPlus className="mr-2 h-4 w-4 text-primary" />
-													<span className="text-primary">
-														Dołącz jako wykonawca
-													</span>
-												</Link>
-											</DropdownMenuItem>
-										</>
-									)}
+								{/* Panel użytkownika - nieklikalny nagłówek */}
+								<div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+									Panel użytkownika
+								</div>
+								{workerProfileCompleted ? (
+									<>
+										<DropdownMenuItem
+											onClick={() => {
+												setViewMode("client");
+												navigate("/dashboard");
+											}}
+											className="rounded-lg cursor-pointer pl-4"
+										>
+											<Briefcase className="mr-2 h-4 w-4" />
+											Panel zleceniodawcy
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												setViewMode("worker");
+												navigate("/dashboard");
+											}}
+											className="rounded-lg cursor-pointer pl-4"
+										>
+											<Wrench className="mr-2 h-4 w-4" />
+											Panel wykonawcy
+										</DropdownMenuItem>
+									</>
+								) : (
+									<>
+										<DropdownMenuItem className="rounded-lg bg-primary/5 text-primary cursor-default pl-4">
+											<Briefcase className="mr-2 h-4 w-4" />
+											Panel zleceniodawcy
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											asChild
+											className="rounded-lg cursor-pointer border border-dashed border-primary/30 mt-2 pl-4"
+										>
+											<Link to="/worker-onboarding">
+												<UserPlus className="mr-2 h-4 w-4 text-primary" />
+												<span className="text-primary">
+													Dołącz jako wykonawca
+												</span>
+											</Link>
+										</DropdownMenuItem>
+									</>
+								)}
 									<DropdownMenuSeparator className="my-1" />
 									<DropdownMenuItem
 										asChild
