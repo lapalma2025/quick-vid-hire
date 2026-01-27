@@ -105,10 +105,10 @@ export function CityAutocomplete({
 								(t) => t.name.toLowerCase() === item.name.toLowerCase()
 							)
 					)
-					// Filter to show only cities that START WITH the query (case insensitive)
-					.filter((item: CitySuggestion) =>
-						item.name.toLowerCase().startsWith(query.toLowerCase())
-					)
+				// Filter to show cities that CONTAIN the query (case insensitive)
+				.filter((item: CitySuggestion) =>
+					item.name.toLowerCase().includes(query.toLowerCase())
+				)
 					// Sort alphabetically
 					.sort((a: CitySuggestion, b: CitySuggestion) =>
 						a.name.localeCompare(b.name, "pl")
