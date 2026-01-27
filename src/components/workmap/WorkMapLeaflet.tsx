@@ -130,7 +130,6 @@ function createJobIcon(urgent: boolean = false) {
     popupAnchor: [0, -size],
     html: `
       <div class="job-marker-wrapper" style="width: ${size}px; height: ${size}px;">
-        ${urgent ? '<div class="job-pulse" style="background: #ef4444;"></div>' : ''}
         <div class="job-pin" style="background: ${color};">
           <svg viewBox="0 0 24 24" fill="white" width="${size * 0.5}" height="${size * 0.5}">
             <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
@@ -152,7 +151,6 @@ function createClusterIcon(count: number, hasUrgent: boolean) {
     popupAnchor: [0, -size / 2],
     html: `
       <div class="cluster-marker-wrapper" style="width: ${size}px; height: ${size}px;">
-        ${hasUrgent ? '<div class="cluster-pulse" style="background: #ef4444;"></div>' : ''}
         <div class="cluster-core" style="background: linear-gradient(135deg, ${clusterColor}, ${clusterColor}dd); width: ${size}px; height: ${size}px;">
           <span class="cluster-count">${count}</span>
         </div>
@@ -718,19 +716,6 @@ export function WorkMapLeaflet({
           transform: scale(1.1);
         }
         
-        .cluster-pulse {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          opacity: 0;
-          animation: pulse 2s ease-out infinite;
-        }
-        
-        @keyframes pulse {
-          0% { transform: scale(0.8); opacity: 0.6; }
-          100% { transform: scale(1.6); opacity: 0; }
-        }
         
         .cluster-core {
           border-radius: 50%;
@@ -803,17 +788,6 @@ export function WorkMapLeaflet({
           align-items: center;
         }
         
-        .job-pulse {
-          position: absolute;
-          top: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          opacity: 0;
-          animation: pulse 2s ease-out infinite;
-        }
         
         .job-pin {
           width: 100%;

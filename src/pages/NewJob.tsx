@@ -789,9 +789,21 @@ export default function NewJob() {
 									onChange={(imgs) => updateForm("images", imgs)}
 									maxImages={5}
 								/>
-							</div>
+						</div>
 
-							{/* Group application toggle */}
+						{/* Urgent job toggle */}
+						<div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+							<div className="space-y-0.5">
+								<Label className="text-base">Zlecenie pilne</Label>
+								<p className="text-xs text-muted-foreground">Start dziś lub jutro</p>
+							</div>
+							<Switch
+								checked={form.urgent}
+								onCheckedChange={(v) => updateForm("urgent", v)}
+							/>
+						</div>
+
+						{/* Group application toggle */}
 							<div className="space-y-4 p-4 rounded-lg border bg-muted/30">
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
@@ -962,21 +974,23 @@ export default function NewJob() {
 								</div>
 							)}
 
-							{/* Street field for dolnośląskie cities */}
-							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
-								<div className="space-y-2 animate-fade-in">
-									<Label>Ulica i numer (opcjonalnie)</Label>
-									<StreetAutocomplete
-										value={form.street}
-										onChange={(street) => updateForm("street", street)}
-										city={form.miasto}
-										placeholder="Wpisz nazwę ulicy..."
-									/>
-									<p className="text-xs text-muted-foreground">
-										Podanie ulicy zwiększy precyzję lokalizacji na Mapie Pracy
-									</p>
-								</div>
-							)}
+						{/* Street field for dolnośląskie cities */}
+						{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
+							<div className="space-y-2 animate-fade-in">
+								<Label>Ulica *</Label>
+								<StreetAutocomplete
+									value={form.street}
+									onChange={(street) => updateForm("street", street)}
+									city={form.miasto}
+									placeholder="Wpisz nazwę ulicy..."
+								/>
+								<p className="text-xs text-muted-foreground">
+									Nazwa ulicy nie będzie widoczna dla innych użytkowników.
+									<br />
+									Jedynie służy umieszczeniu ogłoszenia we właściwej okolicy na mapie.
+								</p>
+							</div>
+						)}
 
 							{/* Info for dolnośląskie cities */}
 							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && form.miasto.toLowerCase() !== "wrocław" && (
@@ -1054,14 +1068,6 @@ export default function NewJob() {
 								)}
 							</div>
 
-							<div className="space-y-2">
-								<Label>Data i godzina zakończenia</Label>
-								<DateTimePicker
-									value={form.end_time}
-									onChange={(v) => updateForm("end_time", v)}
-									placeholder="Wybierz datę i godzinę"
-								/>
-							</div>
 
 							<div className="space-y-2">
 								<Label>Szacowany czas pracy (godziny)</Label>
@@ -1180,10 +1186,10 @@ export default function NewJob() {
 				{/* Step 4: Payment & Summary */}
 				{step === 4 && (
 					<Card>
-						<CardHeader>
-							<CardTitle>Podsumowanie i płatność</CardTitle>
-							<CardDescription>Sprawdź dane i opłać publikację</CardDescription>
-						</CardHeader>
+					<CardHeader>
+						<CardTitle>Podsumowanie</CardTitle>
+						<CardDescription>Sprawdź dane przed publikacją</CardDescription>
+					</CardHeader>
 						<CardContent className="space-y-6">
 							{/* Summary */}
 							<div className="rounded-lg border p-4 space-y-2">

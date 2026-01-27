@@ -386,19 +386,18 @@ export default function Index() {
 					}`}
 				>
 					<div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8 w-full">
-						<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
-							Znajdź wykonawcę
-							<span className="block text-primary mt-2">w kilka minut</span>
-						</h1>
+					<h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-tight">
+						Portal zleceń
+						<span className="block text-primary mt-2">krótkoterminowych</span>
+					</h1>
 
-						<p className="hero-subtitle text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-							Portal pracy krótkoterminowej. Dodaj zlecenie, wybierz wykonawcę,
-							załatw sprawę.
-							<span className="text-foreground font-medium">
-								{" "}
-								Prosto, szybko, lokalnie.
-							</span>
-						</p>
+					<p className="hero-subtitle text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-center">
+						Dodaj zlecenie, wybierz wykonawcę, załatw sprawę.
+						<br />
+						<span className="text-foreground font-medium">
+							Prosto, szybko, lokalnie.
+						</span>
+					</p>
 
 						<div className="hero-buttons flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-2 md:pt-4">
 							<Button
