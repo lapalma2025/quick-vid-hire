@@ -307,7 +307,7 @@ export default function Jobs() {
 		fetchJobs();
 	}, [fetchJobs]);
 
-	// Intersection Observer for infinite scroll
+	// Intersection Observer for infinite scroll - trigger earlier (before reaching bottom)
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(entries) => {
@@ -315,7 +315,10 @@ export default function Jobs() {
 					loadMore();
 				}
 			},
-			{ threshold: 0.1 }
+			{ 
+				threshold: 0,
+				rootMargin: "400px" // Start loading 400px before reaching the trigger
+			}
 		);
 
 		if (loadMoreRef.current) {
@@ -408,15 +411,18 @@ export default function Jobs() {
 									))}
 								</div>
 
-								{/* Load more trigger */}
-								<div ref={loadMoreRef} className="py-8 flex justify-center">
+								{/* Load more trigger - invisible element that triggers loading early */}
+								<div ref={loadMoreRef} className="h-1" />
+								
+								{/* Loading indicator - fixed height to prevent layout shift */}
+								<div className="py-8 flex justify-center min-h-[80px]">
 									{loadingMore && (
 										<div className="flex items-center gap-3 text-muted-foreground">
 											<Loader2 className="h-5 w-5 animate-spin" />
 											<span>Ładowanie kolejnych...</span>
 										</div>
 									)}
-									{!hasMore && jobs.length > 0 && (
+									{!hasMore && jobs.length > 0 && !loadingMore && (
 										<p className="text-muted-foreground text-sm">
 											Wyświetlono wszystkie zlecenia ({jobs.length})
 										</p>
