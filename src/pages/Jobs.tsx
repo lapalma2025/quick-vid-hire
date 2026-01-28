@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { JobCard } from "@/components/jobs/JobCard";
+import { JobCardSkeleton } from "@/components/jobs/JobCardSkeleton";
 import {
 	JobFilters,
 	type JobFilters as Filters,
@@ -74,6 +75,9 @@ export default function Jobs() {
 	});
 
 	const loadMoreRef = useRef<HTMLDivElement>(null);
+	// Tracks how many rows we've fetched from the backend (must NOT depend on jobs.length,
+	// because we do client-side filtering for availableAt, which can shrink the rendered list)
+	const fetchedRowsRef = useRef(0);
 
 	// Fetch all categories for hierarchy filtering
 	useEffect(() => {
@@ -227,12 +231,14 @@ export default function Jobs() {
 		setLoading(true);
 		setJobs([]);
 		setHasMore(true);
+		fetchedRowsRef.current = 0;
 
 		const query = buildQuery();
 		const { data, error, count } = await query.range(0, PAGE_SIZE - 1);
 
 		if (!error && data) {
 			let jobsData = data as Job[];
+			fetchedRowsRef.current = data.length;
 
 			// Client-side filtering for time
 			if (filters.availableAt) {
@@ -279,13 +285,13 @@ export default function Jobs() {
 
 		setLoadingMore(true);
 		const query = buildQuery();
-		const { data, error } = await query.range(
-			jobs.length,
-			jobs.length + PAGE_SIZE - 1
-		);
+		const from = fetchedRowsRef.current;
+		const to = from + PAGE_SIZE - 1;
+		const { data, error } = await query.range(from, to);
 
 		if (!error && data) {
 			let newJobsData = data as Job[];
+			fetchedRowsRef.current += data.length;
 
 			// Client-side filtering for time
 			if (filters.availableAt) {
@@ -297,11 +303,48 @@ export default function Jobs() {
 				});
 			}
 
-			setJobs((prev) => [...prev, ...newJobsData]);
+			setJobs((prev) => {
+				// Defensive dedupe (prevents React key collisions + visual "mruganie")
+				const seen = new Set(prev.map((j) => j.id));
+				const merged = [...prev];
+				for (const j of newJobsData) {
+					if (!seen.has(j.id)) {
+						merged.push(j);
+						seen.add(j.id);
+					}
+				}
+				return merged;
+			});
 			setHasMore(data.length === PAGE_SIZE);
 		}
 		setLoadingMore(false);
-	}, [buildQuery, jobs.length, loadingMore, hasMore, filters.availableAt]);
+	}, [buildQuery, loadingMore, hasMore, filters.availableAt]);
+
+	// Extra prefetch: when user gets close to bottom, start loading earlier (even on fast scroll)
+	useEffect(() => {
+		if (loading) return;
+
+		const PRELOAD_PX = 2600;
+		let ticking = false;
+		const onScroll = () => {
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(() => {
+				ticking = false;
+				if (loadingMore || !hasMore) return;
+				const distanceToBottom =
+					document.documentElement.scrollHeight -
+					(window.scrollY + window.innerHeight);
+				if (distanceToBottom < PRELOAD_PX) {
+					loadMore();
+				}
+			});
+		};
+
+		window.addEventListener("scroll", onScroll, { passive: true });
+		onScroll(); // fill buffer immediately if list is short
+		return () => window.removeEventListener("scroll", onScroll);
+	}, [hasMore, loadMore, loading, loadingMore]);
 
 	useEffect(() => {
 		fetchJobs();
@@ -409,6 +452,10 @@ export default function Jobs() {
 											}} 
 										/>
 									))}
+									{loadingMore &&
+										Array.from({ length: 6 }).map((_, idx) => (
+											<JobCardSkeleton key={`job-skeleton-${idx}`} />
+										))}
 								</div>
 
 								{/* Load more trigger - invisible element that triggers loading early */}
