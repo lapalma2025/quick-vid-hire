@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { JobCard } from "@/components/jobs/JobCard";
 import {
@@ -7,11 +7,7 @@ import {
 } from "@/components/jobs/JobFilters";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Search, Sparkles } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSEO } from "@/hooks/useSEO";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const PAGE_SIZE = 10;
 
@@ -77,8 +73,6 @@ export default function Jobs() {
 		keywords: "zlecenia, praca dorywcza, usługi, fachowcy, remonty, sprzątanie, transport, Polska",
 	});
 
-	const headerRef = useRef<HTMLDivElement>(null);
-	const gridRef = useRef<HTMLDivElement>(null);
 	const loadMoreRef = useRef<HTMLDivElement>(null);
 
 	// Fetch all categories for hierarchy filtering
@@ -331,40 +325,7 @@ export default function Jobs() {
 		return () => observer.disconnect();
 	}, [hasMore, loading, loadingMore, loadMore]);
 
-	useEffect(() => {
-		if (headerRef.current) {
-			gsap.fromTo(
-				headerRef.current,
-				{ opacity: 0, y: 30 },
-				{ opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
-			);
-		}
-	}, []);
-
-	useEffect(() => {
-		if (gridRef.current && !loading && jobs.length > 0) {
-			const cards = gridRef.current.querySelectorAll(".job-card:not(.animated)");
-			if (cards.length === 0) return;
-			
-			// Use transform only (no scale) to avoid layout shifts
-			gsap.fromTo(
-				cards,
-				{ opacity: 0, y: 20 },
-				{
-					opacity: 1,
-					y: 0,
-					duration: 0.4,
-					stagger: 0.05,
-					ease: "power2.out",
-					onComplete: function () {
-						this.targets().forEach((el: Element) =>
-							el.classList.add("animated")
-						);
-					},
-				}
-			);
-		}
-	}, [loading, jobs]);
+	// No GSAP animations for job cards - causes flickering on navigation
 
 	// Memoize the filter change handler to prevent unnecessary re-renders
 	const handleFiltersChange = useCallback((newFilters: Filters) => {
@@ -379,7 +340,7 @@ export default function Jobs() {
 					<div className="absolute top-10 left-10 w-48 sm:w-64 h-48 sm:h-64 bg-primary/10 rounded-full blur-3xl" />
 					<div className="absolute bottom-10 right-10 w-36 sm:w-48 h-36 sm:h-48 bg-accent/10 rounded-full blur-3xl" />
 				</div>
-				<div ref={headerRef} className="container relative py-10 sm:py-16 md:py-20 px-4 sm:px-6">
+				<div className="container relative py-10 sm:py-16 md:py-20 px-4 sm:px-6">
 					<div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
 						<div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
 							<Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -435,17 +396,15 @@ export default function Jobs() {
 							</div>
 						) : (
 							<>
-								<div
-									ref={gridRef}
-									className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
-								>
+								<div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
 									{jobs.map((job) => (
-										<div key={job.id} className="job-card">
-											<JobCard job={{
+										<JobCard 
+											key={job.id}
+											job={{
 												...job,
 												response_count: job.job_responses?.[0]?.count ?? 0
-											}} />
-										</div>
+											}} 
+										/>
 									))}
 								</div>
 
