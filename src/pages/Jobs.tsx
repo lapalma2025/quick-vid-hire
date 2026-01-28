@@ -317,7 +317,7 @@ export default function Jobs() {
 			},
 			{ 
 				threshold: 0,
-				rootMargin: "400px" // Start loading 400px before reaching the trigger
+				rootMargin: "1200px" // Start loading well before reaching the trigger to avoid scroll "jump"
 			}
 		);
 
