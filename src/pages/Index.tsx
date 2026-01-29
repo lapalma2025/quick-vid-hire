@@ -276,15 +276,14 @@ export default function Index() {
 				if (jobFlowIcons.length > 0) {
 					const highlightTl = gsap.timeline({
 						repeat: -1,
-						delay: 1.5,
-						repeatDelay: 1,
+						delay: 2,
+						repeatDelay: 1.5,
 					});
 
 					jobFlowIcons.forEach((icon, index) => {
 						// Highlight current step
 						highlightTl.to(icon, {
-							scale: 1.15,
-							boxShadow: "0 0 25px rgba(var(--primary), 0.5)",
+							scale: 1.12,
 							duration: 0.4,
 							ease: "power2.out",
 						});
@@ -292,14 +291,12 @@ export default function Index() {
 						// Animate arrow after step (except last)
 						if (index < jobFlowArrows.length) {
 							highlightTl.to(jobFlowArrows[index], {
-								x: 5,
-								color: "hsl(var(--primary))",
+								x: 4,
 								duration: 0.2,
 								ease: "power2.out",
 							}, "-=0.2");
 							highlightTl.to(jobFlowArrows[index], {
 								x: 0,
-								color: "",
 								duration: 0.2,
 								ease: "power2.in",
 							});
@@ -308,7 +305,6 @@ export default function Index() {
 						// Return to normal
 						highlightTl.to(icon, {
 							scale: 1,
-							boxShadow: "none",
 							duration: 0.3,
 							ease: "power2.in",
 						}, index < jobFlowArrows.length ? "-=0.2" : "+=0.1");
