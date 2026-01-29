@@ -24,8 +24,8 @@ const routeLabels: Record<string, BreadcrumbConfig> = {
   "/workers": { label: "Wykonawcy" },
   "/work-map": { label: "Mapa pracy" },
   "/dashboard": { label: "Panel", dynamic: true },
-  "/profile": { label: "Profil", parent: "/dashboard" },
-  "/statistics": { label: "Statystyki", parent: "/dashboard" },
+  "/profile": { label: "Profil" },
+  "/statistics": { label: "Statystyki" },
   "/worker-onboarding": { label: "Rejestracja wykonawcy" },
   "/how-it-works": { label: "Jak to działa" },
   "/pricing": { label: "Cennik" },
@@ -39,7 +39,7 @@ const routeLabels: Record<string, BreadcrumbConfig> = {
   "/privacy": { label: "Polityka prywatności" },
   "/login": { label: "Logowanie" },
   "/register": { label: "Rejestracja" },
-  "/saved-jobs": { label: "Zapisane oferty", parent: "/dashboard" },
+  "/saved-jobs": { label: "Zapisane oferty" },
 };
 
 // Funkcja do generowania ścieżki breadcrumb
