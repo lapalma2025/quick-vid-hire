@@ -229,41 +229,48 @@ export default function Index() {
 					});
 				});
 
-				// Job flow animation - sequential highlight effect
+				// Job flow animation - sequential entrance on scroll
 				const jobFlowSteps = promoSection.querySelectorAll(".job-flow-step");
 				const jobFlowArrows = promoSection.querySelectorAll(".job-flow-arrow");
 				const jobFlowIcons = promoSection.querySelectorAll(".job-flow-icon");
 
-				// Initial entrance - staggered fade in
-				gsap.fromTo(
-					jobFlowSteps,
-					{ opacity: 0, scale: 0.5, y: 20 },
-					{
-						opacity: 1,
-						scale: 1,
-						y: 0,
-						duration: 0.5,
-						stagger: 0.15,
-						ease: "back.out(1.7)",
-						scrollTrigger: { trigger: promoSection, start: "top 75%" },
-						delay: 0.5,
-					}
-				);
+				// Create entrance timeline triggered by scroll
+				const entranceTl = gsap.timeline({
+					scrollTrigger: { trigger: promoSection, start: "top 75%" },
+				});
 
-				// Arrows slide in
-				gsap.fromTo(
-					jobFlowArrows,
-					{ opacity: 0, x: -10 },
-					{
-						opacity: 1,
-						x: 0,
-						duration: 0.3,
-						stagger: 0.15,
-						ease: "power2.out",
-						scrollTrigger: { trigger: promoSection, start: "top 75%" },
-						delay: 0.7,
+				// Sequential entrance - step by step with arrows
+				jobFlowSteps.forEach((step, index) => {
+					// Add step entrance
+					entranceTl.fromTo(
+						step,
+						{ opacity: 0, scale: 0.3, y: 30 },
+						{
+							opacity: 1,
+							scale: 1,
+							y: 0,
+							duration: 0.5,
+							ease: "back.out(1.7)",
+						},
+						index === 0 ? 0.3 : "-=0.1"
+					);
+
+					// Add arrow after step (except last)
+					if (index < jobFlowArrows.length) {
+						entranceTl.fromTo(
+							jobFlowArrows[index],
+							{ opacity: 0, x: -15, scale: 0.5 },
+							{
+								opacity: 1,
+								x: 0,
+								scale: 1,
+								duration: 0.3,
+								ease: "power2.out",
+							},
+							"-=0.2"
+						);
 					}
-				);
+				});
 
 				// Sequential highlight animation - loops through each step
 				if (jobFlowIcons.length > 0) {
