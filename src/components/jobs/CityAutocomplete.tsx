@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Loader2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSearchCache } from "@/hooks/useSearchCache";
 
 interface CityAutocompleteProps {
 	value: string;
@@ -18,7 +19,8 @@ interface CitySuggestion {
 	type: string;
 }
 
-const MIN_CHARS = 3;
+const MIN_CHARS = 2;
+const DEBOUNCE_MS = 150;
 
 // Dolnośląskie bounding box
 const DOLNOSLASKIE_BOUNDS = {
@@ -69,6 +71,8 @@ export function CityAutocomplete({
 	const debounceRef = useRef<number | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 	const requestIdRef = useRef(0);
+	
+	const cache = useSearchCache<CitySuggestion[]>(50);
 
 	useEffect(() => {
 		setInputValue(value);
@@ -97,6 +101,15 @@ export function CityAutocomplete({
 
 		if (query.length < MIN_CHARS) {
 			setSuggestions([]);
+			return;
+		}
+
+		// Check cache first
+		const cacheKey = `city:${normalizePl(query)}`;
+		const cached = cache.get(cacheKey);
+		if (cached) {
+			setSuggestions(cached);
+			setIsOpen(cached.length > 0);
 			return;
 		}
 
@@ -134,86 +147,42 @@ export function CityAutocomplete({
 				bounded: "1",
 			});
 
-			const [photonRes, nominatimRes] = await Promise.allSettled([
-				fetch(photonUrl, { signal: controller.signal }),
-				fetch(`https://nominatim.openstreetmap.org/search?${nominatimParams.toString()}`, {
-					signal: controller.signal,
-					headers: { "User-Agent": "Closey/1.0" },
-				}),
-			]);
-
 			const candidates: CitySuggestion[] = [];
+			let hasResults = false;
 
-			// Parse Photon results
-			if (photonRes.status === "fulfilled" && photonRes.value.ok) {
-				const data = await photonRes.value.json();
-				for (const feature of data?.features ?? []) {
-					const props = feature?.properties ?? {};
-					const coords = feature?.geometry?.coordinates;
+			// First-response-wins: process whichever API responds first
+			const photonPromise = fetch(photonUrl, { signal: controller.signal })
+				.then(async (res) => {
+					if (!res.ok) return;
+					const data = await res.json();
+					
+					for (const feature of data?.features ?? []) {
+						const props = feature?.properties ?? {};
+						const coords = feature?.geometry?.coordinates;
 
-					// Check if within Dolnośląskie bounds
-					if (coords && coords.length >= 2) {
-						const [lng, lat] = coords;
-						if (
-							lat < DOLNOSLASKIE_BOUNDS.south ||
-							lat > DOLNOSLASKIE_BOUNDS.north ||
-							lng < DOLNOSLASKIE_BOUNDS.west ||
-							lng > DOLNOSLASKIE_BOUNDS.east
-						) {
-							continue;
-						}
-					}
-
-					const name = props.name;
-					if (!name) continue;
-
-					const state = props.state || "";
-					// Only accept dolnośląskie
-					if (state && !normalizePl(state).includes("dolnoslaski")) {
-						continue;
-					}
-
-					const type = props.type || "miejscowość";
-
-					candidates.push({
-						name,
-						region: "dolnośląskie",
-						type,
-					});
-				}
-			}
-
-			// Parse Nominatim results
-			if (nominatimRes.status === "fulfilled" && nominatimRes.value.ok) {
-				const data = await nominatimRes.value.json();
-				if (Array.isArray(data)) {
-					for (const item of data) {
-						const addr = item?.address ?? {};
-
-						// Check if in Dolnośląskie
-						const state = addr.state || "";
-						if (!normalizePl(state).includes("dolnoslaski")) {
-							continue;
+						// Check if within Dolnośląskie bounds
+						if (coords && coords.length >= 2) {
+							const [lng, lat] = coords;
+							if (
+								lat < DOLNOSLASKIE_BOUNDS.south ||
+								lat > DOLNOSLASKIE_BOUNDS.north ||
+								lng < DOLNOSLASKIE_BOUNDS.west ||
+								lng > DOLNOSLASKIE_BOUNDS.east
+							) {
+								continue;
+							}
 						}
 
-						// Get city/town/village name
-						const name =
-							addr.city ||
-							addr.town ||
-							addr.village ||
-							addr.hamlet ||
-							addr.suburb ||
-							addr.municipality ||
-							item?.name;
-
+						const name = props.name;
 						if (!name) continue;
 
-						// Determine type
-						let type = "miejscowość";
-						if (addr.city) type = "miasto";
-						else if (addr.town) type = "miasteczko";
-						else if (addr.village) type = "wieś";
-						else if (addr.hamlet) type = "przysiółek";
+						const state = props.state || "";
+						// Only accept dolnośląskie
+						if (state && !normalizePl(state).includes("dolnoslaski")) {
+							continue;
+						}
+
+						const type = props.type || "miejscowość";
 
 						candidates.push({
 							name,
@@ -221,30 +190,86 @@ export function CityAutocomplete({
 							type,
 						});
 					}
+					
+					// Show results immediately if we have any
+					if (requestId === requestIdRef.current && candidates.length > 0 && !hasResults) {
+						hasResults = true;
+						const ranked = rankResults(candidates, query);
+						setSuggestions(ranked);
+						setIsOpen(ranked.length > 0);
+					}
+				})
+				.catch(() => {});
+
+			const nominatimPromise = fetch(
+				`https://nominatim.openstreetmap.org/search?${nominatimParams.toString()}`,
+				{
+					signal: controller.signal,
+					headers: { "User-Agent": "Closey/1.0" },
 				}
-			}
+			)
+				.then(async (res) => {
+					if (!res.ok) return;
+					const data = await res.json();
+					
+					if (Array.isArray(data)) {
+						for (const item of data) {
+							const addr = item?.address ?? {};
+
+							// Check if in Dolnośląskie
+							const state = addr.state || "";
+							if (!normalizePl(state).includes("dolnoslaski")) {
+								continue;
+							}
+
+							// Get city/town/village name
+							const name =
+								addr.city ||
+								addr.town ||
+								addr.village ||
+								addr.hamlet ||
+								addr.suburb ||
+								addr.municipality ||
+								item?.name;
+
+							if (!name) continue;
+
+							// Determine type
+							let type = "miejscowość";
+							if (addr.city) type = "miasto";
+							else if (addr.town) type = "miasteczko";
+							else if (addr.village) type = "wieś";
+							else if (addr.hamlet) type = "przysiółek";
+
+							candidates.push({
+								name,
+								region: "dolnośląskie",
+								type,
+							});
+						}
+					}
+					
+					// Show results immediately if we have any and nothing shown yet
+					if (requestId === requestIdRef.current && candidates.length > 0 && !hasResults) {
+						hasResults = true;
+						const ranked = rankResults(candidates, query);
+						setSuggestions(ranked);
+						setIsOpen(ranked.length > 0);
+					}
+				})
+				.catch(() => {});
+
+			// Wait for all to complete, then merge and cache
+			await Promise.allSettled([photonPromise, nominatimPromise]);
 
 			if (requestId !== requestIdRef.current) return;
 
-			// Deduplicate by normalized name
-			const uniqueByName = new Map<string, CitySuggestion>();
-			for (const c of candidates) {
-				const key = normalizePl(c.name);
-				if (!key) continue;
-				if (!uniqueByName.has(key)) {
-					uniqueByName.set(key, c);
-				}
-			}
-
-			// Score and sort
-			const ranked = Array.from(uniqueByName.values())
-				.map((c) => ({ c, score: scoreCandidate(query, c.name) }))
-				.filter((x) => x.score >= 100)
-				.sort((a, b) => b.score - a.score)
-				.slice(0, 10)
-				.map((x) => x.c);
-
+			const ranked = rankResults(candidates, query);
 			setSuggestions(ranked);
+			setIsOpen(ranked.length > 0 || inputValue.length >= MIN_CHARS);
+			
+			// Cache results
+			cache.set(cacheKey, ranked);
 		} catch (error: any) {
 			if (error?.name !== "AbortError") {
 				console.error("Error fetching city suggestions:", error);
@@ -253,6 +278,26 @@ export function CityAutocomplete({
 		} finally {
 			if (requestId === requestIdRef.current) setIsLoading(false);
 		}
+	};
+
+	const rankResults = (candidates: CitySuggestion[], query: string): CitySuggestion[] => {
+		// Deduplicate by normalized name
+		const uniqueByName = new Map<string, CitySuggestion>();
+		for (const c of candidates) {
+			const key = normalizePl(c.name);
+			if (!key) continue;
+			if (!uniqueByName.has(key)) {
+				uniqueByName.set(key, c);
+			}
+		}
+
+		// Score and sort
+		return Array.from(uniqueByName.values())
+			.map((c) => ({ c, score: scoreCandidate(query, c.name) }))
+			.filter((x) => x.score >= 100)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, 10)
+			.map((x) => x.c);
 	};
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,7 +318,7 @@ export function CityAutocomplete({
 
 		debounceRef.current = window.setTimeout(() => {
 			fetchSuggestions(newValue);
-		}, 250);
+		}, DEBOUNCE_MS);
 	};
 
 	const handleSelect = (city: CitySuggestion) => {
