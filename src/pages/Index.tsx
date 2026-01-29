@@ -228,6 +228,55 @@ export default function Index() {
 						yoyo: true,
 					});
 				});
+
+				// Job flow animation
+				const jobFlowSteps = promoSection.querySelectorAll(".job-flow-step");
+				const jobFlowArrows = promoSection.querySelectorAll(".job-flow-arrow");
+				const acceptIcon = promoSection.querySelector(".job-flow-accept");
+
+				// Staggered entrance for steps
+				gsap.fromTo(
+					jobFlowSteps,
+					{ opacity: 0, scale: 0.5, y: 20 },
+					{
+						opacity: 1,
+						scale: 1,
+						y: 0,
+						duration: 0.5,
+						stagger: 0.15,
+						ease: "back.out(1.7)",
+						scrollTrigger: { trigger: promoSection, start: "top 75%" },
+						delay: 0.5,
+					}
+				);
+
+				// Arrows slide in
+				gsap.fromTo(
+					jobFlowArrows,
+					{ opacity: 0, x: -10 },
+					{
+						opacity: 1,
+						x: 0,
+						duration: 0.3,
+						stagger: 0.15,
+						ease: "power2.out",
+						scrollTrigger: { trigger: promoSection, start: "top 75%" },
+						delay: 0.7,
+					}
+				);
+
+				// Pulsing accept icon
+				if (acceptIcon) {
+					gsap.to(acceptIcon, {
+						scale: 1.1,
+						boxShadow: "0 0 20px rgba(34, 197, 94, 0.4)",
+						duration: 0.8,
+						ease: "sine.inOut",
+						repeat: -1,
+						yoyo: true,
+						delay: 1.5,
+					});
+				}
 			}
 
 			// Categories stagger
@@ -451,7 +500,7 @@ export default function Index() {
 			{/* Free Access Promo Section */}
 			<section
 				ref={statsRef}
-				className="py-12 md:py-20 border-y border-border/50 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden"
+				className="py-12 md:py-20 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden"
 			>
 				{/* Animated background elements */}
 				<div className="promo-bg-element absolute top-0 left-0 w-64 h-64 rounded-full blur-3xl" />
@@ -509,6 +558,58 @@ export default function Index() {
 									</span>
 								</div>
 							))}
+						</div>
+
+						{/* Animated Job Flow Illustration */}
+						<div className="stat-item pt-8 pb-4">
+							<div className="job-flow-container flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+								{/* Step 1: Create Job */}
+								<div className="job-flow-step flex flex-col items-center gap-2">
+									<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+										<Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+									</div>
+									<span className="text-xs text-muted-foreground">Dodaj zlecenie</span>
+								</div>
+								
+								{/* Arrow */}
+								<div className="job-flow-arrow text-muted-foreground/50">
+									<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+								</div>
+								
+								{/* Step 2: Workers Apply */}
+								<div className="job-flow-step flex flex-col items-center gap-2">
+									<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+										<Users className="h-5 w-5 sm:h-6 sm:w-6 text-accent-foreground" />
+									</div>
+									<span className="text-xs text-muted-foreground">Otrzymaj oferty</span>
+								</div>
+								
+								{/* Arrow */}
+								<div className="job-flow-arrow text-muted-foreground/50">
+									<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+								</div>
+								
+								{/* Step 3: Accept */}
+								<div className="job-flow-step flex flex-col items-center gap-2">
+									<div className="job-flow-accept w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center">
+										<CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+									</div>
+									<span className="text-xs text-muted-foreground">Zaakceptuj</span>
+								</div>
+								
+								{/* Arrow */}
+								<div className="job-flow-arrow text-muted-foreground/50">
+									<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+								</div>
+								
+								{/* Step 4: Done */}
+								<div className="job-flow-step flex flex-col items-center gap-2">
+									<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+										<Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+									</div>
+									<span className="text-xs text-muted-foreground">Gotowe!</span>
+								</div>
+							</div>
 						</div>
 
 						{/* CTA */}
