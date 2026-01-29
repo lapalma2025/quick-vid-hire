@@ -8,10 +8,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Home } from "lucide-react";
+import { useViewModeStore } from "@/store/viewModeStore";
 
 interface BreadcrumbConfig {
   label: string;
   parent?: string;
+  dynamic?: boolean;
 }
 
 // Mapowanie ścieżek na nazwy stron
@@ -21,9 +23,8 @@ const routeLabels: Record<string, BreadcrumbConfig> = {
   "/jobs/new": { label: "Nowe zlecenie", parent: "/jobs" },
   "/workers": { label: "Wykonawcy" },
   "/work-map": { label: "Mapa pracy" },
-  "/dashboard": { label: "Panel użytkownika" },
+  "/dashboard": { label: "Panel", dynamic: true },
   "/profile": { label: "Profil", parent: "/dashboard" },
-  "/subscription": { label: "Subskrypcja", parent: "/dashboard" },
   "/statistics": { label: "Statystyki", parent: "/dashboard" },
   "/worker-onboarding": { label: "Rejestracja wykonawcy" },
   "/how-it-works": { label: "Jak to działa" },
@@ -38,11 +39,15 @@ const routeLabels: Record<string, BreadcrumbConfig> = {
   "/privacy": { label: "Polityka prywatności" },
   "/login": { label: "Logowanie" },
   "/register": { label: "Rejestracja" },
+  "/saved-jobs": { label: "Zapisane oferty", parent: "/dashboard" },
 };
 
 // Funkcja do generowania ścieżki breadcrumb
-const generateBreadcrumbPath = (pathname: string): { path: string; label: string }[] => {
+const generateBreadcrumbPath = (pathname: string, viewMode: 'client' | 'worker'): { path: string; label: string }[] => {
   const breadcrumbs: { path: string; label: string }[] = [{ path: "/", label: "Strona główna" }];
+  
+  // Dynamic label for dashboard based on view mode
+  const getDashboardLabel = () => viewMode === 'client' ? 'Panel zleceniodawcy' : 'Panel wykonawcy';
   
   // Sprawdź czy to dynamiczna ścieżka (np. /jobs/:id)
   const segments = pathname.split("/").filter(Boolean);
@@ -81,10 +86,14 @@ const generateBreadcrumbPath = (pathname: string): { path: string; label: string
     if (config.parent) {
       const parentConfig = routeLabels[config.parent];
       if (parentConfig) {
-        breadcrumbs.push({ path: config.parent, label: parentConfig.label });
+        // Use dynamic label for dashboard parent
+        const parentLabel = config.parent === '/dashboard' ? getDashboardLabel() : parentConfig.label;
+        breadcrumbs.push({ path: config.parent, label: parentLabel });
       }
     }
-    breadcrumbs.push({ path: pathname, label: config.label });
+    // Use dynamic label for dashboard
+    const label = pathname === '/dashboard' ? getDashboardLabel() : config.label;
+    breadcrumbs.push({ path: pathname, label });
   }
   
   return breadcrumbs;
@@ -108,7 +117,8 @@ const generateBreadcrumbSchema = (breadcrumbs: { path: string; label: string }[]
 
 export const Breadcrumbs = () => {
   const location = useLocation();
-  const breadcrumbs = generateBreadcrumbPath(location.pathname);
+  const { viewMode } = useViewModeStore();
+  const breadcrumbs = generateBreadcrumbPath(location.pathname, viewMode);
   
   // Nie pokazuj breadcrumbs na stronie głównej
   if (location.pathname === "/" || breadcrumbs.length <= 1) {
