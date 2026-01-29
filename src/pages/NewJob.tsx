@@ -1037,13 +1037,13 @@ export default function NewJob() {
 								form.miasto.toLowerCase() !== "wrocław" && (
 									<div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
 										<Sparkles className="h-4 w-4 text-primary" />
-										<p className="text-sm text-muted-foreground">
-											Twoja oferta będzie widoczna na{" "}
-											<span className="font-medium text-foreground">
-												Mapie Pracy
-											</span>{" "}
-											dla województwa dolnośląskiego
-										</p>
+									<p className="text-sm text-muted-foreground">
+										Twoje zlecenie będzie widoczne na{" "}
+										<span className="font-medium text-foreground">
+											Mapie Pracy
+										</span>{" "}
+										dla województwa dolnośląskiego
+									</p>
 									</div>
 								)}
 
