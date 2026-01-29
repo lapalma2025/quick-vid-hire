@@ -106,6 +106,7 @@ export default function NewJob() {
 		min_workers: "1",
 		max_workers: "1",
 		applicant_limit: "unlimited" as string,
+		manual_location_mode: false, // true = user types city/street manually
 	});
 
 	// COMMENTED OUT - Premium addons disabled for free access
@@ -312,9 +313,12 @@ export default function NewJob() {
 			const districtValid = !isWroclaw || form.district !== "";
 			// Start date is required - either a date or "Do ustalenia" must be selected
 			const startDateValid = form.start_date_tbd || form.start_time !== "";
+			// Street is now required
+			const streetValid = form.street.trim() !== "";
 			return (
 				form.wojewodztwo !== "" &&
 				form.miasto !== "" &&
+				streetValid &&
 				districtValid &&
 				!locationError &&
 				!checkingLocation &&
@@ -932,6 +936,20 @@ export default function NewJob() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-6">
+							{/* Manual location mode switch */}
+							<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+								<div className="space-y-0.5">
+									<Label className="text-base">Wpisz adres ręcznie</Label>
+									<p className="text-xs text-muted-foreground">
+										Użyj tej opcji jeśli nie możesz znaleźć adresu przez wyszukiwarkę
+									</p>
+								</div>
+								<Switch
+									checked={form.manual_location_mode}
+									onCheckedChange={(v) => updateForm("manual_location_mode", v)}
+								/>
+							</div>
+
 							<div className="grid sm:grid-cols-2 gap-4">
 								<div className="space-y-2">
 									<Label>Województwo *</Label>
@@ -943,33 +961,41 @@ export default function NewJob() {
 
 								<div className="space-y-2">
 									<Label>Miasto *</Label>
-									<CityAutocomplete
-										value={form.miasto}
-										onChange={(miasto, region) => {
-											updateForm("miasto", miasto);
-											let effectiveWojewodztwo = form.wojewodztwo;
-											if (region) {
-												const normalizedRegion = region.toLowerCase();
-												const matchedWojewodztwo = WOJEWODZTWA.find(
-													(w) => w.toLowerCase() === normalizedRegion
-												);
-												if (
-													matchedWojewodztwo &&
-													matchedWojewodztwo !== form.wojewodztwo
-												) {
-													effectiveWojewodztwo = matchedWojewodztwo;
-													setForm((prev) => ({
-														...prev,
-														miasto,
-														wojewodztwo: matchedWojewodztwo,
-													}));
+									{form.manual_location_mode ? (
+										<Input
+											value={form.miasto}
+											onChange={(e) => updateForm("miasto", e.target.value)}
+											placeholder="Wpisz nazwę miasta..."
+										/>
+									) : (
+										<CityAutocomplete
+											value={form.miasto}
+											onChange={(miasto, region) => {
+												updateForm("miasto", miasto);
+												let effectiveWojewodztwo = form.wojewodztwo;
+												if (region) {
+													const normalizedRegion = region.toLowerCase();
+													const matchedWojewodztwo = WOJEWODZTWA.find(
+														(w) => w.toLowerCase() === normalizedRegion
+													);
+													if (
+														matchedWojewodztwo &&
+														matchedWojewodztwo !== form.wojewodztwo
+													) {
+														effectiveWojewodztwo = matchedWojewodztwo;
+														setForm((prev) => ({
+															...prev,
+															miasto,
+															wojewodztwo: matchedWojewodztwo,
+														}));
+													}
 												}
-											}
-											// Check if in dolnośląskie
-											checkCityInDolnoslaskie(miasto, effectiveWojewodztwo);
-										}}
-										placeholder="Wpisz miasto..."
-									/>
+												// Check if in dolnośląskie
+												checkCityInDolnoslaskie(miasto, effectiveWojewodztwo);
+											}}
+											placeholder="Wpisz miasto..."
+										/>
+									)}
 									{checkingLocation && (
 										<p className="text-xs text-muted-foreground flex items-center gap-1">
 											<Loader2 className="h-3 w-3 animate-spin" />
@@ -977,6 +1003,37 @@ export default function NewJob() {
 										</p>
 									)}
 								</div>
+							</div>
+
+							{/* Street field - always visible */}
+							<div className="space-y-2">
+								<Label>Ulica *</Label>
+								{form.manual_location_mode ? (
+									<Input
+										value={form.street}
+										onChange={(e) => updateForm("street", e.target.value)}
+										placeholder="Wpisz nazwę ulicy..."
+									/>
+								) : (
+									<StreetAutocomplete
+										value={form.street}
+										onChange={(street) => updateForm("street", street)}
+										city={form.miasto || "Wrocław"}
+										placeholder="Wpisz nazwę ulicy..."
+									/>
+								)}
+								{!form.street && form.miasto && (
+									<p className="text-xs text-destructive flex items-center gap-1">
+										<AlertTriangle className="h-3 w-3" />
+										Ulica jest wymagana
+									</p>
+								)}
+								<p className="text-xs text-muted-foreground">
+									Nazwa ulicy nie będzie widoczna dla innych użytkowników.
+									<br />
+									Jedynie służy umieszczeniu zlecenia we właściwej okolicy
+									na mapie.
+								</p>
 							</div>
 
 							{/* District selector for Wrocław - REQUIRED */}
@@ -1012,24 +1069,6 @@ export default function NewJob() {
 								</div>
 							)}
 
-							{/* Street field for dolnośląskie cities */}
-							{form.miasto && DOLNOSLASKIE_CITIES[form.miasto] && (
-								<div className="space-y-2 animate-fade-in">
-									<Label>Ulica *</Label>
-									<StreetAutocomplete
-										value={form.street}
-										onChange={(street) => updateForm("street", street)}
-										city={form.miasto}
-										placeholder="Wpisz nazwę ulicy..."
-									/>
-									<p className="text-xs text-muted-foreground">
-										Nazwa ulicy nie będzie widoczna dla innych użytkowników.
-										<br />
-										Jedynie służy umieszczeniu ogłoszenia we właściwej okolicy
-										na mapie.
-									</p>
-								</div>
-							)}
 
 							{/* Info for dolnośląskie cities */}
 							{form.miasto &&
@@ -1354,7 +1393,7 @@ export default function NewJob() {
 									<span className="font-medium">Darmowa publikacja</span>
 								</div>
 								<p className="text-sm text-muted-foreground">
-									Publikacja ogłoszeń jest obecnie{" "}
+									Publikacja zleceń jest obecnie{" "}
 									<strong className="text-primary">całkowicie darmowa</strong>{" "}
 									dla wszystkich zarejestrowanych użytkowników!
 								</p>
