@@ -47,7 +47,6 @@ import { StreetAutocomplete } from "@/components/jobs/StreetAutocomplete";
 import { WojewodztwoSelect } from "@/components/jobs/WojewodztwoSelect";
 import {
 	WOJEWODZTWA,
-	WROCLAW_DISTRICTS,
 	DOLNOSLASKIE_CITIES,
 	DOLNOSLASKIE_BOUNDS,
 	isInDolnoslaskie,
@@ -308,9 +307,6 @@ export default function NewJob() {
 		}
 		if (s === 2) {
 			// Polish locations must be within dolnośląskie
-			// For Wrocław, district is required
-			const isWroclaw = form.miasto.toLowerCase() === "wrocław";
-			const districtValid = !isWroclaw || form.district !== "";
 			// Start date is required - either a date or "Do ustalenia" must be selected
 			const startDateValid = form.start_date_tbd || form.start_time !== "";
 			// Street is now required
@@ -319,7 +315,6 @@ export default function NewJob() {
 				form.wojewodztwo !== "" &&
 				form.miasto !== "" &&
 				streetValid &&
-				districtValid &&
 				!locationError &&
 				!checkingLocation &&
 				startDateValid
@@ -1033,38 +1028,7 @@ export default function NewJob() {
 								</p>
 							</div>
 
-							{/* District selector for Wrocław - REQUIRED */}
-							{form.miasto.toLowerCase() === "wrocław" && (
-								<div className="space-y-2 animate-fade-in">
-									<Label>Dzielnica *</Label>
-									<Select
-										value={form.district}
-										onValueChange={(v) => updateForm("district", v)}
-									>
-										<SelectTrigger
-											className={!form.district ? "border-destructive/50" : ""}
-										>
-											<SelectValue placeholder="Wybierz dzielnicę" />
-										</SelectTrigger>
-										<SelectContent>
-											{Object.keys(WROCLAW_DISTRICTS).map((district) => (
-												<SelectItem key={district} value={district}>
-													{district}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									{!form.district && (
-										<p className="text-xs text-destructive flex items-center gap-1">
-											<AlertTriangle className="h-3 w-3" />
-											Dla Wrocławia wybór dzielnicy jest obowiązkowy
-										</p>
-									)}
-									<p className="text-xs text-muted-foreground">
-										Dzielnica pozwala na precyzyjne wyświetlanie na Mapie Pracy
-									</p>
-								</div>
-							)}
+							{/* District selector removed - all jobs now use street-based geocoding */}
 
 
 							{/* Info for dolnośląskie cities */}
