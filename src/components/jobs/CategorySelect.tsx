@@ -174,9 +174,9 @@ export function CategorySelect({
                         onChange(subCat.id);
                         setOpen(false);
                       }}
-                      className="flex items-center gap-2 pl-8"
+                      className="flex items-center gap-2 pl-10 text-muted-foreground"
                     >
-                      <span className="text-sm">{subCat.name}</span>
+                      <span className="text-sm">↳ {subCat.name}</span>
                       {value === subCat.id && (
                         <Check className="ml-auto h-4 w-4" />
                       )}
