@@ -1029,10 +1029,7 @@ export default function NewJob() {
 									</p>
 								)}
 								<p className="text-xs text-muted-foreground">
-									Nazwa ulicy nie będzie widoczna dla innych użytkowników.
-									<br />
-									Jedynie służy umieszczeniu zlecenia we właściwej okolicy
-									na mapie.
+									Nazwa ulicy <span className="font-semibold">nie będzie widoczna</span> dla innych użytkowników – służy jedynie umieszczeniu zlecenia we właściwej okolicy na mapie.
 								</p>
 							</div>
 
