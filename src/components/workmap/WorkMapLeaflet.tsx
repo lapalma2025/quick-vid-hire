@@ -73,9 +73,10 @@ const MAX_ZOOM = 18;
 const JOB_MARKERS_PANE = "job-markers";
 
 // Cluster radius in pixels - jobs within this distance get clustered
-const CLUSTER_RADIUS_PX = 60;
-// Zoom level at which we stop clustering
-const NO_CLUSTER_ZOOM = 14;
+// Smaller value = less aggressive clustering
+const CLUSTER_RADIUS_PX = 35;
+// Zoom level at which we stop clustering entirely
+const NO_CLUSTER_ZOOM = 13;
 
 // Memoization cache for clustering
 interface ClusterCache {
