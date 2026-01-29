@@ -112,13 +112,18 @@ export const Header = () => {
 								</div>
 							) : (
 								<>
-									<Badge
+									<Button
 										variant="outline"
-										className="h-9 px-3 gap-1.5 bg-primary/5 border-primary/20 text-primary font-medium"
+										size="sm"
+										onClick={() => {
+											setViewMode("client");
+											navigate("/dashboard");
+										}}
+										className="h-9 px-3 gap-1.5 bg-primary/5 border-primary/20 text-primary font-medium hover:bg-primary/10"
 									>
 										<Briefcase className="h-3.5 w-3.5" />
 										Zleceniodawca
-									</Badge>
+									</Button>
 									<Button
 										variant="outline"
 										size="sm"
@@ -214,7 +219,7 @@ export const Header = () => {
 								{workerProfileCompleted ? (
 									<>
 										<DropdownMenuItem
-											onClick={() => {
+											onSelect={() => {
 												setViewMode("client");
 												navigate("/dashboard");
 											}}
@@ -224,7 +229,7 @@ export const Header = () => {
 											Panel zleceniodawcy
 										</DropdownMenuItem>
 										<DropdownMenuItem
-											onClick={() => {
+											onSelect={() => {
 												setViewMode("worker");
 												navigate("/dashboard");
 											}}
@@ -237,7 +242,7 @@ export const Header = () => {
 								) : (
 									<>
 										<DropdownMenuItem 
-											onClick={() => {
+											onSelect={() => {
 												setViewMode("client");
 												navigate("/dashboard");
 											}}
@@ -407,10 +412,18 @@ export const Header = () => {
 												</div>
 											) : (
 												<div className="flex flex-col gap-2">
-													<div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium">
-														<Briefcase className="h-4 w-4" />
-														Zleceniodawca
-													</div>
+												<Button
+													variant="outline"
+													onClick={() => {
+														setViewMode("client");
+														setMobileOpen(false);
+														navigate("/dashboard");
+													}}
+													className="w-full h-12 gap-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+												>
+													<Briefcase className="h-4 w-4" />
+													Zleceniodawca
+												</Button>
 													<Link
 														to="/worker-onboarding"
 														className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-primary/30 text-primary font-medium hover:bg-primary/10 transition-colors"

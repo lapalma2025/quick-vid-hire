@@ -6,6 +6,33 @@ export const useAuth = () => {
   const { user, session, profile, isLoading, setUser, setSession, setProfile, setIsLoading, reset } = useAuthStore();
   const currentUserIdRef = useRef<string | null>(null);
 
+  const ensureProfile = async (userId: string, fallbackName?: string | null) => {
+    // Try to create a minimal profile for brand-new users (Dashboard depends on profile).
+    // RLS allows INSERT when auth.uid() = user_id.
+    const displayName =
+      (typeof fallbackName === 'string' && fallbackName.trim() ? fallbackName.trim() : null) ??
+      ((user as any)?.user_metadata?.name ? String((user as any).user_metadata.name) : null) ??
+      ((session as any)?.user?.user_metadata?.name ? String((session as any).user.user_metadata.name) : null);
+
+    const { data: created, error: createError } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: userId,
+        name: displayName,
+        // Keep existing app semantics (default client on fresh accounts)
+        role: 'client',
+      } as any)
+      .select('*')
+      .single();
+
+    if (!createError && created) {
+      setProfile(created as any);
+      return true;
+    }
+
+    return false;
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -23,7 +50,7 @@ export const useAuth = () => {
           if (newUserId) {
             // Defer profile fetch to avoid deadlock
             setTimeout(() => {
-              fetchProfile(newUserId);
+              fetchProfile(newUserId, (session as any)?.user?.user_metadata?.name ?? null);
             }, 0);
           } else {
             // User signed out - clear profile
@@ -44,7 +71,7 @@ export const useAuth = () => {
       currentUserIdRef.current = userId;
 
       if (userId) {
-        fetchProfile(userId);
+        fetchProfile(userId, (session as any)?.user?.user_metadata?.name ?? null);
       }
       setIsLoading(false);
     });
@@ -52,7 +79,7 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, fallbackName?: string | null) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -62,10 +89,14 @@ export const useAuth = () => {
     if (data && !error) {
       setProfile(data as any);
     } else {
-      // Only clear if there was an error fetching for the current user
-      if (currentUserIdRef.current === userId) {
-        setProfile(null);
+      // If no profile row exists yet (common right after signup), create it.
+      if (!data && !error) {
+        const created = await ensureProfile(userId, fallbackName);
+        if (created) return;
       }
+
+      // Only clear if there was an error fetching for the current user
+      if (currentUserIdRef.current === userId) setProfile(null);
     }
   };
 
@@ -77,7 +108,7 @@ export const useAuth = () => {
 
   const refreshProfile = () => {
     if (user) {
-      fetchProfile(user.id);
+      fetchProfile(user.id, (user as any)?.user_metadata?.name ?? null);
     }
   };
 
