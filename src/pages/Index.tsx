@@ -229,12 +229,12 @@ export default function Index() {
 					});
 				});
 
-				// Job flow animation
+				// Job flow animation - sequential highlight effect
 				const jobFlowSteps = promoSection.querySelectorAll(".job-flow-step");
 				const jobFlowArrows = promoSection.querySelectorAll(".job-flow-arrow");
-				const acceptIcon = promoSection.querySelector(".job-flow-accept");
+				const jobFlowIcons = promoSection.querySelectorAll(".job-flow-icon");
 
-				// Staggered entrance for steps
+				// Initial entrance - staggered fade in
 				gsap.fromTo(
 					jobFlowSteps,
 					{ opacity: 0, scale: 0.5, y: 20 },
@@ -265,16 +265,46 @@ export default function Index() {
 					}
 				);
 
-				// Pulsing accept icon
-				if (acceptIcon) {
-					gsap.to(acceptIcon, {
-						scale: 1.1,
-						boxShadow: "0 0 20px rgba(34, 197, 94, 0.4)",
-						duration: 0.8,
-						ease: "sine.inOut",
+				// Sequential highlight animation - loops through each step
+				if (jobFlowIcons.length > 0) {
+					const highlightTl = gsap.timeline({
 						repeat: -1,
-						yoyo: true,
 						delay: 1.5,
+						repeatDelay: 1,
+					});
+
+					jobFlowIcons.forEach((icon, index) => {
+						// Highlight current step
+						highlightTl.to(icon, {
+							scale: 1.15,
+							boxShadow: "0 0 25px rgba(var(--primary), 0.5)",
+							duration: 0.4,
+							ease: "power2.out",
+						});
+						
+						// Animate arrow after step (except last)
+						if (index < jobFlowArrows.length) {
+							highlightTl.to(jobFlowArrows[index], {
+								x: 5,
+								color: "hsl(var(--primary))",
+								duration: 0.2,
+								ease: "power2.out",
+							}, "-=0.2");
+							highlightTl.to(jobFlowArrows[index], {
+								x: 0,
+								color: "",
+								duration: 0.2,
+								ease: "power2.in",
+							});
+						}
+
+						// Return to normal
+						highlightTl.to(icon, {
+							scale: 1,
+							boxShadow: "none",
+							duration: 0.3,
+							ease: "power2.in",
+						}, index < jobFlowArrows.length ? "-=0.2" : "+=0.1");
 					});
 				}
 			}
@@ -565,7 +595,7 @@ export default function Index() {
 							<div className="job-flow-container flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
 								{/* Step 1: Create Job */}
 								<div className="job-flow-step flex flex-col items-center gap-2">
-									<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+									<div className="job-flow-icon w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center transition-all duration-300">
 										<Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
 									</div>
 									<span className="text-xs text-muted-foreground">Dodaj zlecenie</span>
@@ -578,7 +608,7 @@ export default function Index() {
 								
 								{/* Step 2: Workers Apply */}
 								<div className="job-flow-step flex flex-col items-center gap-2">
-									<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+									<div className="job-flow-icon w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center transition-all duration-300">
 										<Users className="h-5 w-5 sm:h-6 sm:w-6 text-accent-foreground" />
 									</div>
 									<span className="text-xs text-muted-foreground">Otrzymaj oferty</span>
@@ -591,7 +621,7 @@ export default function Index() {
 								
 								{/* Step 3: Accept */}
 								<div className="job-flow-step flex flex-col items-center gap-2">
-									<div className="job-flow-accept w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center">
+									<div className="job-flow-icon w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center justify-center transition-all duration-300">
 										<CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
 									</div>
 									<span className="text-xs text-muted-foreground">Zaakceptuj</span>
@@ -604,8 +634,8 @@ export default function Index() {
 								
 								{/* Step 4: Done */}
 								<div className="job-flow-step flex flex-col items-center gap-2">
-									<div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-										<Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+									<div className="job-flow-icon w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center transition-all duration-300">
+										<Star className="h-5 w-5 sm:h-6 sm:w-6 text-primary fill-primary/30" />
 									</div>
 									<span className="text-xs text-muted-foreground">Gotowe!</span>
 								</div>
