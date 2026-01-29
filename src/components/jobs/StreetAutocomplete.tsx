@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DOLNOSLASKIE_CITIES } from "@/lib/constants";
+import { useSearchCache } from "@/hooks/useSearchCache";
 
 interface StreetAutocompleteProps {
   value: string;
@@ -20,14 +21,13 @@ interface StreetSuggestion {
 }
 
 const MIN_CHARS = 3;
+const DEBOUNCE_MS = 150;
 
 const normalizePl = (input: string) =>
   input
     .toLowerCase()
     .normalize("NFD")
-    // remove diacritics (ąęóśżźćń etc.)
     .replace(/\p{Diacritic}/gu, "")
-    // handle characters not decomposed by NFD (ł)
     .replace(/ł/g, "l")
     .replace(/\s+/g, " ")
     .trim();
@@ -56,7 +56,6 @@ const scoreCandidate = (queryRaw: string, candidateRaw: string) => {
     tokenScore += best;
   }
 
-  // prefer shorter results when scores are similar
   return tokenScore - Math.min(100, c.length);
 };
 
@@ -91,6 +90,8 @@ export function StreetAutocomplete({
   const debounceRef = useRef<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  
+  const cache = useSearchCache<StreetSuggestion[]>(50);
 
   const cityNorm = useMemo(() => normalizePl(city || ""), [city]);
 
@@ -98,7 +99,7 @@ export function StreetAutocomplete({
     setInputValue(value);
   }, [value]);
 
-  // Clear suggestions when city changes
+  // Clear suggestions and cache when city changes
   useEffect(() => {
     abortRef.current?.abort();
     setSuggestions([]);
@@ -114,7 +115,6 @@ export function StreetAutocomplete({
     if (!isOpen) return;
     updateDropdownRect();
 
-    // capture scroll in any container
     window.addEventListener("scroll", updateDropdownRect, true);
     window.addEventListener("resize", updateDropdownRect);
     return () => {
@@ -131,7 +131,15 @@ export function StreetAutocomplete({
       return;
     }
 
-    // Cancel previous requests and mark this one as the latest
+    // Check cache first
+    const cacheKey = `street:${cityNorm}:${normalizePl(query)}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      setSuggestions(cached);
+      setIsOpen(cached.length > 0);
+      return;
+    }
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -141,23 +149,57 @@ export function StreetAutocomplete({
 
     try {
       const coords = getCityCoords(city);
+      const candidates: StreetSuggestion[] = [];
+      let hasResults = false;
 
-      // 1) Photon (fast autocomplete, supports short prefixes)
+      // 1) Photon (fast autocomplete) - prioritized
       const photonParams = new URLSearchParams();
       photonParams.set("q", query);
       photonParams.set("limit", "30");
-      // Photon doesn't support "pl"; use default (OSM names are often already localized)
       photonParams.set("lang", "default");
       if (coords) {
         photonParams.set("lat", String(coords.lat));
         photonParams.set("lon", String(coords.lng));
       }
-      // Keep it focused on street-like results
       photonParams.append("layer", "street");
 
       const photonUrl = `https://photon.komoot.io/api/?${photonParams.toString()}`;
 
-      // 2) Nominatim (good for full queries / official names)
+      // Photon first - show results immediately
+      const photonPromise = fetch(photonUrl, { signal: controller.signal })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const data = await res.json();
+          
+          for (const feature of data?.features ?? []) {
+            const props = feature?.properties ?? {};
+            const name = props.name;
+            if (!name) continue;
+
+            const placeCity = props.city || props.town || props.village || props.locality || "";
+            const placeCityNorm = normalizePl(placeCity);
+
+            if (placeCityNorm && cityNorm && !placeCityNorm.includes(cityNorm) && !cityNorm.includes(placeCityNorm)) {
+              continue;
+            }
+
+            candidates.push({
+              name,
+              fullName: [name, placeCity || city].filter(Boolean).join(", "),
+            });
+          }
+          
+          // Show results immediately
+          if (requestId === requestIdRef.current && candidates.length > 0 && !hasResults) {
+            hasResults = true;
+            const ranked = rankResults(candidates, query);
+            setSuggestions(ranked);
+            setIsOpen(ranked.length > 0);
+          }
+        })
+        .catch(() => {});
+
+      // 2) Nominatim queries (fallback/enrichment)
       const nominatimQ = new URLSearchParams({
         q: `${query}, ${city}, Polska`,
         format: "json",
@@ -168,7 +210,6 @@ export function StreetAutocomplete({
         dedupe: "1",
       });
 
-      // 3) Nominatim structured query (better city binding)
       const nominatimStructured = new URLSearchParams({
         street: query,
         city,
@@ -180,42 +221,6 @@ export function StreetAutocomplete({
         "accept-language": "pl",
       });
 
-      const [photonRes, nom1Res, nom2Res] = await Promise.allSettled([
-        fetch(photonUrl, { signal: controller.signal }),
-        fetch(`https://nominatim.openstreetmap.org/search?${nominatimQ.toString()}`, {
-          signal: controller.signal,
-        }),
-        fetch(`https://nominatim.openstreetmap.org/search?${nominatimStructured.toString()}`, {
-          signal: controller.signal,
-        }),
-      ]);
-
-      const candidates: StreetSuggestion[] = [];
-
-      // Photon parsing
-      if (photonRes.status === "fulfilled" && photonRes.value.ok) {
-        const data = await photonRes.value.json();
-        for (const feature of data?.features ?? []) {
-          const props = feature?.properties ?? {};
-          const name = props.name;
-          if (!name) continue;
-
-          const placeCity = props.city || props.town || props.village || props.locality || "";
-          const placeCityNorm = normalizePl(placeCity);
-
-          // keep tightly bound to chosen city when photon provides city
-          if (placeCityNorm && cityNorm && !placeCityNorm.includes(cityNorm) && !cityNorm.includes(placeCityNorm)) {
-            continue;
-          }
-
-          candidates.push({
-            name,
-            fullName: [name, placeCity || city].filter(Boolean).join(", "),
-          });
-        }
-      }
-
-      // Nominatim parsing helper
       const consumeNominatim = async (res: Response) => {
         const data = await res.json();
         if (!Array.isArray(data)) return;
@@ -242,30 +247,42 @@ export function StreetAutocomplete({
         }
       };
 
-      if (nom1Res.status === "fulfilled" && nom1Res.value.ok) await consumeNominatim(nom1Res.value);
-      if (nom2Res.status === "fulfilled" && nom2Res.value.ok) await consumeNominatim(nom2Res.value);
+      const nom1Promise = fetch(`https://nominatim.openstreetmap.org/search?${nominatimQ.toString()}`, {
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (res.ok) await consumeNominatim(res);
+          
+          // Show results if Photon didn't have any
+          if (requestId === requestIdRef.current && candidates.length > 0 && !hasResults) {
+            hasResults = true;
+            const ranked = rankResults(candidates, query);
+            setSuggestions(ranked);
+            setIsOpen(ranked.length > 0);
+          }
+        })
+        .catch(() => {});
 
-      // Ignore stale results (user typed something else already)
+      const nom2Promise = fetch(`https://nominatim.openstreetmap.org/search?${nominatimStructured.toString()}`, {
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (res.ok) await consumeNominatim(res);
+        })
+        .catch(() => {});
+
+      // Wait for all, then merge and cache
+      await Promise.allSettled([photonPromise, nom1Promise, nom2Promise]);
+
       if (requestId !== requestIdRef.current) return;
 
-      // Deduplicate + score
-      const uniqueByName = new Map<string, StreetSuggestion>();
-      for (const c of candidates) {
-        const key = normalizePl(c.name);
-        if (!key) continue;
-        if (!uniqueByName.has(key)) uniqueByName.set(key, c);
-      }
-
-      const ranked = Array.from(uniqueByName.values())
-        .map((c) => ({ c, score: scoreCandidate(query, c.name) }))
-        .filter((x) => x.score >= 300)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10)
-        .map((x) => x.c);
-
+      const ranked = rankResults(candidates, query);
       setSuggestions(ranked);
+      setIsOpen(ranked.length > 0 || inputValue.length >= MIN_CHARS);
+      
+      // Cache results
+      cache.set(cacheKey, ranked);
     } catch (error: any) {
-      // ignore abort
       if (error?.name !== "AbortError") {
         console.error("Error fetching street suggestions:", error);
       }
@@ -273,6 +290,22 @@ export function StreetAutocomplete({
     } finally {
       if (requestId === requestIdRef.current) setIsLoading(false);
     }
+  };
+
+  const rankResults = (candidates: StreetSuggestion[], query: string): StreetSuggestion[] => {
+    const uniqueByName = new Map<string, StreetSuggestion>();
+    for (const c of candidates) {
+      const key = normalizePl(c.name);
+      if (!key) continue;
+      if (!uniqueByName.has(key)) uniqueByName.set(key, c);
+    }
+
+    return Array.from(uniqueByName.values())
+      .map((c) => ({ c, score: scoreCandidate(query, c.name) }))
+      .filter((x) => x.score >= 300)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+      .map((x) => x.c);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -293,7 +326,7 @@ export function StreetAutocomplete({
 
     debounceRef.current = window.setTimeout(() => {
       fetchSuggestions(newValue);
-    }, 250);
+    }, DEBOUNCE_MS);
   };
 
   const handleSelect = (street: StreetSuggestion) => {
@@ -304,7 +337,6 @@ export function StreetAutocomplete({
   };
 
   const handleBlur = () => {
-    // Delay to allow click on suggestion (mousedown)
     setTimeout(() => setIsOpen(false), 150);
   };
 
@@ -376,7 +408,7 @@ export function StreetAutocomplete({
           </ul>
         ) : !isLoading ? (
           <div className="bg-popover border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
-            Nie znaleziono dopasowań dla „{inputValue}” w mieście {city}
+            Nie znaleziono dopasowań dla „{inputValue}" w mieście {city}
           </div>
         ) : null}
       </div>,

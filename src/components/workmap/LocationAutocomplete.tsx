@@ -95,7 +95,7 @@ export function LocationAutocomplete({
 
     debounceRef.current = setTimeout(() => {
       fetchStreets(inputValue);
-    }, 350);
+    }, 150);
 
     return () => {
       if (debounceRef.current) {
