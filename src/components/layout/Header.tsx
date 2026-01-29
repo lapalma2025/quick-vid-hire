@@ -236,7 +236,13 @@ export const Header = () => {
 									</>
 								) : (
 									<>
-										<DropdownMenuItem className="rounded-lg bg-primary/5 text-primary cursor-default pl-4">
+										<DropdownMenuItem 
+											onClick={() => {
+												setViewMode("client");
+												navigate("/dashboard");
+											}}
+											className="rounded-lg cursor-pointer bg-primary/5 text-primary pl-4"
+										>
 											<Briefcase className="mr-2 h-4 w-4" />
 											Panel zleceniodawcy
 										</DropdownMenuItem>
@@ -270,15 +276,6 @@ export const Header = () => {
 										<Link to="/saved-jobs">
 											<Bookmark className="mr-2 h-4 w-4" />
 											Zapisane oferty
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										asChild
-										className="rounded-lg cursor-pointer"
-									>
-										<Link to="/subscription">
-											<Crown className="mr-2 h-4 w-4" />
-											Subskrypcja
 										</Link>
 									</DropdownMenuItem>
 									<DropdownMenuItem
@@ -459,15 +456,7 @@ export const Header = () => {
 											<Bookmark className="h-5 w-5" />
 											Zapisane oferty
 										</Link>
-										<Link
-											to="/subscription"
-											className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
-											onClick={() => setMobileOpen(false)}
-										>
-											<Crown className="h-5 w-5" />
-											Subskrypcja
-										</Link>
-										<Link
+									<Link
 											to="/statistics"
 											className="flex items-center gap-3 px-4 py-3 rounded-xl text-lg font-medium hover:bg-primary/10 transition-colors"
 											onClick={() => setMobileOpen(false)}

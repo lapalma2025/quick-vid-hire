@@ -214,9 +214,9 @@ export function CategoryMultiSelect({
                         onSelect={() => {
                           toggleCategory(subCat.id);
                         }}
-                        className="flex items-center gap-2 pl-8 cursor-pointer"
+                        className="flex items-center gap-2 pl-10 cursor-pointer text-muted-foreground"
                       >
-                        <span className="text-sm">{subCat.name}</span>
+                        <span className="text-sm">↳ {subCat.name}</span>
                       </CommandItem>
                     ))}
                   </CommandGroup>
