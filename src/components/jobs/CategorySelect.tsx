@@ -176,7 +176,7 @@ export function CategorySelect({
                       }}
                       className="flex items-center gap-2 pl-10 text-muted-foreground"
                     >
-                      <span className="text-sm">↳ {subCat.name}</span>
+                      <span className="text-sm">{subCat.name}</span>
                       {value === subCat.id && (
                         <Check className="ml-auto h-4 w-4" />
                       )}
