@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Layout } from "@/components/layout/Layout";
+import { JobJourneyAnimation } from "@/components/home/JobJourneyAnimation";
 import {
 	ArrowRight,
 	Briefcase,
@@ -529,6 +530,9 @@ export default function Index() {
 					))}
 				</div>
 			</section>
+
+			{/* Job Journey Animation - Worker's perspective */}
+			<JobJourneyAnimation />
 
 			{/* Free Access Promo Section */}
 			<section
