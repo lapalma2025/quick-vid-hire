@@ -148,19 +148,6 @@ export const Layout = ({
                 </ul>
               </div>
               <div>
-                <h4 className="font-display font-bold text-lg mb-4">Blog</h4>
-                <ul className="space-y-3">
-                  <li>
-                    <Link
-                      to="/blog"
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
-                    >
-                      Wszystkie wpisy
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
                 <h4 className="font-display font-bold text-lg mb-4">Kontakt</h4>
                 <ul className="space-y-3">
                   <li>
@@ -169,6 +156,35 @@ export const Layout = ({
                       className="text-muted-foreground hover:text-primary transition-colors duration-300"
                     >
                       Pomoc
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/terms"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                    >
+                      Regulamin
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/privacy"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                    >
+                      Polityka prywatności
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-display font-bold text-lg mb-4">Blog</h4>
+                <ul className="space-y-3">
+                  <li>
+                    <Link
+                      to="/blog"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                    >
+                      Wszystkie wpisy
                     </Link>
                   </li>
                   <li>
