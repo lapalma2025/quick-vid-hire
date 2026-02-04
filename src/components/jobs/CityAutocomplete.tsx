@@ -7,16 +7,18 @@ import { useSearchCache } from "@/hooks/useSearchCache";
 
 interface CityAutocompleteProps {
 	value: string;
-	onChange: (value: string, region?: string) => void;
+	onChange: (value: string, region?: string, isManual?: boolean) => void;
 	placeholder?: string;
 	disabled?: boolean;
 	className?: string;
+	onManualModeChange?: (isManual: boolean) => void;
 }
 
 interface CitySuggestion {
 	name: string;
 	region: string;
 	type: string;
+	isManualOption?: boolean;
 }
 
 const MIN_CHARS = 2;
@@ -58,6 +60,7 @@ export function CityAutocomplete({
 	placeholder = "Wpisz nazwę miejscowości...",
 	disabled,
 	className,
+	onManualModeChange,
 }: CityAutocompleteProps) {
 	const [inputValue, setInputValue] = useState(value);
 	const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
@@ -65,6 +68,7 @@ export function CityAutocomplete({
 	const [isOpen, setIsOpen] = useState(false);
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
+	const [noResults, setNoResults] = useState(false);
 
 	const inputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLUListElement>(null);
@@ -101,6 +105,7 @@ export function CityAutocomplete({
 
 		if (query.length < MIN_CHARS) {
 			setSuggestions([]);
+			setNoResults(false);
 			return;
 		}
 
@@ -109,7 +114,8 @@ export function CityAutocomplete({
 		const cached = cache.get(cacheKey);
 		if (cached) {
 			setSuggestions(cached);
-			setIsOpen(cached.length > 0);
+			setNoResults(cached.length === 0);
+			setIsOpen(true);
 			return;
 		}
 
@@ -262,23 +268,27 @@ export function CityAutocomplete({
 			// Wait for all to complete, then merge and cache
 			await Promise.allSettled([photonPromise, nominatimPromise]);
 
-			if (requestId !== requestIdRef.current) return;
+		if (requestId !== requestIdRef.current) return;
 
-			const ranked = rankResults(candidates, query);
-			setSuggestions(ranked);
-			setIsOpen(ranked.length > 0 || inputValue.length >= MIN_CHARS);
-			
-			// Cache results
-			cache.set(cacheKey, ranked);
-		} catch (error: any) {
-			if (error?.name !== "AbortError") {
-				console.error("Error fetching city suggestions:", error);
-			}
-			if (requestId === requestIdRef.current) setSuggestions([]);
-		} finally {
-			if (requestId === requestIdRef.current) setIsLoading(false);
+		const ranked = rankResults(candidates, query);
+		setSuggestions(ranked);
+		setNoResults(ranked.length === 0);
+		setIsOpen(true);
+		
+		// Cache results
+		cache.set(cacheKey, ranked);
+	} catch (error: any) {
+		if (error?.name !== "AbortError") {
+			console.error("Error fetching city suggestions:", error);
 		}
-	};
+		if (requestId === requestIdRef.current) {
+			setSuggestions([]);
+			setNoResults(true);
+		}
+	} finally {
+		if (requestId === requestIdRef.current) setIsLoading(false);
+	}
+};
 
 	const rankResults = (candidates: CitySuggestion[], query: string): CitySuggestion[] => {
 		// Deduplicate by normalized name
@@ -306,11 +316,12 @@ export function CityAutocomplete({
 		setIsOpen(true);
 		setHighlightedIndex(-1);
 
-		if (newValue === "") {
-			onChange("");
-			setSuggestions([]);
-			return;
-		}
+	if (newValue === "") {
+		onChange("");
+		setSuggestions([]);
+		setNoResults(false);
+		return;
+	}
 
 		if (debounceRef.current) {
 			window.clearTimeout(debounceRef.current);
@@ -321,12 +332,20 @@ export function CityAutocomplete({
 		}, DEBOUNCE_MS);
 	};
 
-	const handleSelect = (city: CitySuggestion) => {
-		setInputValue(city.name);
-		onChange(city.name, city.region);
+const handleSelect = (city: CitySuggestion) => {
+	if (city.isManualOption) {
+		// User chose to enter manually
+		onChange(inputValue, "dolnośląskie", true);
+		onManualModeChange?.(true);
 		setIsOpen(false);
 		setSuggestions([]);
-	};
+		return;
+	}
+	setInputValue(city.name);
+	onChange(city.name, city.region);
+	setIsOpen(false);
+	setSuggestions([]);
+};
 
 	const handleBlur = () => {
 		setTimeout(() => setIsOpen(false), 150);
@@ -388,57 +407,77 @@ export function CityAutocomplete({
 		}
 	};
 
-	const dropdown =
-		isOpen &&
-		inputValue.length >= MIN_CHARS &&
-		dropdownRect &&
-		createPortal(
-			<div
-				style={{
-					position: "fixed",
-					top: dropdownRect.bottom + 4,
-					left: dropdownRect.left,
-					width: dropdownRect.width,
-					zIndex: 1000,
-				}}
-			>
-				{suggestions.length > 0 ? (
-					<ul
-						ref={listRef}
-						className="bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto"
-					>
-						{suggestions.map((city, index) => (
-							<li
-								key={`${city.name}-${index}`}
-								onMouseDown={(e) => {
-									e.preventDefault();
-									handleSelect(city);
-								}}
-								className={cn(
-									"px-3 py-2 cursor-pointer flex items-center gap-2 text-sm",
-									highlightedIndex === index
-										? "bg-accent text-accent-foreground"
-										: "hover:bg-muted"
-								)}
-							>
-								<MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-								<div className="flex-1 min-w-0">
-									<p className="font-medium">{city.name}</p>
-									<p className="text-xs text-muted-foreground">
-										{getTypeLabel(city.type)} • {city.region}
-									</p>
-								</div>
-							</li>
-						))}
-					</ul>
-				) : !isLoading ? (
-					<div className="bg-popover border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
+const manualOption: CitySuggestion = {
+	name: inputValue,
+	region: "dolnośląskie",
+	type: "manual",
+	isManualOption: true,
+};
+
+const dropdown =
+	isOpen &&
+	inputValue.length >= MIN_CHARS &&
+	dropdownRect &&
+	createPortal(
+		<div
+			style={{
+				position: "fixed",
+				top: dropdownRect.bottom + 4,
+				left: dropdownRect.left,
+				width: dropdownRect.width,
+				zIndex: 1000,
+			}}
+		>
+			{suggestions.length > 0 ? (
+				<ul
+					ref={listRef}
+					className="bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+				>
+					{suggestions.map((city, index) => (
+						<li
+							key={`${city.name}-${index}`}
+							onMouseDown={(e) => {
+								e.preventDefault();
+								handleSelect(city);
+							}}
+							className={cn(
+								"px-3 py-2 cursor-pointer flex items-center gap-2 text-sm",
+								highlightedIndex === index
+									? "bg-accent text-accent-foreground"
+									: "hover:bg-muted"
+							)}
+						>
+							<MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+							<div className="flex-1 min-w-0">
+								<p className="font-medium">{city.name}</p>
+								<p className="text-xs text-muted-foreground">
+									{getTypeLabel(city.type)} • {city.region}
+								</p>
+							</div>
+						</li>
+					))}
+				</ul>
+			) : !isLoading && noResults ? (
+				<div className="bg-popover border border-border rounded-md shadow-lg overflow-hidden">
+					<div className="p-3 text-sm text-muted-foreground border-b border-border">
 						Nie znaleziono miejscowości „{inputValue}" w woj. dolnośląskim
 					</div>
-				) : null}
-			</div>,
-			document.body
-		);
+					<button
+						type="button"
+						onMouseDown={(e) => {
+							e.preventDefault();
+							handleSelect(manualOption);
+						}}
+						className="w-full px-3 py-2.5 text-sm text-left hover:bg-accent flex items-center gap-2 text-primary font-medium"
+					>
+						<MapPin className="h-3.5 w-3.5" />
+						Wpisz „{inputValue}" ręcznie
+					</button>
+				</div>
+			) : null}
+		</div>,
+		document.body
+	);
 
 	return (
 		<div className={cn("relative", className)}>

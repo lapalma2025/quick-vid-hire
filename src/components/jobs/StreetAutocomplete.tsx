@@ -8,16 +8,18 @@ import { useSearchCache } from "@/hooks/useSearchCache";
 
 interface StreetAutocompleteProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, isManual?: boolean) => void;
   city: string;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  onManualModeChange?: (isManual: boolean) => void;
 }
 
 interface StreetSuggestion {
   name: string;
   fullName: string;
+  isManualOption?: boolean;
 }
 
 const MIN_CHARS = 3;
@@ -77,6 +79,7 @@ export function StreetAutocomplete({
   placeholder = "Wpisz nazwę ulicy...",
   disabled,
   className,
+  onManualModeChange,
 }: StreetAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<StreetSuggestion[]>([]);
@@ -84,6 +87,7 @@ export function StreetAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [dropdownRect, setDropdownRect] = useState<DOMRect | null>(null);
+  const [noResults, setNoResults] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -128,6 +132,7 @@ export function StreetAutocomplete({
 
     if (query.length < MIN_CHARS || !city) {
       setSuggestions([]);
+      setNoResults(false);
       return;
     }
 
@@ -136,7 +141,8 @@ export function StreetAutocomplete({
     const cached = cache.get(cacheKey);
     if (cached) {
       setSuggestions(cached);
-      setIsOpen(cached.length > 0);
+      setNoResults(cached.length === 0);
+      setIsOpen(true);
       return;
     }
 
@@ -278,7 +284,8 @@ export function StreetAutocomplete({
 
       const ranked = rankResults(candidates, query);
       setSuggestions(ranked);
-      setIsOpen(ranked.length > 0 || inputValue.length >= MIN_CHARS);
+      setNoResults(ranked.length === 0);
+      setIsOpen(true);
       
       // Cache results
       cache.set(cacheKey, ranked);
@@ -286,7 +293,10 @@ export function StreetAutocomplete({
       if (error?.name !== "AbortError") {
         console.error("Error fetching street suggestions:", error);
       }
-      if (requestId === requestIdRef.current) setSuggestions([]);
+      if (requestId === requestIdRef.current) {
+        setSuggestions([]);
+        setNoResults(true);
+      }
     } finally {
       if (requestId === requestIdRef.current) setIsLoading(false);
     }
@@ -317,6 +327,7 @@ export function StreetAutocomplete({
     if (newValue === "") {
       onChange("");
       setSuggestions([]);
+      setNoResults(false);
       return;
     }
 
@@ -330,6 +341,14 @@ export function StreetAutocomplete({
   };
 
   const handleSelect = (street: StreetSuggestion) => {
+    if (street.isManualOption) {
+      // User chose to enter manually
+      onChange(inputValue, true);
+      onManualModeChange?.(true);
+      setIsOpen(false);
+      setSuggestions([]);
+      return;
+    }
     setInputValue(street.name);
     onChange(street.name);
     setIsOpen(false);
@@ -363,6 +382,12 @@ export function StreetAutocomplete({
         setIsOpen(false);
         break;
     }
+  };
+
+  const manualOption: StreetSuggestion = {
+    name: inputValue,
+    fullName: `Wpisz "${inputValue}" ręcznie`,
+    isManualOption: true,
   };
 
   const dropdown =
@@ -406,9 +431,22 @@ export function StreetAutocomplete({
               </li>
             ))}
           </ul>
-        ) : !isLoading ? (
-          <div className="bg-popover border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
-            Nie znaleziono dopasowań dla „{inputValue}" w mieście {city}
+        ) : !isLoading && noResults ? (
+          <div className="bg-popover border border-border rounded-md shadow-lg overflow-hidden">
+            <div className="p-3 text-sm text-muted-foreground border-b border-border">
+              Nie znaleziono „{inputValue}" w mieście {city}
+            </div>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(manualOption);
+              }}
+              className="w-full px-3 py-2.5 text-sm text-left hover:bg-accent flex items-center gap-2 text-primary font-medium"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              Wpisz „{inputValue}" ręcznie
+            </button>
           </div>
         ) : null}
       </div>,

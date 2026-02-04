@@ -105,7 +105,8 @@ export default function NewJob() {
 		min_workers: "1",
 		max_workers: "1",
 		applicant_limit: "unlimited" as string,
-		manual_location_mode: false, // true = user types city/street manually
+		manual_city_mode: false, // true = user typed city manually (API didn't find it)
+		manual_street_mode: false, // true = user typed street manually (API didn't find it)
 	});
 
 	// COMMENTED OUT - Premium addons disabled for free access
@@ -931,20 +932,6 @@ export default function NewJob() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-6">
-							{/* Manual location mode switch */}
-							<div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-								<div className="space-y-0.5">
-									<Label className="text-base">Wpisz adres ręcznie</Label>
-									<p className="text-xs text-muted-foreground">
-										Użyj tej opcji jeśli nie możesz znaleźć adresu przez wyszukiwarkę
-									</p>
-								</div>
-								<Switch
-									checked={form.manual_location_mode}
-									onCheckedChange={(v) => updateForm("manual_location_mode", v)}
-								/>
-							</div>
-
 							<div className="grid sm:grid-cols-2 gap-4">
 								<div className="space-y-2">
 									<Label>Województwo *</Label>
@@ -956,17 +943,26 @@ export default function NewJob() {
 
 								<div className="space-y-2">
 									<Label>Miasto *</Label>
-									{form.manual_location_mode ? (
+									{form.manual_city_mode ? (
 										<Input
 											value={form.miasto}
 											onChange={(e) => updateForm("miasto", e.target.value)}
 											placeholder="Wpisz nazwę miasta..."
+											className="h-11 rounded-xl"
 										/>
 									) : (
 										<CityAutocomplete
 											value={form.miasto}
-											onChange={(miasto, region) => {
+											onChange={(miasto, region, isManual) => {
 												updateForm("miasto", miasto);
+												if (isManual) {
+													setForm((prev) => ({
+														...prev,
+														miasto,
+														manual_city_mode: true,
+													}));
+													return;
+												}
 												let effectiveWojewodztwo = form.wojewodztwo;
 												if (region) {
 													const normalizedRegion = region.toLowerCase();
@@ -989,6 +985,7 @@ export default function NewJob() {
 												checkCityInDolnoslaskie(miasto, effectiveWojewodztwo);
 											}}
 											placeholder="Wpisz miasto..."
+											onManualModeChange={(isManual) => updateForm("manual_city_mode", isManual)}
 										/>
 									)}
 									{checkingLocation && (
@@ -1003,18 +1000,29 @@ export default function NewJob() {
 							{/* Street field - always visible */}
 							<div className="space-y-2">
 								<Label>Ulica *</Label>
-								{form.manual_location_mode ? (
+								{form.manual_street_mode ? (
 									<Input
 										value={form.street}
 										onChange={(e) => updateForm("street", e.target.value)}
 										placeholder="Wpisz nazwę ulicy..."
+										className="h-11 rounded-xl"
 									/>
 								) : (
 									<StreetAutocomplete
 										value={form.street}
-										onChange={(street) => updateForm("street", street)}
+										onChange={(street, isManual) => {
+											updateForm("street", street);
+											if (isManual) {
+												setForm((prev) => ({
+													...prev,
+													street,
+													manual_street_mode: true,
+												}));
+											}
+										}}
 										city={form.miasto || "Wrocław"}
 										placeholder="Wpisz nazwę ulicy..."
+										onManualModeChange={(isManual) => updateForm("manual_street_mode", isManual)}
 									/>
 								)}
 								{!form.street && form.miasto && (
