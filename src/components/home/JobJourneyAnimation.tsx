@@ -442,10 +442,6 @@ export function JobJourneyAnimation() {
   }, []);
   return <section ref={sectionRef} className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden">
       <div ref={containerRef} className="container h-screen flex flex-col items-center justify-start px-4 pt-24 sm:pt-28 pb-16">
-        {/* Section Title */}
-        <div className="text-center mb-3 sm:mb-4">
-          <h2 className="text-sm sm:text-base lg:text-lg font-bold leading-tight">Jak to działa?</h2>
-        </div>
 
         {/* Centered Phone */}
         <div className="relative flex-shrink-0">
