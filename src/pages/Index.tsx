@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useSEO } from "@/hooks/useSEO";
+import { JobJourneyAnimation } from "@/components/home/JobJourneyAnimation";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -530,6 +531,8 @@ export default function Index() {
 				</div>
 			</section>
 
+			{/* Job Journey Animation - Scroll-driven */}
+			<JobJourneyAnimation />
 
 			{/* Free Access Promo Section */}
 			<section
