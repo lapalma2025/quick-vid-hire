@@ -126,9 +126,9 @@ function PhoneUI({ className }: { className?: string }) {
               </div>
             </div>
             
-            {/* Confetti */}
-            <div className="confetti absolute inset-0 pointer-events-none overflow-hidden">
-              {[...Array(20)].map((_, i) => (
+            {/* Confetti - positioned at top of phone screen, falls behind balance card */}
+            <div className="confetti absolute top-8 left-0 right-0 h-32 pointer-events-none overflow-hidden -z-10">
+              {[...Array(16)].map((_, i) => (
                 <div
                   key={i}
                   className={`confetti-piece absolute w-1.5 h-1.5 sm:w-2 sm:h-2 opacity-0 ${
@@ -137,8 +137,8 @@ function PhoneUI({ className }: { className?: string }) {
                     i % 4 === 2 ? "bg-amber-500" : "bg-blue-500"
                   } ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`}
                   style={{
-                    left: `${10 + (i * 4)}%`,
-                    top: "-10px",
+                    left: `${5 + (i * 6)}%`,
+                    top: "0px",
                   }}
                 />
               ))}
@@ -315,17 +315,17 @@ export function JobJourneyAnimation() {
       // Payout text
       tl.to(".payout-text", { opacity: 1, duration: 0.05 }, 0.95);
       
-      // Confetti!
+      // Confetti - falls shorter distance to stay in top area
       const confettiPieces = document.querySelectorAll(".confetti-piece");
       confettiPieces.forEach((piece, i) => {
         tl.to(piece, {
           opacity: 1,
-          y: 400 + Math.random() * 100,
-          x: (Math.random() - 0.5) * 100,
-          rotation: Math.random() * 720,
-          duration: 0.15,
+          y: 80 + Math.random() * 40,
+          x: (Math.random() - 0.5) * 60,
+          rotation: Math.random() * 360,
+          duration: 0.12,
           ease: "power1.out",
-        }, 0.82 + i * 0.01);
+        }, 0.82 + i * 0.008);
       });
 
     }, container);
@@ -339,10 +339,10 @@ export function JobJourneyAnimation() {
       className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden"
     >
       <div ref={containerRef} className="container h-screen flex flex-col items-center justify-center px-4">
-        {/* Section Title */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Jak to działa?</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Przewiń, aby zobaczyć proces</p>
+        {/* Section Title - smaller */}
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1">Jak to działa?</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">Przewiń, aby zobaczyć proces</p>
         </div>
 
         {/* Centered Phone */}
