@@ -187,22 +187,6 @@ export const Layout = ({
                       Wszystkie wpisy
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      to="/terms"
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
-                    >
-                      Regulamin
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/privacy"
-                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
-                    >
-                      Polityka prywatności
-                    </Link>
-                  </li>
                 </ul>
               </div>
             </div>
