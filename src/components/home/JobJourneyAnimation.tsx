@@ -1,147 +1,129 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Search, MessageCircle, Check, Star } from "lucide-react";
+import { Search, Check, Star } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Phone UI Component
+// Phone UI Component - smaller size
 function PhoneUI({ className }: { className?: string }) {
   return (
     <div className={`relative ${className}`}>
-      {/* Phone Frame */}
-      <div className="phone-frame relative w-[280px] sm:w-[320px] h-[560px] sm:h-[640px] bg-background rounded-[40px] border-4 border-slate-800 shadow-2xl overflow-hidden">
+      {/* Phone Frame - reduced size */}
+      <div className="phone-frame relative w-[220px] sm:w-[260px] h-[440px] sm:h-[520px] bg-background rounded-[32px] border-4 border-slate-800 shadow-2xl overflow-hidden">
         {/* Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 sm:w-32 h-6 sm:h-7 bg-slate-800 rounded-b-2xl z-20" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 sm:w-24 h-5 sm:h-6 bg-slate-800 rounded-b-xl z-20" />
         
         {/* Screen Content */}
-        <div className="phone-screen relative w-full h-full pt-10 px-3 sm:px-4 pb-4 overflow-hidden">
+        <div className="phone-screen relative w-full h-full pt-8 px-2.5 sm:px-3 pb-3 overflow-hidden">
           {/* Scene 1: Search */}
-          <div className="scene-1 absolute inset-0 pt-10 px-3 sm:px-4">
+          <div className="scene-1 absolute inset-0 pt-8 px-2.5 sm:px-3">
             <div className="search-container">
-              <div className="search-box relative bg-muted rounded-2xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+              <div className="search-box relative bg-muted rounded-xl p-2.5 sm:p-3 flex items-center gap-2">
                 <div className="search-icon">
-                  <Search className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                  <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
-                <div className="search-text text-muted-foreground font-medium text-sm sm:text-base">
+                <div className="search-text text-muted-foreground font-medium text-xs sm:text-sm">
                   <span className="search-placeholder">Szukaj zlecenia...</span>
-                  <span className="search-typed opacity-0 absolute left-10 sm:left-12">Wrocław • weekend</span>
-                  <span className="cursor inline-block w-0.5 h-4 sm:h-5 bg-primary ml-1 opacity-0" />
+                  <span className="search-typed opacity-0 absolute left-8 sm:left-10">Wrocław • weekend</span>
+                  <span className="cursor inline-block w-0.5 h-3 sm:h-4 bg-primary ml-1 opacity-0" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Scene 2: Job Cards */}
-          <div className="scene-2 absolute inset-0 pt-10 px-3 sm:px-4 opacity-0">
-            <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3">Znalezione zlecenia</div>
-            <div className="space-y-2 sm:space-y-3">
+          <div className="scene-2 absolute inset-0 pt-8 px-2.5 sm:px-3 opacity-0">
+            <div className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1.5 sm:mb-2">Znalezione zlecenia</div>
+            <div className="space-y-1.5 sm:space-y-2">
               {/* Card 1 - Best Match */}
-              <div className="job-card-1 relative bg-card rounded-xl p-3 sm:p-4 border shadow-sm opacity-0 translate-y-8">
-                <div className="best-match-badge absolute -top-2 -right-2 bg-emerald-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full opacity-0 scale-0 flex items-center gap-1">
-                  <Star className="h-3 w-3 fill-current" /> Najlepsze
+              <div className="job-card-1 relative bg-card rounded-lg p-2 sm:p-3 border shadow-sm opacity-0 translate-y-8">
+                <div className="best-match-badge absolute -top-1.5 -right-1.5 bg-emerald-500 text-white text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 scale-0 flex items-center gap-0.5">
+                  <Star className="h-2 w-2 sm:h-2.5 sm:w-2.5 fill-current" /> Najlepsze
                 </div>
-                <div className="match-bar h-1 sm:h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
+                <div className="match-bar h-1 bg-muted rounded-full mb-1.5 overflow-hidden">
                   <div className="match-fill h-full bg-emerald-500 w-0 rounded-full" />
                 </div>
-                <div className="match-percent text-[10px] sm:text-xs font-bold text-emerald-500 mb-1">0%</div>
-                <div className="font-semibold text-xs sm:text-sm">Pomoc przy przeprowadzce</div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Wrocław • 150-200 zł</div>
+                <div className="match-percent text-[8px] sm:text-[10px] font-bold text-emerald-500 mb-0.5">0%</div>
+                <div className="font-semibold text-[10px] sm:text-xs">Pomoc przy przeprowadzce</div>
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground">Wrocław • 150-200 zł</div>
               </div>
               
               {/* Card 2 */}
-              <div className="job-card-2 bg-card rounded-xl p-3 sm:p-4 border shadow-sm opacity-0 translate-y-8">
-                <div className="match-bar h-1 sm:h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
+              <div className="job-card-2 bg-card rounded-lg p-2 sm:p-3 border shadow-sm opacity-0 translate-y-8">
+                <div className="match-bar h-1 bg-muted rounded-full mb-1.5 overflow-hidden">
                   <div className="match-fill h-full bg-amber-500 w-0 rounded-full" />
                 </div>
-                <div className="match-percent text-[10px] sm:text-xs font-bold text-amber-500 mb-1">0%</div>
-                <div className="font-semibold text-xs sm:text-sm">Sprzątanie biura</div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Wrocław • 80 zł</div>
+                <div className="match-percent text-[8px] sm:text-[10px] font-bold text-amber-500 mb-0.5">0%</div>
+                <div className="font-semibold text-[10px] sm:text-xs">Sprzątanie biura</div>
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground">Wrocław • 80 zł</div>
               </div>
               
               {/* Card 3 */}
-              <div className="job-card-3 bg-card rounded-xl p-3 sm:p-4 border shadow-sm opacity-0 translate-y-8">
-                <div className="match-bar h-1 sm:h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
+              <div className="job-card-3 bg-card rounded-lg p-2 sm:p-3 border shadow-sm opacity-0 translate-y-8">
+                <div className="match-bar h-1 bg-muted rounded-full mb-1.5 overflow-hidden">
                   <div className="match-fill h-full bg-blue-500 w-0 rounded-full" />
                 </div>
-                <div className="match-percent text-[10px] sm:text-xs font-bold text-blue-500 mb-1">0%</div>
-                <div className="font-semibold text-xs sm:text-sm">Montaż mebli IKEA</div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Wrocław • 120 zł</div>
+                <div className="match-percent text-[8px] sm:text-[10px] font-bold text-blue-500 mb-0.5">0%</div>
+                <div className="font-semibold text-[10px] sm:text-xs">Montaż mebli IKEA</div>
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground">Wrocław • 120 zł</div>
               </div>
             </div>
           </div>
 
           {/* Scene 3: Apply + Chat */}
-          <div className="scene-3 absolute inset-0 pt-10 px-3 sm:px-4 opacity-0">
-            <div className="apply-card bg-card rounded-xl p-3 sm:p-4 border shadow-sm mb-3 sm:mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-[10px] sm:text-xs text-emerald-500 font-medium">92% dopasowania</span>
+          <div className="scene-3 absolute inset-0 pt-8 px-2.5 sm:px-3 opacity-0">
+            <div className="apply-card bg-card rounded-lg p-2 sm:p-3 border shadow-sm mb-2 sm:mb-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[8px] sm:text-[10px] text-emerald-500 font-medium">92% dopasowania</span>
               </div>
-              <div className="font-semibold text-xs sm:text-sm mb-1">Pomoc przy przeprowadzce</div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">Wrocław • Sobota 10:00 • 150-200 zł</div>
+              <div className="font-semibold text-[10px] sm:text-xs mb-0.5">Pomoc przy przeprowadzce</div>
+              <div className="text-[8px] sm:text-[10px] text-muted-foreground mb-2">Wrocław • Sobota 10:00</div>
               
-              <button className="apply-button w-full bg-primary text-primary-foreground rounded-xl py-2 sm:py-3 font-semibold text-xs sm:text-sm relative overflow-hidden">
+              <button className="apply-button w-full bg-primary text-primary-foreground rounded-lg py-1.5 sm:py-2 font-semibold text-[10px] sm:text-xs relative overflow-hidden">
                 <span className="apply-text">Aplikuj teraz</span>
                 <span className="apply-loading absolute inset-0 flex items-center justify-center opacity-0">
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                 </span>
-                <span className="apply-sent absolute inset-0 flex items-center justify-center opacity-0 gap-2">
-                  <Check className="h-4 w-4 sm:h-5 sm:w-5" /> Wysłano!
+                <span className="apply-sent absolute inset-0 flex items-center justify-center opacity-0 gap-1">
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4" /> Wysłano!
                 </span>
               </button>
             </div>
             
             {/* Chat Bubble */}
             <div className="chat-section opacity-0 translate-y-4">
-              <div className="chat-bubble-incoming bg-muted rounded-2xl rounded-bl-sm p-2 sm:p-3 mb-2 max-w-[85%]">
-                <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">Zleceniodawca</div>
-                <div className="text-xs sm:text-sm">Hej! Jesteś dostępny dziś o 18:00?</div>
+              <div className="chat-bubble-incoming bg-muted rounded-xl rounded-bl-sm p-2 mb-1.5 max-w-[85%]">
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground mb-0.5">Zleceniodawca</div>
+                <div className="text-[10px] sm:text-xs">Hej! Jesteś dostępny dziś o 18:00?</div>
               </div>
               
-              <div className="chat-bubble-outgoing bg-primary text-primary-foreground rounded-2xl rounded-br-sm p-2 sm:p-3 ml-auto max-w-[85%] opacity-0 translate-x-4">
-                <div className="chat-typing text-xs sm:text-sm">
+              <div className="chat-bubble-outgoing bg-primary text-primary-foreground rounded-xl rounded-br-sm p-2 ml-auto max-w-[85%] opacity-0 translate-x-4">
+                <div className="chat-typing text-[10px] sm:text-xs">
                   <span className="chat-typed-text"></span>
-                  <span className="chat-cursor inline-block w-0.5 h-3 sm:h-4 bg-primary-foreground ml-0.5 opacity-0" />
+                  <span className="chat-cursor inline-block w-0.5 h-2.5 sm:h-3 bg-primary-foreground ml-0.5 opacity-0" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Scene 4: Success */}
-          <div className="scene-4 absolute inset-0 pt-10 px-3 sm:px-4 flex flex-col items-center justify-center opacity-0">
-            <div className="success-icon w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-3 sm:mb-4 scale-0">
-              <Check className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+          <div className="scene-4 absolute inset-0 pt-8 px-2.5 sm:px-3 flex flex-col items-center justify-center opacity-0">
+            <div className="success-icon w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500 rounded-full flex items-center justify-center mb-2 sm:mb-3 scale-0">
+              <Check className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
             </div>
-            <div className="success-title text-lg sm:text-xl font-bold mb-2 opacity-0">Gratulacje! 🎉</div>
-            <div className="success-subtitle text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 opacity-0">Zlecenie zostało wykonane</div>
+            <div className="success-title text-sm sm:text-base font-bold mb-1 opacity-0">Gratulacje! 🎉</div>
+            <div className="success-subtitle text-[10px] sm:text-xs text-muted-foreground mb-3 sm:mb-4 opacity-0">Zlecenie zostało wykonane</div>
             
-            <div className="balance-card bg-card rounded-2xl p-4 sm:p-6 border shadow-lg w-full opacity-0 scale-95">
-              <div className="text-xs sm:text-sm text-muted-foreground mb-1">Twoje saldo</div>
-              <div className="balance-amount text-2xl sm:text-3xl font-bold text-emerald-500 mb-2">
+            <div className="balance-card bg-card rounded-xl p-3 sm:p-4 border shadow-lg w-full opacity-0 scale-95 relative z-10">
+              <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Twoje saldo</div>
+              <div className="balance-amount text-xl sm:text-2xl font-bold text-emerald-500 mb-1">
                 +<span className="balance-number">0</span> zł
               </div>
-              <div className="payout-text text-[10px] sm:text-xs text-muted-foreground opacity-0">
+              <div className="payout-text text-[8px] sm:text-[10px] text-muted-foreground opacity-0">
                 💸 Wypłata jutro na konto
               </div>
-            </div>
-            
-            {/* Confetti - positioned at top of phone screen, falls behind balance card */}
-            <div className="confetti absolute top-8 left-0 right-0 h-32 pointer-events-none overflow-hidden -z-10">
-              {[...Array(16)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`confetti-piece absolute w-1.5 h-1.5 sm:w-2 sm:h-2 opacity-0 ${
-                    i % 4 === 0 ? "bg-primary" : 
-                    i % 4 === 1 ? "bg-emerald-500" : 
-                    i % 4 === 2 ? "bg-amber-500" : "bg-blue-500"
-                  } ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`}
-                  style={{
-                    left: `${5 + (i * 6)}%`,
-                    top: "0px",
-                  }}
-                />
-              ))}
             </div>
           </div>
         </div>
@@ -160,20 +142,18 @@ export function JobJourneyAnimation() {
     if (!section || !container) return;
 
     const ctx = gsap.context(() => {
-      // Main timeline controlled by scroll
+      // Main timeline controlled by scroll - increased scrub for smoother animation
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: "top top",
-          end: "+=2500",
-          scrub: 1,
+          end: "+=2000",
+          scrub: 2,
           pin: true,
           anticipatePin: 1,
         },
       });
 
-      // Progress bar animation
-      
       // ===== SCENE 1: Search =====
       tl.to(".progress-fill", { width: "25%", duration: 0.1 }, 0);
       tl.to(".step-indicator", { 
@@ -315,17 +295,17 @@ export function JobJourneyAnimation() {
       // Payout text
       tl.to(".payout-text", { opacity: 1, duration: 0.05 }, 0.95);
       
-      // Confetti - falls shorter distance to stay in top area
+      // Confetti animation - positioned outside phone
       const confettiPieces = document.querySelectorAll(".confetti-piece");
       confettiPieces.forEach((piece, i) => {
         tl.to(piece, {
           opacity: 1,
-          y: 80 + Math.random() * 40,
-          x: (Math.random() - 0.5) * 60,
+          y: 150 + Math.random() * 100,
+          x: (Math.random() - 0.5) * 80,
           rotation: Math.random() * 360,
-          duration: 0.12,
+          duration: 0.15,
           ease: "power1.out",
-        }, 0.82 + i * 0.008);
+        }, 0.82 + i * 0.01);
       });
 
     }, container);
@@ -339,28 +319,46 @@ export function JobJourneyAnimation() {
       className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden"
     >
       <div ref={containerRef} className="container h-screen flex flex-col items-center justify-center px-4">
-        {/* Section Title - smaller */}
-        <div className="text-center mb-4 sm:mb-6">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1">Jak to działa?</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">Przewiń, aby zobaczyć proces</p>
+        {/* Section Title */}
+        <div className="text-center mb-4 sm:mb-5">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1">Jak to działa?</h2>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">Przewiń, aby zobaczyć proces</p>
         </div>
 
-        {/* Centered Phone */}
+        {/* Centered Phone with confetti outside */}
         <div className="relative flex-shrink-0">
           <PhoneUI />
           
+          {/* Confetti - positioned OUTSIDE phone, below it */}
+          <div className="confetti absolute -bottom-16 left-1/2 -translate-x-1/2 w-[300px] h-40 pointer-events-none overflow-visible">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className={`confetti-piece absolute w-2 h-2 sm:w-2.5 sm:h-2.5 opacity-0 ${
+                  i % 4 === 0 ? "bg-primary" : 
+                  i % 4 === 1 ? "bg-emerald-500" : 
+                  i % 4 === 2 ? "bg-amber-500" : "bg-blue-500"
+                } ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`}
+                style={{
+                  left: `${10 + (i * 4)}%`,
+                  top: "0px",
+                }}
+              />
+            ))}
+          </div>
+          
           {/* Decorative elements */}
-          <div className="absolute -top-10 -right-10 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="absolute -top-8 -right-8 w-16 h-16 bg-primary/10 rounded-full blur-2xl" />
+          <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-emerald-500/10 rounded-full blur-3xl" />
         </div>
 
-        {/* Progress Bar - positioned below phone with proper spacing */}
-        <div className="w-full max-w-xs sm:max-w-sm mt-6 sm:mt-8">
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="step-text text-xs sm:text-sm font-medium text-muted-foreground">Rozpocznij</span>
-            <span className="step-indicator text-xs sm:text-sm font-bold text-primary">0/4</span>
+        {/* Progress Bar - more spacing from phone */}
+        <div className="w-full max-w-[200px] sm:max-w-[240px] mt-20 sm:mt-24">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="step-text text-[10px] sm:text-xs font-medium text-muted-foreground">Rozpocznij</span>
+            <span className="step-indicator text-[10px] sm:text-xs font-bold text-primary">0/4</span>
           </div>
-          <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
             <div className="progress-fill h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full w-0 transition-all" />
           </div>
         </div>
