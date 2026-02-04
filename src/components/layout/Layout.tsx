@@ -57,7 +57,7 @@ export const Layout = ({
           className="border-t border-border/50 bg-muted/30 py-12 mt-auto"
         >
           <div className="container">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
               <div>
                 <h4 className="font-display font-bold text-lg mb-4">O nas</h4>
                 <ul className="space-y-3">
@@ -69,16 +69,6 @@ export const Layout = ({
                       Jak to działa
                     </Link>
                   </li>
-                  {/* Cennik link commented out
-                <li>
-                  <Link
-                    to="/pricing"
-                    className="text-muted-foreground hover:text-primary transition-colors duration-300"
-                  >
-                    Cennik
-                  </Link>
-                </li>
-                */}
                   <li>
                     <Link
                       to="/safety"
@@ -153,6 +143,19 @@ export const Layout = ({
                       className="text-muted-foreground hover:text-primary transition-colors duration-300"
                     >
                       Opinie
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-display font-bold text-lg mb-4">Blog</h4>
+                <ul className="space-y-3">
+                  <li>
+                    <Link
+                      to="/blog"
+                      className="text-muted-foreground hover:text-primary transition-colors duration-300"
+                    >
+                      Wszystkie wpisy
                     </Link>
                   </li>
                 </ul>
