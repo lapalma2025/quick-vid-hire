@@ -10,7 +10,7 @@ function PhoneUI({ className }: { className?: string }) {
   return (
     <div className={`relative ${className}`}>
       {/* Phone Frame - reduced size */}
-      <div className="phone-frame relative w-[220px] sm:w-[260px] h-[440px] sm:h-[520px] bg-background rounded-[32px] border-4 border-slate-800 shadow-2xl overflow-hidden">
+      <div className="phone-frame relative w-[200px] sm:w-[240px] h-[410px] sm:h-[500px] bg-background rounded-[32px] border-4 border-slate-800 shadow-2xl overflow-hidden">
         {/* Notch */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 sm:w-24 h-5 sm:h-6 bg-slate-800 rounded-b-xl z-20" />
         
@@ -109,7 +109,7 @@ function PhoneUI({ className }: { className?: string }) {
           </div>
 
           {/* Scene 4: Success */}
-          <div className="scene-4 absolute inset-0 pt-8 px-2.5 sm:px-3 flex flex-col items-center justify-center opacity-0">
+          <div className="scene-4 absolute inset-0 pt-8 px-2.5 sm:px-3 flex flex-col items-center justify-start opacity-0 relative">
             <div className="success-icon w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500 rounded-full flex items-center justify-center mb-2 sm:mb-3 scale-0">
               <Check className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
             </div>
@@ -124,6 +124,25 @@ function PhoneUI({ className }: { className?: string }) {
               <div className="payout-text text-[8px] sm:text-[10px] text-muted-foreground opacity-0">
                 💸 Wypłata jutro na konto
               </div>
+            </div>
+
+            {/* Confetti - inside phone, lower part only (won't cover balance) */}
+            <div className="confetti absolute bottom-0 left-0 right-0 h-28 pointer-events-none overflow-hidden z-0">
+              {[...Array(18)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`confetti-piece absolute w-2 h-2 opacity-0 ${
+                    i % 4 === 0 ? "bg-primary" :
+                    i % 4 === 1 ? "bg-emerald-500" :
+                    i % 4 === 2 ? "bg-amber-500" :
+                    "bg-blue-500"
+                  } ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`}
+                  style={{
+                    left: `${6 + (i * 5)}%`,
+                    top: "-10px",
+                  }}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -144,13 +163,17 @@ export function JobJourneyAnimation() {
     const ctx = gsap.context(() => {
       // Main timeline controlled by scroll - increased scrub for smoother animation
       const tl = gsap.timeline({
+        defaults: { ease: "none" },
         scrollTrigger: {
           trigger: section,
           start: "top top",
           end: "+=2000",
           scrub: 2,
           pin: true,
+          pinType: "fixed",
+          pinSpacing: true,
           anticipatePin: 1,
+          invalidateOnRefresh: true,
         },
       });
 
@@ -295,15 +318,15 @@ export function JobJourneyAnimation() {
       // Payout text
       tl.to(".payout-text", { opacity: 1, duration: 0.05 }, 0.95);
       
-      // Confetti animation - positioned outside phone
+      // Confetti animation - inside phone (lower zone)
       const confettiPieces = document.querySelectorAll(".confetti-piece");
       confettiPieces.forEach((piece, i) => {
         tl.to(piece, {
           opacity: 1,
-          y: 150 + Math.random() * 100,
-          x: (Math.random() - 0.5) * 80,
+          y: 90 + Math.random() * 30,
+          x: (Math.random() - 0.5) * 50,
           rotation: Math.random() * 360,
-          duration: 0.15,
+          duration: 0.12,
           ease: "power1.out",
         }, 0.82 + i * 0.01);
       });
@@ -318,34 +341,15 @@ export function JobJourneyAnimation() {
       ref={sectionRef}
       className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden"
     >
-      <div ref={containerRef} className="container h-screen flex flex-col items-center justify-center px-4">
+      <div ref={containerRef} className="container h-screen flex flex-col items-center justify-start px-4 pt-24 sm:pt-28 pb-16">
         {/* Section Title */}
-        <div className="text-center mb-4 sm:mb-5">
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1">Jak to działa?</h2>
-          <p className="text-[10px] sm:text-xs text-muted-foreground">Przewiń, aby zobaczyć proces</p>
+        <div className="text-center mb-3 sm:mb-4">
+          <h2 className="text-sm sm:text-base lg:text-lg font-bold leading-tight">Jak to działa?</h2>
         </div>
 
-        {/* Centered Phone with confetti outside */}
+        {/* Centered Phone */}
         <div className="relative flex-shrink-0">
           <PhoneUI />
-          
-          {/* Confetti - positioned OUTSIDE phone, below it */}
-          <div className="confetti absolute -bottom-16 left-1/2 -translate-x-1/2 w-[300px] h-40 pointer-events-none overflow-visible">
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className={`confetti-piece absolute w-2 h-2 sm:w-2.5 sm:h-2.5 opacity-0 ${
-                  i % 4 === 0 ? "bg-primary" : 
-                  i % 4 === 1 ? "bg-emerald-500" : 
-                  i % 4 === 2 ? "bg-amber-500" : "bg-blue-500"
-                } ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`}
-                style={{
-                  left: `${10 + (i * 4)}%`,
-                  top: "0px",
-                }}
-              />
-            ))}
-          </div>
           
           {/* Decorative elements */}
           <div className="absolute -top-8 -right-8 w-16 h-16 bg-primary/10 rounded-full blur-2xl" />
@@ -353,7 +357,7 @@ export function JobJourneyAnimation() {
         </div>
 
         {/* Progress Bar - more spacing from phone */}
-        <div className="w-full max-w-[200px] sm:max-w-[240px] mt-20 sm:mt-24">
+        <div className="w-full max-w-[200px] sm:max-w-[240px] mt-10 sm:mt-12">
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
             <span className="step-text text-[10px] sm:text-xs font-medium text-muted-foreground">Rozpocznij</span>
             <span className="step-indicator text-[10px] sm:text-xs font-bold text-primary">0/4</span>
@@ -363,6 +367,9 @@ export function JobJourneyAnimation() {
           </div>
         </div>
       </div>
+
+      {/* Spacer so the next section doesn't start immediately after unpin */}
+      <div aria-hidden className="h-16 sm:h-24" />
     </section>
   );
 }
