@@ -34,6 +34,10 @@ import WorkerOnboarding from "./pages/WorkerOnboarding";
 import WorkMap from "./pages/WorkMap";
 import SavedJobs from "./pages/SavedJobs";
 import ResetPassword from "./pages/ResetPassword";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import BlogAdmin from "./pages/BlogAdmin";
+import BlogEditor from "./pages/BlogEditor";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +78,11 @@ const App = () => (
 					<Route path="/help" element={<Help />} />
 					<Route path="/terms" element={<Terms />} />
 					<Route path="/privacy" element={<Privacy />} />
+					<Route path="/blog" element={<Blog />} />
+					<Route path="/blog/:slug" element={<BlogPost />} />
+					<Route path="/blog/admin" element={<BlogAdmin />} />
+					<Route path="/blog/admin/new" element={<BlogEditor />} />
+					<Route path="/blog/admin/edit/:id" element={<BlogEditor />} />
 					<Route path="*" element={<NotFound />} />
 				</Routes>
 			</BrowserRouter>
