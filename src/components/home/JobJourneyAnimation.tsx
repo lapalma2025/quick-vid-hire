@@ -2,13 +2,15 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Search, Check, Star } from "lucide-react";
-
 gsap.registerPlugin(ScrollTrigger);
 
 // Phone UI Component - smaller size
-function PhoneUI({ className }: { className?: string }) {
-  return (
-    <div className={`relative ${className}`}>
+function PhoneUI({
+  className
+}: {
+  className?: string;
+}) {
+  return <div className={`relative ${className}`}>
       {/* Phone Frame - reduced size */}
       <div className="phone-frame relative w-[200px] sm:w-[240px] h-[410px] sm:h-[500px] bg-background rounded-[32px] border-4 border-slate-800 shadow-2xl overflow-hidden">
         {/* Notch */}
@@ -128,42 +130,29 @@ function PhoneUI({ className }: { className?: string }) {
 
             {/* Confetti - inside phone, lower part only (won't cover balance) */}
             <div className="confetti absolute bottom-0 left-0 right-0 h-28 pointer-events-none overflow-hidden z-0">
-              {[...Array(18)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`confetti-piece absolute w-2 h-2 opacity-0 ${
-                    i % 4 === 0 ? "bg-primary" :
-                    i % 4 === 1 ? "bg-emerald-500" :
-                    i % 4 === 2 ? "bg-amber-500" :
-                    "bg-blue-500"
-                  } ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`}
-                  style={{
-                    left: `${6 + (i * 5)}%`,
-                    top: "-10px",
-                  }}
-                />
-              ))}
+              {[...Array(18)].map((_, i) => <div key={i} className={`confetti-piece absolute w-2 h-2 opacity-0 ${i % 4 === 0 ? "bg-primary" : i % 4 === 1 ? "bg-emerald-500" : i % 4 === 2 ? "bg-amber-500" : "bg-blue-500"} ${i % 2 === 0 ? "rounded-full" : "rotate-45"}`} style={{
+              left: `${6 + i * 5}%`,
+              top: "-10px"
+            }} />)}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
-
 export function JobJourneyAnimation() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const section = sectionRef.current;
     const container = containerRef.current;
     if (!section || !container) return;
-
     const ctx = gsap.context(() => {
       // Main timeline controlled by scroll - increased scrub for smoother animation
       const tl = gsap.timeline({
-        defaults: { ease: "none" },
+        defaults: {
+          ease: "none"
+        },
         scrollTrigger: {
           trigger: section,
           start: "top top",
@@ -173,151 +162,269 @@ export function JobJourneyAnimation() {
           pinType: "fixed",
           pinSpacing: true,
           anticipatePin: 1,
-          invalidateOnRefresh: true,
-        },
+          invalidateOnRefresh: true
+        }
       });
 
       // ===== SCENE 1: Search =====
-      tl.to(".progress-fill", { width: "25%", duration: 0.1 }, 0);
-      tl.to(".step-indicator", { 
+      tl.to(".progress-fill", {
+        width: "25%",
+        duration: 0.1
+      }, 0);
+      tl.to(".step-indicator", {
         innerHTML: "1/4",
-        duration: 0.01,
+        duration: 0.01
       }, 0);
-      tl.to(".step-text", { 
+      tl.to(".step-text", {
         innerHTML: "Szukam pracy",
-        duration: 0.01,
+        duration: 0.01
       }, 0);
-      
+
       // Cursor blink
-      tl.to(".cursor", { opacity: 1, duration: 0.1 }, 0.05);
-      tl.to(".cursor", { 
-        opacity: 0, 
-        repeat: 3, 
-        yoyo: true, 
-        duration: 0.05 
-      }, 0.1);
-      
-      // Type search text
-      tl.to(".search-placeholder", { opacity: 0, duration: 0.05 }, 0.15);
-      tl.to(".search-typed", { 
+      tl.to(".cursor", {
         opacity: 1,
-        duration: 0.1,
+        duration: 0.1
+      }, 0.05);
+      tl.to(".cursor", {
+        opacity: 0,
+        repeat: 3,
+        yoyo: true,
+        duration: 0.05
+      }, 0.1);
+
+      // Type search text
+      tl.to(".search-placeholder", {
+        opacity: 0,
+        duration: 0.05
       }, 0.15);
-      
+      tl.to(".search-typed", {
+        opacity: 1,
+        duration: 0.1
+      }, 0.15);
+
       // Search icon bounce
       tl.to(".search-icon", {
         scale: 1.2,
         duration: 0.05,
         yoyo: true,
-        repeat: 1,
+        repeat: 1
       }, 0.2);
 
       // ===== SCENE 2: Matching =====
-      tl.to(".scene-1", { opacity: 0, duration: 0.05 }, 0.25);
-      tl.to(".scene-2", { opacity: 1, duration: 0.05 }, 0.26);
-      tl.to(".progress-fill", { width: "50%", duration: 0.1 }, 0.26);
-      tl.to(".step-indicator", { innerHTML: "2/4", duration: 0.01 }, 0.26);
-      tl.to(".step-text", { innerHTML: "Dopasowuję oferty", duration: 0.01 }, 0.26);
-      
+      tl.to(".scene-1", {
+        opacity: 0,
+        duration: 0.05
+      }, 0.25);
+      tl.to(".scene-2", {
+        opacity: 1,
+        duration: 0.05
+      }, 0.26);
+      tl.to(".progress-fill", {
+        width: "50%",
+        duration: 0.1
+      }, 0.26);
+      tl.to(".step-indicator", {
+        innerHTML: "2/4",
+        duration: 0.01
+      }, 0.26);
+      tl.to(".step-text", {
+        innerHTML: "Dopasowuję oferty",
+        duration: 0.01
+      }, 0.26);
+
       // Cards fly in with stagger
-      tl.to(".job-card-1", { opacity: 1, y: 0, duration: 0.08 }, 0.28);
-      tl.to(".job-card-2", { opacity: 1, y: 0, duration: 0.08 }, 0.32);
-      tl.to(".job-card-3", { opacity: 1, y: 0, duration: 0.08 }, 0.36);
-      
+      tl.to(".job-card-1", {
+        opacity: 1,
+        y: 0,
+        duration: 0.08
+      }, 0.28);
+      tl.to(".job-card-2", {
+        opacity: 1,
+        y: 0,
+        duration: 0.08
+      }, 0.32);
+      tl.to(".job-card-3", {
+        opacity: 1,
+        y: 0,
+        duration: 0.08
+      }, 0.36);
+
       // Match percentages count up
-      tl.to(".job-card-1 .match-fill", { width: "92%", duration: 0.1 }, 0.35);
-      tl.to(".job-card-1 .match-percent", { innerHTML: "92%", duration: 0.1 }, 0.35);
-      
-      tl.to(".job-card-2 .match-fill", { width: "78%", duration: 0.1 }, 0.38);
-      tl.to(".job-card-2 .match-percent", { innerHTML: "78%", duration: 0.1 }, 0.38);
-      
-      tl.to(".job-card-3 .match-fill", { width: "88%", duration: 0.1 }, 0.41);
-      tl.to(".job-card-3 .match-percent", { innerHTML: "88%", duration: 0.1 }, 0.41);
-      
+      tl.to(".job-card-1 .match-fill", {
+        width: "92%",
+        duration: 0.1
+      }, 0.35);
+      tl.to(".job-card-1 .match-percent", {
+        innerHTML: "92%",
+        duration: 0.1
+      }, 0.35);
+      tl.to(".job-card-2 .match-fill", {
+        width: "78%",
+        duration: 0.1
+      }, 0.38);
+      tl.to(".job-card-2 .match-percent", {
+        innerHTML: "78%",
+        duration: 0.1
+      }, 0.38);
+      tl.to(".job-card-3 .match-fill", {
+        width: "88%",
+        duration: 0.1
+      }, 0.41);
+      tl.to(".job-card-3 .match-percent", {
+        innerHTML: "88%",
+        duration: 0.1
+      }, 0.41);
+
       // Best match badge appears
-      tl.to(".best-match-badge", { 
-        opacity: 1, 
-        scale: 1, 
+      tl.to(".best-match-badge", {
+        opacity: 1,
+        scale: 1,
         duration: 0.08,
-        ease: "back.out(2)",
+        ease: "back.out(2)"
       }, 0.45);
-      
+
       // Card glow effect
       tl.to(".job-card-1", {
         boxShadow: "0 0 20px rgba(16, 185, 129, 0.3)",
-        duration: 0.1,
+        duration: 0.1
       }, 0.45);
 
       // ===== SCENE 3: Apply + Chat =====
-      tl.to(".scene-2", { opacity: 0, duration: 0.05 }, 0.5);
-      tl.to(".scene-3", { opacity: 1, duration: 0.05 }, 0.51);
-      tl.to(".progress-fill", { width: "75%", duration: 0.1 }, 0.51);
-      tl.to(".step-indicator", { innerHTML: "3/4", duration: 0.01 }, 0.51);
-      tl.to(".step-text", { innerHTML: "Aplikuję na zlecenie", duration: 0.01 }, 0.51);
-      
+      tl.to(".scene-2", {
+        opacity: 0,
+        duration: 0.05
+      }, 0.5);
+      tl.to(".scene-3", {
+        opacity: 1,
+        duration: 0.05
+      }, 0.51);
+      tl.to(".progress-fill", {
+        width: "75%",
+        duration: 0.1
+      }, 0.51);
+      tl.to(".step-indicator", {
+        innerHTML: "3/4",
+        duration: 0.01
+      }, 0.51);
+      tl.to(".step-text", {
+        innerHTML: "Aplikuję na zlecenie",
+        duration: 0.01
+      }, 0.51);
+
       // Button states
-      tl.to(".apply-text", { opacity: 0, duration: 0.02 }, 0.55);
-      tl.to(".apply-loading", { opacity: 1, duration: 0.02 }, 0.56);
-      tl.to(".apply-loading", { opacity: 0, duration: 0.02 }, 0.62);
-      tl.to(".apply-sent", { opacity: 1, duration: 0.02 }, 0.63);
-      tl.to(".apply-button", { 
-        backgroundColor: "rgb(34 197 94)", 
-        duration: 0.05 
+      tl.to(".apply-text", {
+        opacity: 0,
+        duration: 0.02
+      }, 0.55);
+      tl.to(".apply-loading", {
+        opacity: 1,
+        duration: 0.02
+      }, 0.56);
+      tl.to(".apply-loading", {
+        opacity: 0,
+        duration: 0.02
+      }, 0.62);
+      tl.to(".apply-sent", {
+        opacity: 1,
+        duration: 0.02
       }, 0.63);
-      
+      tl.to(".apply-button", {
+        backgroundColor: "rgb(34 197 94)",
+        duration: 0.05
+      }, 0.63);
+
       // Chat appears
-      tl.to(".chat-section", { opacity: 1, y: 0, duration: 0.08 }, 0.65);
-      
+      tl.to(".chat-section", {
+        opacity: 1,
+        y: 0,
+        duration: 0.08
+      }, 0.65);
+
       // Outgoing message appears with typing
-      tl.to(".chat-bubble-outgoing", { opacity: 1, x: 0, duration: 0.05 }, 0.68);
-      tl.to(".chat-cursor", { opacity: 1, duration: 0.02 }, 0.69);
-      
+      tl.to(".chat-bubble-outgoing", {
+        opacity: 1,
+        x: 0,
+        duration: 0.05
+      }, 0.68);
+      tl.to(".chat-cursor", {
+        opacity: 1,
+        duration: 0.02
+      }, 0.69);
+
       // Type response
       const responseText = "Tak, jestem! 👍";
       tl.to(".chat-typed-text", {
         innerHTML: responseText,
         duration: 0.1,
-        ease: "none",
+        ease: "none"
       }, 0.7);
-      
-      tl.to(".chat-cursor", { opacity: 0, duration: 0.02 }, 0.75);
+      tl.to(".chat-cursor", {
+        opacity: 0,
+        duration: 0.02
+      }, 0.75);
 
       // ===== SCENE 4: Success =====
-      tl.to(".scene-3", { opacity: 0, duration: 0.05 }, 0.78);
-      tl.to(".scene-4", { opacity: 1, duration: 0.05 }, 0.79);
-      tl.to(".progress-fill", { width: "100%", duration: 0.1 }, 0.79);
-      tl.to(".step-indicator", { innerHTML: "4/4", duration: 0.01 }, 0.79);
-      tl.to(".step-text", { innerHTML: "Gotowe! 🎉", duration: 0.01 }, 0.79);
-      
+      tl.to(".scene-3", {
+        opacity: 0,
+        duration: 0.05
+      }, 0.78);
+      tl.to(".scene-4", {
+        opacity: 1,
+        duration: 0.05
+      }, 0.79);
+      tl.to(".progress-fill", {
+        width: "100%",
+        duration: 0.1
+      }, 0.79);
+      tl.to(".step-indicator", {
+        innerHTML: "4/4",
+        duration: 0.01
+      }, 0.79);
+      tl.to(".step-text", {
+        innerHTML: "Gotowe! 🎉",
+        duration: 0.01
+      }, 0.79);
+
       // Success icon pops in
-      tl.to(".success-icon", { 
-        scale: 1, 
+      tl.to(".success-icon", {
+        scale: 1,
         duration: 0.1,
-        ease: "back.out(2)",
+        ease: "back.out(2)"
       }, 0.8);
-      
+
       // Text fades in
-      tl.to(".success-title", { opacity: 1, duration: 0.05 }, 0.85);
-      tl.to(".success-subtitle", { opacity: 1, duration: 0.05 }, 0.87);
-      
+      tl.to(".success-title", {
+        opacity: 1,
+        duration: 0.05
+      }, 0.85);
+      tl.to(".success-subtitle", {
+        opacity: 1,
+        duration: 0.05
+      }, 0.87);
+
       // Balance card appears
-      tl.to(".balance-card", { 
-        opacity: 1, 
-        scale: 1, 
+      tl.to(".balance-card", {
+        opacity: 1,
+        scale: 1,
         duration: 0.08,
-        ease: "back.out(1.5)",
+        ease: "back.out(1.5)"
       }, 0.88);
-      
+
       // Money count up
       tl.to(".balance-number", {
         innerHTML: "120",
         duration: 0.1,
-        snap: { innerHTML: 1 },
+        snap: {
+          innerHTML: 1
+        }
       }, 0.9);
-      
+
       // Payout text
-      tl.to(".payout-text", { opacity: 1, duration: 0.05 }, 0.95);
-      
+      tl.to(".payout-text", {
+        opacity: 1,
+        duration: 0.05
+      }, 0.95);
+
       // Confetti animation - inside phone (lower zone)
       const confettiPieces = document.querySelectorAll(".confetti-piece");
       confettiPieces.forEach((piece, i) => {
@@ -327,20 +434,13 @@ export function JobJourneyAnimation() {
           x: (Math.random() - 0.5) * 50,
           rotation: Math.random() * 360,
           duration: 0.12,
-          ease: "power1.out",
+          ease: "power1.out"
         }, 0.82 + i * 0.01);
       });
-
     }, container);
-
     return () => ctx.revert();
   }, []);
-
-  return (
-    <section
-      ref={sectionRef}
-      className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden"
-    >
+  return <section ref={sectionRef} className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden">
       <div ref={containerRef} className="container h-screen flex flex-col items-center justify-start px-4 pt-24 sm:pt-28 pb-16">
         {/* Section Title */}
         <div className="text-center mb-3 sm:mb-4">
@@ -357,19 +457,10 @@ export function JobJourneyAnimation() {
         </div>
 
         {/* Progress Bar - more spacing from phone */}
-        <div className="w-full max-w-[200px] sm:max-w-[240px] mt-10 sm:mt-12">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <span className="step-text text-[10px] sm:text-xs font-medium text-muted-foreground">Rozpocznij</span>
-            <span className="step-indicator text-[10px] sm:text-xs font-bold text-primary">0/4</span>
-          </div>
-          <div className="h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
-            <div className="progress-fill h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full w-0 transition-all" />
-          </div>
-        </div>
+        
       </div>
 
       {/* Spacer so the next section doesn't start immediately after unpin */}
       <div aria-hidden className="h-16 sm:h-24" />
-    </section>
-  );
+    </section>;
 }
