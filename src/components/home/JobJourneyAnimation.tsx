@@ -1,201 +1,127 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Search, MessageCircle, Check, Sparkles, Star } from "lucide-react";
+import { Search, MessageCircle, Check, Star } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
-
-// Simple SVG Character Component
-function Character({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 200 300"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Body */}
-      <g className="character-body">
-        {/* Torso */}
-        <path
-          d="M70 140 Q100 130 130 140 L140 220 Q100 230 60 220 Z"
-          className="fill-primary"
-        />
-        {/* Left Arm */}
-        <g className="character-left-arm" style={{ transformOrigin: "70px 150px" }}>
-          <path
-            d="M70 150 Q50 170 45 200 Q40 210 50 215 Q60 210 65 200 Q70 180 75 165"
-            className="fill-primary"
-          />
-          {/* Hand */}
-          <circle cx="47" cy="212" r="12" className="fill-amber-200" />
-        </g>
-        {/* Right Arm */}
-        <g className="character-right-arm" style={{ transformOrigin: "130px 150px" }}>
-          <path
-            d="M130 150 Q150 170 155 200 Q160 210 150 215 Q140 210 135 200 Q130 180 125 165"
-            className="fill-primary"
-          />
-          {/* Hand */}
-          <circle cx="153" cy="212" r="12" className="fill-amber-200" />
-        </g>
-        {/* Legs */}
-        <path
-          d="M75 220 L70 280 Q70 290 80 290 L90 290 Q95 290 95 280 L95 230"
-          className="fill-slate-700"
-        />
-        <path
-          d="M105 230 L105 280 Q105 290 115 290 L125 290 Q130 290 130 280 L125 220"
-          className="fill-slate-700"
-        />
-      </g>
-      {/* Head */}
-      <g className="character-head" style={{ transformOrigin: "100px 80px" }}>
-        {/* Face */}
-        <circle cx="100" cy="80" r="50" className="fill-amber-200" />
-        {/* Hair */}
-        <path
-          d="M55 70 Q55 30 100 30 Q145 30 145 70 Q140 50 100 50 Q60 50 55 70"
-          className="fill-slate-800"
-        />
-        {/* Eyes */}
-        <g className="character-eyes">
-          <circle cx="82" cy="80" r="6" className="fill-slate-800" />
-          <circle cx="118" cy="80" r="6" className="fill-slate-800" />
-          <circle cx="84" cy="78" r="2" className="fill-white" />
-          <circle cx="120" cy="78" r="2" className="fill-white" />
-        </g>
-        {/* Mouth */}
-        <path
-          d="M88 100 Q100 110 112 100"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          className="text-slate-800 character-mouth"
-          fill="none"
-        />
-      </g>
-    </svg>
-  );
-}
 
 // Phone UI Component
 function PhoneUI({ className }: { className?: string }) {
   return (
     <div className={`relative ${className}`}>
       {/* Phone Frame */}
-      <div className="phone-frame relative w-[280px] h-[560px] bg-background rounded-[40px] border-4 border-slate-800 shadow-2xl overflow-hidden">
+      <div className="phone-frame relative w-[280px] sm:w-[320px] h-[560px] sm:h-[640px] bg-background rounded-[40px] border-4 border-slate-800 shadow-2xl overflow-hidden">
         {/* Notch */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-800 rounded-b-2xl z-20" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 sm:w-32 h-6 sm:h-7 bg-slate-800 rounded-b-2xl z-20" />
         
         {/* Screen Content */}
-        <div className="phone-screen relative w-full h-full pt-10 px-4 pb-4 overflow-hidden">
+        <div className="phone-screen relative w-full h-full pt-10 px-3 sm:px-4 pb-4 overflow-hidden">
           {/* Scene 1: Search */}
-          <div className="scene-1 absolute inset-0 pt-10 px-4">
+          <div className="scene-1 absolute inset-0 pt-10 px-3 sm:px-4">
             <div className="search-container">
-              <div className="search-box relative bg-muted rounded-2xl p-4 flex items-center gap-3">
+              <div className="search-box relative bg-muted rounded-2xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
                 <div className="search-icon">
-                  <Search className="h-5 w-5 text-muted-foreground" />
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 </div>
-                <div className="search-text text-muted-foreground font-medium">
+                <div className="search-text text-muted-foreground font-medium text-sm sm:text-base">
                   <span className="search-placeholder">Szukaj zlecenia...</span>
-                  <span className="search-typed opacity-0 absolute left-12">Wrocław • weekend</span>
-                  <span className="cursor inline-block w-0.5 h-5 bg-primary ml-1 opacity-0" />
+                  <span className="search-typed opacity-0 absolute left-10 sm:left-12">Wrocław • weekend</span>
+                  <span className="cursor inline-block w-0.5 h-4 sm:h-5 bg-primary ml-1 opacity-0" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Scene 2: Job Cards */}
-          <div className="scene-2 absolute inset-0 pt-10 px-4 opacity-0">
-            <div className="text-sm font-semibold text-muted-foreground mb-3">Znalezione zlecenia</div>
-            <div className="space-y-3">
+          <div className="scene-2 absolute inset-0 pt-10 px-3 sm:px-4 opacity-0">
+            <div className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 sm:mb-3">Znalezione zlecenia</div>
+            <div className="space-y-2 sm:space-y-3">
               {/* Card 1 - Best Match */}
-              <div className="job-card-1 relative bg-card rounded-xl p-4 border shadow-sm opacity-0 translate-y-8">
-                <div className="best-match-badge absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full opacity-0 scale-0">
-                  ✨ Najlepsze
+              <div className="job-card-1 relative bg-card rounded-xl p-3 sm:p-4 border shadow-sm opacity-0 translate-y-8">
+                <div className="best-match-badge absolute -top-2 -right-2 bg-emerald-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full opacity-0 scale-0 flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-current" /> Najlepsze
                 </div>
-                <div className="match-bar h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
+                <div className="match-bar h-1 sm:h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
                   <div className="match-fill h-full bg-emerald-500 w-0 rounded-full" />
                 </div>
-                <div className="match-percent text-xs font-bold text-emerald-500 mb-1">0%</div>
-                <div className="font-semibold text-sm">Pomoc przy przeprowadzce</div>
-                <div className="text-xs text-muted-foreground">Wrocław • 150-200 zł</div>
+                <div className="match-percent text-[10px] sm:text-xs font-bold text-emerald-500 mb-1">0%</div>
+                <div className="font-semibold text-xs sm:text-sm">Pomoc przy przeprowadzce</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Wrocław • 150-200 zł</div>
               </div>
               
               {/* Card 2 */}
-              <div className="job-card-2 bg-card rounded-xl p-4 border shadow-sm opacity-0 translate-y-8">
-                <div className="match-bar h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
+              <div className="job-card-2 bg-card rounded-xl p-3 sm:p-4 border shadow-sm opacity-0 translate-y-8">
+                <div className="match-bar h-1 sm:h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
                   <div className="match-fill h-full bg-amber-500 w-0 rounded-full" />
                 </div>
-                <div className="match-percent text-xs font-bold text-amber-500 mb-1">0%</div>
-                <div className="font-semibold text-sm">Sprzątanie biura</div>
-                <div className="text-xs text-muted-foreground">Wrocław • 80 zł</div>
+                <div className="match-percent text-[10px] sm:text-xs font-bold text-amber-500 mb-1">0%</div>
+                <div className="font-semibold text-xs sm:text-sm">Sprzątanie biura</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Wrocław • 80 zł</div>
               </div>
               
               {/* Card 3 */}
-              <div className="job-card-3 bg-card rounded-xl p-4 border shadow-sm opacity-0 translate-y-8">
-                <div className="match-bar h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
+              <div className="job-card-3 bg-card rounded-xl p-3 sm:p-4 border shadow-sm opacity-0 translate-y-8">
+                <div className="match-bar h-1 sm:h-1.5 bg-muted rounded-full mb-2 overflow-hidden">
                   <div className="match-fill h-full bg-blue-500 w-0 rounded-full" />
                 </div>
-                <div className="match-percent text-xs font-bold text-blue-500 mb-1">0%</div>
-                <div className="font-semibold text-sm">Montaż mebli IKEA</div>
-                <div className="text-xs text-muted-foreground">Wrocław • 120 zł</div>
+                <div className="match-percent text-[10px] sm:text-xs font-bold text-blue-500 mb-1">0%</div>
+                <div className="font-semibold text-xs sm:text-sm">Montaż mebli IKEA</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">Wrocław • 120 zł</div>
               </div>
             </div>
           </div>
 
           {/* Scene 3: Apply + Chat */}
-          <div className="scene-3 absolute inset-0 pt-10 px-4 opacity-0">
-            <div className="apply-card bg-card rounded-xl p-4 border shadow-sm mb-4">
+          <div className="scene-3 absolute inset-0 pt-10 px-3 sm:px-4 opacity-0">
+            <div className="apply-card bg-card rounded-xl p-3 sm:p-4 border shadow-sm mb-3 sm:mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-xs text-emerald-500 font-medium">92% dopasowania</span>
+                <span className="text-[10px] sm:text-xs text-emerald-500 font-medium">92% dopasowania</span>
               </div>
-              <div className="font-semibold mb-1">Pomoc przy przeprowadzce</div>
-              <div className="text-sm text-muted-foreground mb-3">Wrocław • Sobota 10:00 • 150-200 zł</div>
+              <div className="font-semibold text-xs sm:text-sm mb-1">Pomoc przy przeprowadzce</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3">Wrocław • Sobota 10:00 • 150-200 zł</div>
               
-              <button className="apply-button w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold relative overflow-hidden">
+              <button className="apply-button w-full bg-primary text-primary-foreground rounded-xl py-2 sm:py-3 font-semibold text-xs sm:text-sm relative overflow-hidden">
                 <span className="apply-text">Aplikuj teraz</span>
                 <span className="apply-loading absolute inset-0 flex items-center justify-center opacity-0">
-                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                 </span>
                 <span className="apply-sent absolute inset-0 flex items-center justify-center opacity-0 gap-2">
-                  <Check className="h-5 w-5" /> Wysłano!
+                  <Check className="h-4 w-4 sm:h-5 sm:w-5" /> Wysłano!
                 </span>
               </button>
             </div>
             
             {/* Chat Bubble */}
             <div className="chat-section opacity-0 translate-y-4">
-              <div className="chat-bubble-incoming bg-muted rounded-2xl rounded-bl-sm p-3 mb-2 max-w-[85%]">
-                <div className="text-xs text-muted-foreground mb-1">Zleceniodawca</div>
-                <div className="text-sm">Hej! Jesteś dostępny dziś o 18:00?</div>
+              <div className="chat-bubble-incoming bg-muted rounded-2xl rounded-bl-sm p-2 sm:p-3 mb-2 max-w-[85%]">
+                <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">Zleceniodawca</div>
+                <div className="text-xs sm:text-sm">Hej! Jesteś dostępny dziś o 18:00?</div>
               </div>
               
-              <div className="chat-bubble-outgoing bg-primary text-primary-foreground rounded-2xl rounded-br-sm p-3 ml-auto max-w-[85%] opacity-0 translate-x-4">
-                <div className="chat-typing text-sm">
+              <div className="chat-bubble-outgoing bg-primary text-primary-foreground rounded-2xl rounded-br-sm p-2 sm:p-3 ml-auto max-w-[85%] opacity-0 translate-x-4">
+                <div className="chat-typing text-xs sm:text-sm">
                   <span className="chat-typed-text"></span>
-                  <span className="chat-cursor inline-block w-0.5 h-4 bg-primary-foreground ml-0.5 opacity-0" />
+                  <span className="chat-cursor inline-block w-0.5 h-3 sm:h-4 bg-primary-foreground ml-0.5 opacity-0" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Scene 4: Success */}
-          <div className="scene-4 absolute inset-0 pt-10 px-4 flex flex-col items-center justify-center opacity-0">
-            <div className="success-icon w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-4 scale-0">
-              <Check className="h-10 w-10 text-white" />
+          <div className="scene-4 absolute inset-0 pt-10 px-3 sm:px-4 flex flex-col items-center justify-center opacity-0">
+            <div className="success-icon w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-3 sm:mb-4 scale-0">
+              <Check className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
             </div>
-            <div className="success-title text-xl font-bold mb-2 opacity-0">Gratulacje! 🎉</div>
-            <div className="success-subtitle text-muted-foreground mb-6 opacity-0">Zlecenie zostało wykonane</div>
+            <div className="success-title text-lg sm:text-xl font-bold mb-2 opacity-0">Gratulacje! 🎉</div>
+            <div className="success-subtitle text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 opacity-0">Zlecenie zostało wykonane</div>
             
-            <div className="balance-card bg-card rounded-2xl p-6 border shadow-lg w-full opacity-0 scale-95">
-              <div className="text-sm text-muted-foreground mb-1">Twoje saldo</div>
-              <div className="balance-amount text-3xl font-bold text-emerald-500 mb-2">
+            <div className="balance-card bg-card rounded-2xl p-4 sm:p-6 border shadow-lg w-full opacity-0 scale-95">
+              <div className="text-xs sm:text-sm text-muted-foreground mb-1">Twoje saldo</div>
+              <div className="balance-amount text-2xl sm:text-3xl font-bold text-emerald-500 mb-2">
                 +<span className="balance-number">0</span> zł
               </div>
-              <div className="payout-text text-xs text-muted-foreground opacity-0">
+              <div className="payout-text text-[10px] sm:text-xs text-muted-foreground opacity-0">
                 💸 Wypłata jutro na konto
               </div>
             </div>
@@ -205,7 +131,7 @@ function PhoneUI({ className }: { className?: string }) {
               {[...Array(20)].map((_, i) => (
                 <div
                   key={i}
-                  className={`confetti-piece absolute w-2 h-2 opacity-0 ${
+                  className={`confetti-piece absolute w-1.5 h-1.5 sm:w-2 sm:h-2 opacity-0 ${
                     i % 4 === 0 ? "bg-primary" : 
                     i % 4 === 1 ? "bg-emerald-500" : 
                     i % 4 === 2 ? "bg-amber-500" : "bg-blue-500"
@@ -246,17 +172,7 @@ export function JobJourneyAnimation() {
         },
       });
 
-      // Character idle animation (independent)
-      gsap.to(".character-body", {
-        y: 3,
-        duration: 2,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-
       // Progress bar animation
-      const progressSteps = [0.25, 0.5, 0.75, 1];
       
       // ===== SCENE 1: Search =====
       tl.to(".progress-fill", { width: "25%", duration: 0.1 }, 0);
@@ -292,12 +208,6 @@ export function JobJourneyAnimation() {
         yoyo: true,
         repeat: 1,
       }, 0.2);
-      
-      // Character looks at phone
-      tl.to(".character-head", {
-        rotation: 5,
-        duration: 0.1,
-      }, 0.1);
 
       // ===== SCENE 2: Matching =====
       tl.to(".scene-1", { opacity: 0, duration: 0.05 }, 0.25);
@@ -331,13 +241,9 @@ export function JobJourneyAnimation() {
       
       // Card glow effect
       tl.to(".job-card-1", {
-        boxShadow: "0 0 20px rgba(var(--primary), 0.3)",
+        boxShadow: "0 0 20px rgba(16, 185, 129, 0.3)",
         duration: 0.1,
       }, 0.45);
-      
-      // Character leans toward phone
-      tl.to(".character-body", { rotation: -5, duration: 0.1 }, 0.35);
-      tl.to(".character-head", { rotation: 10, duration: 0.1 }, 0.35);
 
       // ===== SCENE 3: Apply + Chat =====
       tl.to(".scene-2", { opacity: 0, duration: 0.05 }, 0.5);
@@ -345,10 +251,6 @@ export function JobJourneyAnimation() {
       tl.to(".progress-fill", { width: "75%", duration: 0.1 }, 0.51);
       tl.to(".step-indicator", { innerHTML: "3/4", duration: 0.01 }, 0.51);
       tl.to(".step-text", { innerHTML: "Aplikuję na zlecenie", duration: 0.01 }, 0.51);
-      
-      // Character taps
-      tl.to(".character-right-arm", { rotation: -30, duration: 0.05 }, 0.53);
-      tl.to(".character-right-arm", { rotation: 0, duration: 0.05 }, 0.58);
       
       // Button states
       tl.to(".apply-text", { opacity: 0, duration: 0.02 }, 0.55);
@@ -425,16 +327,6 @@ export function JobJourneyAnimation() {
           ease: "power1.out",
         }, 0.82 + i * 0.01);
       });
-      
-      // Character jumps
-      tl.to(".character-body", { y: -20, rotation: 0, duration: 0.05 }, 0.85);
-      tl.to(".character-body", { y: 0, duration: 0.05 }, 0.9);
-      
-      // Character happy expression (mouth changes via scale)
-      tl.to(".character-mouth", { 
-        attr: { d: "M80 95 Q100 115 120 95" },
-        duration: 0.05,
-      }, 0.85);
 
     }, container);
 
@@ -446,38 +338,31 @@ export function JobJourneyAnimation() {
       ref={sectionRef}
       className="relative min-h-screen bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden"
     >
-      <div ref={containerRef} className="container h-screen flex items-center justify-center">
-        <div className="flex items-center gap-8 lg:gap-16">
-          {/* Left: Character */}
-          <div className="hidden md:block">
-            <Character className="w-48 lg:w-64 h-auto" />
-          </div>
-
-          {/* Right: Phone */}
-          <div className="relative">
-            <PhoneUI />
-            
-            {/* Decorative elements */}
-            <div className="absolute -top-10 -right-10 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
-            <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
-          </div>
+      <div ref={containerRef} className="container h-screen flex flex-col items-center justify-center px-4">
+        {/* Section Title */}
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Jak to działa?</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Przewiń, aby zobaczyć proces</p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-full max-w-md px-8">
-          <div className="flex items-center justify-between mb-3">
-            <span className="step-text text-sm font-medium text-muted-foreground">Rozpocznij</span>
-            <span className="step-indicator text-sm font-bold text-primary">0/4</span>
+        {/* Centered Phone */}
+        <div className="relative flex-shrink-0">
+          <PhoneUI />
+          
+          {/* Decorative elements */}
+          <div className="absolute -top-10 -right-10 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
+        </div>
+
+        {/* Progress Bar - positioned below phone with proper spacing */}
+        <div className="w-full max-w-xs sm:max-w-sm mt-6 sm:mt-8">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="step-text text-xs sm:text-sm font-medium text-muted-foreground">Rozpocznij</span>
+            <span className="step-indicator text-xs sm:text-sm font-bold text-primary">0/4</span>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
             <div className="progress-fill h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full w-0 transition-all" />
           </div>
-        </div>
-
-        {/* Section Title */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-2">Jak to działa?</h2>
-          <p className="text-muted-foreground">Przewiń, aby zobaczyć proces</p>
         </div>
       </div>
     </section>
